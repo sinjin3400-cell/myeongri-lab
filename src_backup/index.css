@@ -1,0 +1,143 @@
+:root {
+  font-family:
+    'Pretendard Variable',
+    Pretendard,
+    -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+
+  /* 미드나잇 블루 + 골드 포인트 */
+  --app-midnight: #1a2744;
+  --app-midnight-soft: #2d3f5c;
+  --app-gold: #c9a962;
+  --app-cream: #fefbf7;
+  --app-cream-deep: #f3ebe3;
+  --app-navy-mist: #e4eaf4;
+  --gradient-app: linear-gradient(
+    168deg,
+    #fefbf7 0%,
+    #f5ebe0 42%,
+    #e2e9f4 100%
+  );
+  --footer-fade: linear-gradient(
+    transparent,
+    rgba(254, 251, 247, 0.92) 38%
+  );
+  --card-shadow: 0 8px 32px rgba(26, 39, 68, 0.07),
+    0 2px 8px rgba(26, 39, 68, 0.04);
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  width: 100%;
+  min-height: 100dvh;
+  background: var(--gradient-app);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.app-page {
+  padding: 28px 24px 132px;
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100dvh;
+}
+
+.app-footer-cta {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  padding: 14px 24px calc(14px + env(safe-area-inset-bottom));
+  background: var(--footer-fade);
+}
+
+@keyframes app-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.app-fade-line {
+  animation: app-fade-in 0.45s ease both;
+}
+
+@keyframes app-twinkle {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes app-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes app-spin-soft {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.toss-like-input {
+  width: 100%;
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.5;
+  padding: 16px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(26, 39, 68, 0.1);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--app-midnight);
+  font-family: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+  box-shadow: 0 1px 2px rgba(26, 39, 68, 0.04);
+}
+
+.toss-like-input::placeholder {
+  color: #9aa3ad;
+  font-weight: 400;
+}
+
+.toss-like-input:focus {
+  outline: none;
+  border-color: rgba(42, 63, 107, 0.45);
+  box-shadow: 0 0 0 3px rgba(42, 63, 107, 0.12);
+}
+
+.toss-like-input:disabled {
+  opacity: 0.5;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.app-cta-round {
+  border-radius: 16px !important;
+}

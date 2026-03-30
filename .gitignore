@@ -1,0 +1,8 @@
+node_modules
+dist
+.granite
+*.ait
+*.local
+.env
+.DS_Store
+.vercel
