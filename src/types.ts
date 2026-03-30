@@ -24,6 +24,21 @@ export interface LuckyInfo {
   item: string;
 }
 
+export type FortuneCategory = 'overall' | 'love' | 'money' | 'health';
+
+export interface FortuneHighlight {
+  summaryLine: string;
+  score: number;
+  bestCategory: FortuneCategory;
+  bestSummary: string;
+  bestDetail: string;
+  cautionCategory: FortuneCategory;
+  cautionSummary: string;
+  cautionDetail: string;
+  lucky: LuckyInfo;
+  mbtiInsight?: string;
+}
+
 export interface FortuneResult {
   overall: string;
   love: string;

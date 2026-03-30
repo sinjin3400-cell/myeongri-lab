@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
 import { generateHapticFeedback } from '@apps-in-toss/web-framework';
-import type { FortuneResult, FortunePeriod, Step, UserInfo } from './types';
+import type { FortuneResult, FortuneHighlight, FortunePeriod, Step, UserInfo } from './types';
 import type { MbtiType } from './api';
-import { requestFortune } from './api';
+import { requestFortuneHighlight, requestFortuneFull } from './api';
 import { InfoStep } from './screens/InfoStep';
 import { MbtiStep } from './screens/MbtiStep';
 import { LoadingStep } from './screens/LoadingStep';
@@ -20,7 +20,8 @@ export default function App() {
   const [step, setStep] = useState<Step>('info');
   const [info, setInfo] = useState<UserInfo>(initialInfo);
   const [mbti, setMbti] = useState<MbtiType | null>(null);
-  const [result, setResult] = useState<FortuneResult | null>(null);
+  const [highlight, setHighlight] = useState<FortuneHighlight | null>(null);
+  const [fullResult, setFullResult] = useState<FortuneResult | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [period, setPeriod] = useState<FortunePeriod>('today');
 
@@ -40,10 +41,12 @@ export default function App() {
     goNextFromMbti();
   }, [goNextFromMbti]);
 
+  // 1단계: 하이라이트만 빠르게 로딩
   const runAnalysis = useCallback(async () => {
     try {
-      const data = await requestFortune(info, mbti, period);
-      setResult(data);
+      const data = await requestFortuneHighlight(info, mbti, period);
+      setHighlight(data);
+      setFullResult(null);
       setStep('result');
       generateHapticFeedback({ type: 'softMedium' });
     } catch (e) {
@@ -53,10 +56,23 @@ export default function App() {
     }
   }, [info, mbti, period]);
 
+  // 2단계: 전체 운세 로딩
+  const loadFullResult = useCallback(async () => {
+    try {
+      const data = await requestFortuneFull(info, mbti, period);
+      setFullResult(data);
+      generateHapticFeedback({ type: 'softMedium' });
+    } catch {
+      // 전체 로딩 실패해도 하이라이트는 유지
+    }
+  }, [info, mbti, period]);
+
   const handleChangePeriod = useCallback(
     (newPeriod: FortunePeriod) => {
       if (newPeriod === period) return;
       setPeriod(newPeriod);
+      setHighlight(null);
+      setFullResult(null);
       setLoadError(null);
       setStep('loading');
     },
@@ -64,9 +80,10 @@ export default function App() {
   );
 
   const handleTomorrow = useCallback(() => {
-    // "내일 운세" → 실제로는 다시 오늘 운세를 재분석 (서버에서 내일 날짜 처리 가능)
     generateHapticFeedback({ type: 'softMedium' });
     setPeriod('today');
+    setHighlight(null);
+    setFullResult(null);
     setLoadError(null);
     setStep('loading');
   }, []);
@@ -75,7 +92,8 @@ export default function App() {
     generateHapticFeedback({ type: 'softMedium' });
     setInfo(initialInfo);
     setMbti(null);
-    setResult(null);
+    setHighlight(null);
+    setFullResult(null);
     setLoadError(null);
     setPeriod('today');
     setStep('info');
@@ -116,9 +134,11 @@ export default function App() {
           </div>
         </div>
       )}
-      {step === 'result' && result && (
+      {step === 'result' && highlight && (
         <ResultStep
-          result={result}
+          highlight={highlight}
+          fullResult={fullResult}
+          onLoadFull={loadFullResult}
           userName={info.name}
           mbti={mbti}
           period={period}

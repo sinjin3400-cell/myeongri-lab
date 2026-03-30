@@ -1,15 +1,17 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { generateHapticFeedback } from '@apps-in-toss/web-framework';
 import { ResultSparkleDecor } from '../components/ResultSparkleDecor';
 import { ScoreRing } from '../components/ScoreRing';
 import { ShareSheet } from '../components/ShareSheet';
-import type { FortuneResult, FortunePeriod } from '../types';
+import type { FortuneResult, FortuneHighlight, FortunePeriod, FortuneCategory } from '../types';
 import type { MbtiType } from '../api';
 import { MBTI_PROFILES } from '../data/mbtiProfiles';
 import { mergeLucky } from '../utils/lucky';
 
 type Props = {
-  result: FortuneResult;
+  highlight: FortuneHighlight;
+  fullResult: FortuneResult | null;
+  onLoadFull: () => Promise<void>;
   userName: string;
   mbti: MbtiType | null;
   period: FortunePeriod;
@@ -56,6 +58,13 @@ const SECTIONS: FortuneSection[] = [
     gradient: 'linear-gradient(135deg, rgba(56, 176, 126, 0.06) 0%, rgba(255, 255, 255, 0.9) 100%)',
   },
 ];
+
+const CATEGORY_LABEL: Record<FortuneCategory, { title: string; icon: string }> = {
+  overall: { title: '총운', icon: '☀️' },
+  love: { title: '애정운', icon: '💕' },
+  money: { title: '금전운', icon: '✨' },
+  health: { title: '건강운', icon: '🌿' },
+};
 
 function AccordionCard({
   section,
@@ -160,8 +169,111 @@ function AccordionCard({
   );
 }
 
+function HighlightCard({
+  type,
+  category,
+  summary,
+  detail,
+  gradient,
+}: {
+  type: 'best' | 'caution';
+  category: FortuneCategory;
+  summary: string;
+  detail: string;
+  gradient: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const label = CATEGORY_LABEL[category];
+  const badge = type === 'best'
+    ? { text: '오늘 가장 좋은 운', bg: 'rgba(201, 169, 98, 0.15)', color: 'var(--gold-600)' }
+    : { text: '오늘 조심할 운', bg: 'rgba(232, 98, 124, 0.12)', color: '#c4566a' };
+
+  return (
+    <section
+      className={`premium-card ${open ? 'active' : ''}`}
+      style={{ background: gradient, cursor: 'pointer' }}
+      onClick={() => {
+        generateHapticFeedback({ type: 'softMedium' });
+        setOpen(!open);
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <span
+          style={{
+            display: 'inline-block',
+            padding: '4px 10px',
+            borderRadius: 12,
+            fontSize: 12,
+            fontWeight: 700,
+            background: badge.bg,
+            color: badge.color,
+          }}
+        >
+          {badge.text}
+        </span>
+        <span
+          className={`accordion-arrow ${open ? 'open' : ''}`}
+          style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 500 }}
+        >
+          <span style={{ color: 'var(--navy-300)' }}>{open ? '접기' : '상세보기'}</span>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M5 7l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      </div>
+
+      <h2
+        style={{
+          margin: '0 0 12px',
+          fontSize: 17,
+          fontWeight: 700,
+          color: 'var(--navy-700)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
+        <span style={{ fontSize: 20 }}>{label.icon}</span>
+        {label.title}
+      </h2>
+
+      <p
+        style={{
+          margin: 0,
+          fontSize: 15,
+          fontWeight: 400,
+          color: 'var(--navy-500)',
+          lineHeight: 1.65,
+          whiteSpace: 'pre-wrap',
+        }}
+      >
+        {summary}
+      </p>
+
+      <div className={`accordion-content ${open ? 'open' : ''}`}>
+        <div style={{ borderTop: '1px solid rgba(26, 39, 68, 0.06)', paddingTop: 14 }}>
+          <p
+            style={{
+              margin: 0,
+              fontSize: 14,
+              fontWeight: 400,
+              color: 'var(--navy-400)',
+              lineHeight: 1.7,
+              whiteSpace: 'pre-wrap',
+            }}
+          >
+            {detail}
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function ResultStep({
-  result,
+  highlight,
+  fullResult,
+  onLoadFull,
   userName,
   mbti,
   period,
@@ -170,15 +282,35 @@ export function ResultStep({
   onTomorrow,
 }: Props) {
   const [showShare, setShowShare] = useState(false);
+  const [loadingFull, setLoadingFull] = useState(false);
   const displayName = userName.trim() || '회원';
   const mbtiProfile = mbti ? MBTI_PROFILES[mbti] : null;
-  const lucky = mergeLucky(result.lucky);
+  const lucky = mergeLucky(highlight.lucky);
 
   const periodLabel = period === 'today' ? '오늘' : period === 'week' ? '이번 주' : '이번 달';
 
   const today = new Date();
   const dateStr = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
   const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][today.getDay()];
+
+  const handleLoadFull = useCallback(async () => {
+    setLoadingFull(true);
+    generateHapticFeedback({ type: 'softMedium' });
+    await onLoadFull();
+    setLoadingFull(false);
+  }, [onLoadFull]);
+
+  // 공유용 결과 조합
+  const shareResult: FortuneResult = fullResult ?? {
+    overall: highlight.bestCategory === 'overall' ? highlight.bestSummary : highlight.cautionCategory === 'overall' ? highlight.cautionSummary : '',
+    love: highlight.bestCategory === 'love' ? highlight.bestSummary : highlight.cautionCategory === 'love' ? highlight.cautionSummary : '',
+    money: highlight.bestCategory === 'money' ? highlight.bestSummary : highlight.cautionCategory === 'money' ? highlight.cautionSummary : '',
+    health: highlight.bestCategory === 'health' ? highlight.bestSummary : highlight.cautionCategory === 'health' ? highlight.cautionSummary : '',
+    summaryLine: highlight.summaryLine,
+    lucky: highlight.lucky,
+    score: highlight.score,
+    mbtiInsight: highlight.mbtiInsight,
+  };
 
   return (
     <div className="app-page">
@@ -266,7 +398,7 @@ export function ResultStep({
           animationDelay: '0.15s',
         }}
       >
-        <ScoreRing score={result.score} size={88} />
+        <ScoreRing score={highlight.score} size={88} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <p
             style={{
@@ -277,9 +409,9 @@ export function ResultStep({
               lineHeight: 1.4,
             }}
           >
-            {result.summaryLine}
+            {highlight.summaryLine}
           </p>
-          {result.mbtiInsight && (
+          {highlight.mbtiInsight && (
             <p
               style={{
                 margin: 0,
@@ -289,7 +421,7 @@ export function ResultStep({
                 lineHeight: 1.45,
               }}
             >
-              {result.mbtiInsight}
+              {highlight.mbtiInsight}
             </p>
           )}
         </div>
@@ -309,37 +441,71 @@ export function ResultStep({
         }}
       >
         <div className="lucky-badge">
-          <span
-            className="lucky-color-dot"
-            style={{ background: lucky.colorHex }}
-          />
+          <span className="lucky-color-dot" style={{ background: lucky.colorHex }} />
           행운색: {lucky.color}
         </div>
-        <div className="lucky-badge">
-          🔢 행운숫자: {lucky.number}
-        </div>
-        <div className="lucky-badge">
-          🧭 행운방향: {lucky.direction}
-        </div>
-        <div className="lucky-badge">
-          🍀 행운아이템: {lucky.item}
-        </div>
+        <div className="lucky-badge">🔢 행운숫자: {lucky.number}</div>
+        <div className="lucky-badge">🧭 행운방향: {lucky.direction}</div>
+        <div className="lucky-badge">🍀 행운아이템: {lucky.item}</div>
       </div>
 
-      {/* 운세 카드들 — 아코디언 */}
-      <div
-        className="stagger-children"
-        style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}
-      >
-        {SECTIONS.map((sec) => (
-          <AccordionCard
-            key={sec.key}
-            section={sec}
-            body={result[sec.key]}
-            detail={result[sec.detailKey]}
+      {/* 하이라이트 카드 2개 */}
+      {!fullResult && (
+        <div
+          className="stagger-children"
+          style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}
+        >
+          <HighlightCard
+            type="best"
+            category={highlight.bestCategory}
+            summary={highlight.bestSummary}
+            detail={highlight.bestDetail}
+            gradient="linear-gradient(135deg, rgba(201, 169, 98, 0.08) 0%, rgba(255, 255, 255, 0.9) 100%)"
           />
-        ))}
-      </div>
+          <HighlightCard
+            type="caution"
+            category={highlight.cautionCategory}
+            summary={highlight.cautionSummary}
+            detail={highlight.cautionDetail}
+            gradient="linear-gradient(135deg, rgba(232, 98, 124, 0.05) 0%, rgba(255, 255, 255, 0.9) 100%)"
+          />
+
+          {/* 나머지 운세 보기 버튼 */}
+          <button
+            className="btn-primary"
+            style={{
+              marginTop: 4,
+              gap: 8,
+              opacity: loadingFull ? 0.7 : 1,
+            }}
+            disabled={loadingFull}
+            onClick={handleLoadFull}
+          >
+            {loadingFull ? (
+              <>분석 중... 🔮</>
+            ) : (
+              <>나머지 운세도 볼래요 🔮</>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* 전체 운세 카드들 */}
+      {fullResult && (
+        <div
+          className="stagger-children"
+          style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}
+        >
+          {SECTIONS.map((sec) => (
+            <AccordionCard
+              key={sec.key}
+              section={sec}
+              body={fullResult[sec.key]}
+              detail={fullResult[sec.detailKey]}
+            />
+          ))}
+        </div>
+      )}
 
       {/* 공유 버튼 */}
       <button
@@ -374,7 +540,7 @@ export function ResultStep({
       {/* 공유 시트 */}
       {showShare && (
         <ShareSheet
-          result={result}
+          result={shareResult}
           userName={displayName}
           onClose={() => setShowShare(false)}
         />
