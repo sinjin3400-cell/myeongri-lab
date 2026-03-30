@@ -3,11 +3,13 @@ import { LoadingNightAnimation } from '../components/LoadingNightAnimation';
 
 const MESSAGES = [
   '사주팔자를 펼치고 있어요 🔮',
-  '천간과 지지의 흐름을 읽는 중이에요 ✨',
+  '천간과 지지의 흐름을 읽는 중 ✨',
   '오행의 균형을 살펴보고 있어요 🌿',
+  '일주와 일진의 관계를 분석 중 🔥',
   'MBTI 성향과 연결하고 있어요 🧠',
-  '오늘의 일진과 대조하는 중이에요 🌙',
-  '나만의 맞춤 운세를 완성하고 있어요 💫',
+  '오늘의 일진과 대조하는 중 🌙',
+  '운세 에너지를 모으고 있어요 ⚡',
+  '맞춤 운세를 완성하고 있어요 💫',
 ] as const;
 
 type Props = {
@@ -22,18 +24,20 @@ export function LoadingStep({ onRun }: Props) {
   useEffect(() => {
     const t = window.setInterval(() => {
       setIdx((i) => (i + 1) % MESSAGES.length);
-    }, 2000);
+    }, 1200);
     return () => clearInterval(t);
   }, []);
 
-  // 가짜 프로그레스 바
+  // 프로그레스 바 - 초반 빠르게, 후반 느리게
   useEffect(() => {
     const t = window.setInterval(() => {
       setProgress((p) => {
-        if (p >= 90) return p;
-        return p + Math.random() * 8 + 2;
+        if (p >= 95) return p;
+        if (p < 40) return p + Math.random() * 12 + 4;
+        if (p < 70) return p + Math.random() * 6 + 2;
+        return p + Math.random() * 2 + 0.5;
       });
-    }, 400);
+    }, 300);
     return () => clearInterval(t);
   }, []);
 
