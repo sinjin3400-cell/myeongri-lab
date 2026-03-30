@@ -70,10 +70,12 @@ function AccordionCard({
   section,
   body,
   detail,
+  badge,
 }: {
   section: FortuneSection;
   body: string;
   detail?: string;
+  badge?: { text: string; bg: string; color: string } | null;
 }) {
   const [open, setOpen] = useState(false);
   const hasDetail = !!detail;
@@ -96,20 +98,36 @@ function AccordionCard({
           justifyContent: 'space-between',
         }}
       >
-        <h2
-          style={{
-            margin: 0,
-            fontSize: 17,
-            fontWeight: 700,
-            color: 'var(--navy-700)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <span style={{ fontSize: 20 }}>{section.icon}</span>
-          {section.title}
-        </h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: 17,
+              fontWeight: 700,
+              color: 'var(--navy-700)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <span style={{ fontSize: 20 }}>{section.icon}</span>
+            {section.title}
+          </h2>
+          {badge && (
+            <span
+              style={{
+                padding: '2px 8px',
+                borderRadius: 10,
+                fontSize: 11,
+                fontWeight: 700,
+                background: badge.bg,
+                color: badge.color,
+              }}
+            >
+              {badge.text}
+            </span>
+          )}
+        </div>
         {hasDetail && (
           <span
             className={`accordion-arrow ${open ? 'open' : ''}`}
@@ -442,7 +460,7 @@ export function ResultStep({
       >
         <div className="lucky-badge">
           <span className="lucky-color-dot" style={{ background: lucky.colorHex }} />
-          행운색: {lucky.color}
+          행운색: <span style={{ color: lucky.colorHex, fontWeight: 700 }}>{lucky.color}</span>
         </div>
         <div className="lucky-badge">🔢 행운숫자: {lucky.number}</div>
         <div className="lucky-badge">🧭 행운방향: {lucky.direction}</div>
@@ -482,28 +500,42 @@ export function ResultStep({
             onClick={handleLoadFull}
           >
             {loadingFull ? (
-              <>분석 중... 🔮</>
+              <>운세를 펼치는 중... ✨</>
             ) : (
-              <>나머지 운세도 볼래요 🔮</>
+              <>숨겨진 {4 - 2}개의 운세가 더 있어요 👀</>
             )}
           </button>
         </div>
       )}
 
-      {/* 전체 운세 카드들 */}
+      {/* 전체 운세 카드들 — 새로운 운세 먼저, 이미 본 운세는 아래로 */}
       {fullResult && (
         <div
           className="stagger-children"
           style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}
         >
-          {SECTIONS.map((sec) => (
-            <AccordionCard
-              key={sec.key}
-              section={sec}
-              body={fullResult[sec.key]}
-              detail={fullResult[sec.detailKey]}
-            />
-          ))}
+          {(() => {
+            const seenKeys = [highlight.bestCategory, highlight.cautionCategory];
+            const newSections = SECTIONS.filter((s) => !seenKeys.includes(s.key));
+            const seenSections = SECTIONS.filter((s) => seenKeys.includes(s.key));
+            const sorted = [...newSections, ...seenSections];
+            return sorted.map((sec) => {
+              const badge = sec.key === highlight.bestCategory
+                ? { text: '✨ BEST', bg: 'rgba(201, 169, 98, 0.15)', color: 'var(--gold-600)' }
+                : sec.key === highlight.cautionCategory
+                  ? { text: '⚠️ 주의', bg: 'rgba(232, 98, 124, 0.12)', color: '#c4566a' }
+                  : null;
+              return (
+                <AccordionCard
+                  key={sec.key}
+                  section={sec}
+                  body={fullResult[sec.key]}
+                  detail={fullResult[sec.detailKey]}
+                  badge={badge}
+                />
+              );
+            });
+          })()}
         </div>
       )}
 
