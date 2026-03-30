@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { generateHapticFeedback } from '@apps-in-toss/web-framework';
 import { ResultSparkleDecor } from '../components/ResultSparkleDecor';
 import { ScoreRing } from '../components/ScoreRing';
@@ -7,6 +7,7 @@ import type { FortuneResult, FortuneHighlight, FortunePeriod, FortuneCategory } 
 import type { MbtiType } from '../api';
 import { MBTI_PROFILES } from '../data/mbtiProfiles';
 import { mergeLucky } from '../utils/lucky';
+import { useTossBanner, useInterstitialAd, AD_IDS } from '../hooks/useAds';
 
 type Props = {
   highlight: FortuneHighlight;
@@ -305,6 +306,22 @@ export function ResultStep({
   const mbtiProfile = mbti ? MBTI_PROFILES[mbti] : null;
   const lucky = mergeLucky(highlight.lucky);
 
+  // 광고
+  const { isInitialized: bannerReady, attachBanner } = useTossBanner();
+  const { showAd: showInterstitial } = useInterstitialAd(AD_IDS.INTERSTITIAL);
+  const bannerRef = useRef<HTMLDivElement>(null);
+
+  // 배너 광고 부착
+  useEffect(() => {
+    if (!bannerReady || !bannerRef.current) return;
+    const attached = attachBanner(AD_IDS.BANNER, bannerRef.current, {
+      theme: 'light',
+      tone: 'blackAndWhite',
+      variant: 'card',
+    });
+    return () => { attached?.destroy(); };
+  }, [bannerReady, attachBanner]);
+
   const periodLabel = period === 'today' ? '오늘' : period === 'week' ? '이번 주' : '이번 달';
 
   const today = new Date();
@@ -314,9 +331,11 @@ export function ResultStep({
   const handleLoadFull = useCallback(async () => {
     setLoadingFull(true);
     generateHapticFeedback({ type: 'softMedium' });
+    // 전면 광고 표시 후 전체 운세 로딩
+    await showInterstitial();
     await onLoadFull();
     setLoadingFull(false);
-  }, [onLoadFull]);
+  }, [onLoadFull, showInterstitial]);
 
   // 공유용 결과 조합
   const shareResult: FortuneResult = fullResult ?? {
@@ -562,6 +581,12 @@ export function ResultStep({
         </svg>
         친구에게 운세 공유하기
       </button>
+
+      {/* 배너 광고 */}
+      <div
+        ref={bannerRef}
+        style={{ width: '100%', height: '96px', marginBottom: 16 }}
+      />
 
       {/* CTA */}
       <div className="app-footer-cta">
