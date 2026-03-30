@@ -494,10 +494,10 @@ export function ResultStep({
             style={{
               marginTop: 4,
               gap: 6,
-              background: 'linear-gradient(135deg, #FFB347 0%, #FF6B6B 50%, #C471ED 100%)',
+              background: 'linear-gradient(135deg, #E08A30 0%, #D4556A 50%, #9B59B6 100%)',
               color: '#fff',
               fontSize: 16,
-              boxShadow: '0 4px 16px rgba(255, 107, 107, 0.3)',
+              boxShadow: '0 4px 14px rgba(212, 85, 106, 0.25)',
               opacity: loadingFull ? 0.7 : 1,
             }}
             disabled={loadingFull}
