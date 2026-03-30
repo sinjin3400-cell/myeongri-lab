@@ -493,10 +493,11 @@ export function ResultStep({
             className="btn-primary"
             style={{
               marginTop: 4,
-              gap: 8,
-              background: 'linear-gradient(135deg, var(--gold-500) 0%, var(--gold-600) 100%)',
+              gap: 6,
+              background: 'linear-gradient(135deg, #FFB347 0%, #FF6B6B 50%, #C471ED 100%)',
               color: '#fff',
               fontSize: 16,
+              boxShadow: '0 4px 16px rgba(255, 107, 107, 0.3)',
               opacity: loadingFull ? 0.7 : 1,
             }}
             disabled={loadingFull}
@@ -505,7 +506,7 @@ export function ResultStep({
             {loadingFull ? (
               <>운세를 펼치는 중... ✨</>
             ) : (
-              <>숨겨진 2개의 운세가 더 있어요 👀</>
+              <>숨겨진 2개의 운세가 더 있어요 ☝️👀</>
             )}
           </button>
         </div>
