@@ -460,7 +460,7 @@ export function ResultStep({
       >
         <div className="lucky-badge">
           <span className="lucky-color-dot" style={{ background: lucky.colorHex }} />
-          행운색: <span style={{ color: lucky.colorHex, fontWeight: 700 }}>{lucky.color}</span>
+          행운색: {lucky.color}
         </div>
         <div className="lucky-badge">🔢 행운숫자: {lucky.number}</div>
         <div className="lucky-badge">🧭 행운방향: {lucky.direction}</div>
@@ -494,6 +494,9 @@ export function ResultStep({
             style={{
               marginTop: 4,
               gap: 8,
+              background: 'linear-gradient(135deg, var(--gold-500) 0%, var(--gold-600) 100%)',
+              color: '#fff',
+              fontSize: 16,
               opacity: loadingFull ? 0.7 : 1,
             }}
             disabled={loadingFull}
@@ -502,7 +505,7 @@ export function ResultStep({
             {loadingFull ? (
               <>운세를 펼치는 중... ✨</>
             ) : (
-              <>숨겨진 {4 - 2}개의 운세가 더 있어요 👀</>
+              <>숨겨진 2개의 운세가 더 있어요 👀</>
             )}
           </button>
         </div>
