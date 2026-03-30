@@ -203,8 +203,8 @@ function HighlightCard({
   const [open, setOpen] = useState(false);
   const label = CATEGORY_LABEL[category];
   const badge = type === 'best'
-    ? { text: '오늘 가장 좋은 운', bg: 'rgba(201, 169, 98, 0.15)', color: 'var(--gold-600)' }
-    : { text: '오늘 조심할 운', bg: 'rgba(232, 98, 124, 0.12)', color: '#c4566a' };
+    ? { text: '🌟 오늘 가장 좋은 운', bg: 'rgba(201, 169, 98, 0.15)', color: 'var(--gold-600)' }
+    : { text: '🛡️ 오늘 조심할 운', bg: 'rgba(232, 98, 124, 0.12)', color: '#c4566a' };
 
   return (
     <section
