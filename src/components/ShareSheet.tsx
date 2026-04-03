@@ -402,7 +402,7 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const Kakao = (window as any).Kakao;
       if (!Kakao.isInitialized()) {
-        const key = import.meta.env.VITE_KAKAO_JS_KEY as string | undefined;
+        const key = (import.meta.env.VITE_KAKAO_JS_KEY as string | undefined)?.trim();
         if (!key) {
           alert('카카오 앱 키가 설정되지 않았어요. .env에 VITE_KAKAO_JS_KEY를 추가해주세요.');
           return;
