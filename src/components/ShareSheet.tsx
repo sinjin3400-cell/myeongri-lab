@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FortuneResult, FortuneHighlight } from '../types';
-import { buildShareUrl, encodeShareDataCompact } from '../utils/shareUrl';
+import { buildShareUrl } from '../utils/shareUrl';
 
 type Props = {
   result: FortuneResult;
@@ -410,16 +410,16 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
         Kakao.init(key);
       }
       const kakaoBaseUrl = 'https://myeongri-lab.vercel.app';
-      // 초경량 인코딩으로 URL을 최대한 짧게 (~200자)
-      const compactData = highlight ? encodeShareDataCompact(userName, highlight) : '';
-      const kakaoShareUrl = compactData
-        ? `${kakaoBaseUrl}/s/${compactData}`
-        : kakaoBaseUrl;
       const score = result.score;
       const desc = [
-        `🎯 운세 점수: ${score}점`,
+        `🎯 오늘의 운세 점수: ${score}점`,
         `"${result.summaryLine}"`,
+        '',
+        `☀️ 총운: ${result.overall.slice(0, 40)}...`,
+        `💕 애정운: ${result.love.slice(0, 40)}...`,
+        '',
         `🍀 행운색: ${result.lucky.color} | 🔢 ${result.lucky.number}`,
+        `🧭 ${result.lucky.direction} | 🍀 ${result.lucky.item}`,
       ].join('\n');
       Kakao.Share.sendDefault({
         objectType: 'feed',
@@ -428,16 +428,16 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
           description: desc,
           imageUrl: `${kakaoBaseUrl}/og-image.png`,
           link: {
-            mobileWebUrl: kakaoShareUrl,
-            webUrl: kakaoShareUrl,
+            mobileWebUrl: kakaoBaseUrl,
+            webUrl: kakaoBaseUrl,
           },
         },
         buttons: [
           {
-            title: `${userName}님의 운세 보기 🔮`,
+            title: '나도 운세 보기 🔮',
             link: {
-              mobileWebUrl: kakaoShareUrl,
-              webUrl: kakaoShareUrl,
+              mobileWebUrl: kakaoBaseUrl,
+              webUrl: kakaoBaseUrl,
             },
           },
         ],
