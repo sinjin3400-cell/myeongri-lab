@@ -13,7 +13,7 @@ const MESSAGES = [
   '맞춤 운세를 완성하고 있어요 💫',
 ] as const;
 
-const GOLDEN_MESSAGE = '🏆 오늘의 황금운세를 가지신 분께 1,000P를 드려요! 🎁';
+const GOLDEN_MESSAGE = '오늘의 황금운세를 가지신 분께 1,000P를 드려요! 🎁';
 
 type Props = {
   onRun: () => Promise<void>;
@@ -105,11 +105,11 @@ export function LoadingStep({ onRun }: Props) {
             lineHeight: 1.55,
             fontSize: 17,
             fontWeight: 800,
-            background: 'linear-gradient(135deg, #FFD700, #FFA500, #FF6347)',
+            background: 'linear-gradient(135deg, #B8860B, #8B6914, #A0522D)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             letterSpacing: '-0.01em',
-            filter: 'drop-shadow(0 0 8px rgba(255, 215, 0, 0.3))',
+            textShadow: '0 0 20px rgba(184, 134, 11, 0.15)',
           }}
         >
           {GOLDEN_MESSAGE}
