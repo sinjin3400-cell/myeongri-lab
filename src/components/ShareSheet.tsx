@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import type { FortuneResult } from '../types';
+import type { FortuneResult, FortuneHighlight } from '../types';
+import { buildShareUrl } from '../utils/shareUrl';
 
 type Props = {
   result: FortuneResult;
   userName: string;
+  highlight?: FortuneHighlight;
   onClose: () => void;
 };
 
@@ -51,7 +53,25 @@ function drawFortuneCard(result: FortuneResult, userName: string): HTMLCanvasEle
   totalH += 20;  // 간격
   totalH += 100; // 점수 영역
   totalH += 30;  // 간격
-  totalH += 50;  // 행운 배지
+  // 행운 배지 높이 계산 (줄바꿈 반영)
+  tmpCtx.font = '600 20px Pretendard, -apple-system, sans-serif';
+  const badgeTexts = [
+    `● 행운색: ${result.lucky.color}`,
+    `🔢 행운숫자: ${result.lucky.number}`,
+    `🧭 행운방향: ${result.lucky.direction}`,
+    `🍀 행운아이템: ${result.lucky.item}`,
+  ];
+  let tmpBx = pad;
+  let badgeLineCount = 0;
+  for (const bt of badgeTexts) {
+    const bw = tmpCtx.measureText(bt).width + 24;
+    tmpBx += bw + 10;
+    if (tmpBx > W - pad - 100) {
+      tmpBx = pad;
+      badgeLineCount++;
+    }
+  }
+  totalH += badgeLineCount * 44 + 50;  // 행운 배지 (줄바꿈 반영)
   totalH += 30;  // 간격
 
   const sectionHeights: number[] = [];
@@ -255,10 +275,29 @@ function drawFortuneCard(result: FortuneResult, userName: string): HTMLCanvasEle
   return canvas;
 }
 
-export function ShareSheet({ result, userName, onClose }: Props) {
+function loadKakaoSDK(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if ((window as unknown as Record<string, unknown>).Kakao) {
+      resolve();
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js';
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Kakao SDK 로드 실패'));
+    document.head.appendChild(script);
+  });
+}
+
+export function ShareSheet({ result, userName, highlight, onClose }: Props) {
   const [saving, setSaving] = useState(false);
 
-  const shareText = `✨ ${userName}님의 오늘 운세\n\n${result.summaryLine}\n\n🎯 총운: ${result.overall.slice(0, 60)}...\n💕 애정운: ${result.love.slice(0, 60)}...\n\n🍀 행운색: ${result.lucky.color} | 행운숫자: ${result.lucky.number}\n\n명리연구소에서 나만의 운세 보기 →`;
+  // 공유 URL 생성 (highlight가 있으면 운세 데이터 포함)
+  const shareUrl = highlight
+    ? buildShareUrl(userName, highlight)
+    : 'https://myeongri-lab.vercel.app';
+
+  const shareText = `✨ ${userName}님의 오늘 운세\n\n${result.summaryLine}\n🍀 행운색: ${result.lucky.color} | 행운숫자: ${result.lucky.number}\n\n${userName}님의 운세 보기 →\n${shareUrl}`;
 
   const handleSaveImage = async () => {
     if (saving) return;
@@ -352,6 +391,74 @@ export function ShareSheet({ result, userName, onClose }: Props) {
     }
   };
 
+  const handleKakaoShare = async () => {
+    try {
+      await loadKakaoSDK();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const Kakao = (window as any).Kakao;
+      if (!Kakao.isInitialized()) {
+        const key = import.meta.env.VITE_KAKAO_JS_KEY as string | undefined;
+        if (!key) {
+          alert('카카오 앱 키가 설정되지 않았어요. .env에 VITE_KAKAO_JS_KEY를 추가해주세요.');
+          return;
+        }
+        Kakao.init(key);
+      }
+      const kakaoBaseUrl = 'https://myeongri-lab.vercel.app';
+      // 해시 프래그먼트는 카카오 SDK 도메인 검증에 영향 없음
+      const kakaoShareUrl = shareUrl;
+      const score = result.score;
+      const desc = [
+        `🎯 오늘의 운세 점수: ${score}점`,
+        `"${result.summaryLine}"`,
+        '',
+        `☀️ 총운: ${result.overall.slice(0, 40)}...`,
+        `💕 애정운: ${result.love.slice(0, 40)}...`,
+        '',
+        `🍀 행운색: ${result.lucky.color} | 🔢 ${result.lucky.number}`,
+        `🧭 ${result.lucky.direction} | 🍀 ${result.lucky.item}`,
+      ].join('\n');
+      Kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          title: `✨ ${userName}님의 오늘 운세`,
+          description: desc,
+          imageUrl: `${kakaoBaseUrl}/og-image.png`,
+          link: {
+            mobileWebUrl: kakaoShareUrl,
+            webUrl: kakaoShareUrl,
+          },
+        },
+        buttons: [
+          {
+            title: '나도 운세 보기 🔮',
+            link: {
+              mobileWebUrl: kakaoShareUrl,
+              webUrl: kakaoShareUrl,
+            },
+          },
+        ],
+      });
+      onClose();
+    } catch {
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: `${userName}님의 운세`, text: shareText });
+          onClose();
+        } catch { /* 취소 */ }
+      } else {
+        alert('카카오톡 공유에 실패했어요. 텍스트 복사로 공유해주세요.');
+      }
+    }
+  };
+
+  const handleSmsShare = () => {
+    const body = encodeURIComponent(shareText);
+    const isIOS = /iPhone|iPad/i.test(navigator.userAgent);
+    window.location.href = isIOS ? `sms:&body=${body}` : `sms:?body=${body}`;
+    onClose();
+  };
+
   return (
     <div className="share-sheet-overlay" onClick={onClose}>
       <div className="share-sheet" onClick={(e) => e.stopPropagation()}>
@@ -394,6 +501,30 @@ export function ShareSheet({ result, userName, onClose }: Props) {
 
           <button
             className="btn-secondary"
+            onClick={handleKakaoShare}
+            style={{ gap: 8, background: '#FEE500', color: '#191919', border: 'none' }}
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M10 3C5.58 3 2 5.87 2 9.35c0 2.21 1.47 4.15 3.68 5.25l-.94 3.44c-.08.29.25.52.5.35l4.12-2.73c.21.02.42.03.64.03 4.42 0 8-2.87 8-6.35S14.42 3 10 3z" fill="#191919"/>
+            </svg>
+            카카오톡으로 공유하기
+          </button>
+
+          <button
+            className="btn-secondary"
+            onClick={handleSmsShare}
+            style={{ gap: 8 }}
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <rect x="3" y="1" width="12" height="16" rx="2" stroke="var(--navy-400)" strokeWidth="1.5"/>
+              <line x1="7" y1="14" x2="11" y2="14" stroke="var(--navy-400)" strokeWidth="1.5" strokeLinecap="round"/>
+              <path d="M6 6h6M6 9h4" stroke="var(--navy-400)" strokeWidth="1.2" strokeLinecap="round"/>
+            </svg>
+            문자로 공유하기
+          </button>
+
+          <button
+            className="btn-secondary"
             onClick={handleNativeShare}
             style={{ gap: 8 }}
           >
@@ -405,7 +536,7 @@ export function ShareSheet({ result, userName, onClose }: Props) {
                 strokeLinecap="round"
               />
             </svg>
-            텍스트로 공유하기
+            다른 앱으로 공유하기
           </button>
 
           <button
