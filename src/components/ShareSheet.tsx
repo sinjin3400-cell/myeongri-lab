@@ -410,12 +410,9 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
         Kakao.init(key);
       }
       const kakaoBaseUrl = 'https://myeongri-lab.vercel.app';
-      // 카카오용 compact URL (10KB 패킷 제한 회피)
-      const compactData = highlight ? encodeShareDataCompact(userName, highlight) : '';
-      const kakaoShareUrl = compactData
-        ? `${kakaoBaseUrl}/s/${compactData}`
-        : kakaoBaseUrl;
-      const desc = `🎯 ${result.score}점 "${result.summaryLine}"\n🍀 행운색: ${result.lucky.color} | 🔢 ${result.lucky.number}`;
+      // 모바일 패킷 10KB 제한 회피를 위해 기본 URL만 사용
+      const kakaoShareUrl = kakaoBaseUrl;
+      const desc = `🎯 오늘의 운세 점수: ${result.score}점\n"${result.summaryLine}"\n🍀 행운색: ${result.lucky.color} | 🔢 ${result.lucky.number}`;
       Kakao.Share.sendDefault({
         objectType: 'feed',
         content: {
