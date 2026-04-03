@@ -74,8 +74,8 @@ export function decodeShareData(encoded: string): SharedFortuneData | null {
 
 export function buildShareUrl(userName: string, highlight: FortuneHighlight, texts?: FortuneTexts): string {
   const encoded = encodeShareData(userName, highlight, texts);
-  // query parameter 사용 — 카카오 SDK가 해시(#) URL을 거부하므로
-  return `https://myeongri-lab.vercel.app?s=${encoded}`;
+  // 경로 기반 URL — 카카오 SDK가 해시/query를 거부하지만 하위 경로는 허용
+  return `https://myeongri-lab.vercel.app/s/${encoded}`;
 }
 
 export function sharedDataToHighlight(data: SharedFortuneData): {

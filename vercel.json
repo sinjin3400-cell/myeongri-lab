@@ -2,5 +2,8 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist/web",
   "installCommand": "npm install",
-  "framework": "vite"
+  "framework": "vite",
+  "rewrites": [
+    { "source": "/s/:path*", "destination": "/index.html" }
+  ]
 }

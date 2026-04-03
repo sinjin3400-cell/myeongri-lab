@@ -11,12 +11,18 @@ import { SharedResultView } from './screens/SharedResultView';
 import { decodeShareData, sharedDataToHighlight } from './utils/shareUrl';
 import type { FortuneTexts } from './utils/shareUrl';
 
-// URL에서 공유 데이터 확인 (?s=base64data 또는 #s=base64data)
+// URL에서 공유 데이터 확인 (/s/base64data, ?s=base64data, #s=base64data)
 function getSharedData(): { userName: string; highlight: FortuneHighlight; texts: FortuneTexts } | null {
-  // query parameter 우선 확인
-  const params = new URLSearchParams(window.location.search);
-  let encoded = params.get('s');
-  // 하위호환: 해시 프래그먼트도 확인
+  let encoded: string | null = null;
+  // 1순위: 경로 기반 (/s/데이터)
+  const pathMatch = window.location.pathname.match(/^\/s\/(.+)$/);
+  if (pathMatch) encoded = pathMatch[1];
+  // 2순위: query parameter
+  if (!encoded) {
+    const params = new URLSearchParams(window.location.search);
+    encoded = params.get('s');
+  }
+  // 3순위: 해시 프래그먼트 (하위호환)
   if (!encoded) {
     const hash = window.location.hash;
     if (hash.startsWith('#s=')) encoded = hash.slice(3);
