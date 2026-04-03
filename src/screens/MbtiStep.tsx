@@ -185,7 +185,17 @@ export function MbtiStep({
       )}
 
       {/* CTA */}
-      <div className="app-footer-cta">
+      <div
+        className="app-footer-cta"
+        style={{
+          position: 'static',
+          padding: 0,
+          background: 'transparent',
+          marginTop: 28,
+          maxWidth: 'none',
+          zIndex: 'auto',
+        }}
+      >
         <button
           className="btn-secondary"
           onClick={onSkip}
