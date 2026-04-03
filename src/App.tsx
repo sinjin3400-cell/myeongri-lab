@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { haptic } from './utils/haptic';
 import type { FortuneResult, FortuneHighlight, FortuneCategory, FortunePeriod, Step, UserInfo } from './types';
 import type { MbtiType } from './api';
@@ -9,29 +9,43 @@ import { LoadingStep } from './screens/LoadingStep';
 import { ResultStep } from './screens/ResultStep';
 import { SharedResultView } from './screens/SharedResultView';
 import { decodeShareData, decodeShareDataCompact, sharedDataToHighlight } from './utils/shareUrl';
-import type { FortuneTexts } from './utils/shareUrl';
+import type { SharedFortuneData, FortuneTexts } from './utils/shareUrl';
 
-// URL에서 공유 데이터 확인 (/s/base64data, ?s=base64data, #s=base64data)
-function getSharedData(): { userName: string; highlight: FortuneHighlight; texts: FortuneTexts } | null {
-  let encoded: string | null = null;
-  // 1순위: 경로 기반 (/s/데이터)
-  const pathMatch = window.location.pathname.match(/^\/s\/(.+)$/);
-  if (pathMatch) encoded = pathMatch[1];
-  // 2순위: query parameter
-  if (!encoded) {
-    const params = new URLSearchParams(window.location.search);
-    encoded = params.get('s');
-  }
-  // 3순위: 해시 프래그먼트 (하위호환)
-  if (!encoded) {
-    const hash = window.location.hash;
-    if (hash.startsWith('#s=')) encoded = hash.slice(3);
-  }
+/** URL에서 공유 데이터 동기 확인 (base64 인코딩된 경우) */
+function getSharedDataSync(): { userName: string; highlight: FortuneHighlight; texts: FortuneTexts } | null {
+  const encoded = getShareSlug();
   if (!encoded) return null;
-  // JSON 형식 먼저 시도, 실패하면 compact 형식 시도
+  // 짧은 ID(6자, API 조회 필요)는 여기서 처리하지 않음
+  if (encoded.length <= 8) return null;
   const data = decodeShareData(encoded) || decodeShareDataCompact(encoded);
   if (!data) return null;
   return sharedDataToHighlight(data);
+}
+
+/** URL 경로에서 /s/xxx 슬러그 추출 */
+function getShareSlug(): string | null {
+  const pathMatch = window.location.pathname.match(/^\/s\/(.+)$/);
+  if (pathMatch) return pathMatch[1];
+  const params = new URLSearchParams(window.location.search);
+  const qs = params.get('s');
+  if (qs) return qs;
+  const hash = window.location.hash;
+  if (hash.startsWith('#s=')) return hash.slice(3);
+  return null;
+}
+
+/** 짧은 공유 ID를 API에서 조회 */
+async function fetchSharedData(id: string): Promise<{ userName: string; highlight: FortuneHighlight; texts: FortuneTexts } | null> {
+  try {
+    const apiBase = import.meta.env.VITE_API_BASE || '';
+    const res = await fetch(`${apiBase}/api/share?id=${encodeURIComponent(id)}`);
+    if (!res.ok) return null;
+    const data: SharedFortuneData = await res.json();
+    if (!data || !data.n) return null;
+    return sharedDataToHighlight(data);
+  } catch {
+    return null;
+  }
 }
 
 const initialInfo: UserInfo = {
@@ -43,7 +57,20 @@ const initialInfo: UserInfo = {
 };
 
 export default function App() {
-  const [sharedView, setSharedView] = useState(() => getSharedData());
+  const [sharedView, setSharedView] = useState(() => getSharedDataSync());
+  const [sharedLoading, setSharedLoading] = useState(false);
+
+  // 짧은 공유 ID(서버 저장)인 경우 비동기로 조회
+  useEffect(() => {
+    const slug = getShareSlug();
+    if (!slug || slug.length > 8) return; // base64는 이미 동기 처리됨
+    setSharedLoading(true);
+    fetchSharedData(slug)
+      .then((result) => {
+        if (result) setSharedView(result);
+      })
+      .finally(() => setSharedLoading(false));
+  }, []);
   const [step, setStep] = useState<Step>('info');
   const [info, setInfo] = useState<UserInfo>(initialInfo);
   const [mbti, setMbti] = useState<MbtiType | null>(null);
@@ -146,9 +173,20 @@ export default function App() {
 
   const dismissShared = useCallback(() => {
     setSharedView(null);
-    // URL 해시 제거
-    window.history.replaceState({}, '', window.location.pathname);
+    // URL을 루트로 정리 (공유 경로 제거)
+    window.history.replaceState({}, '', '/');
   }, []);
+
+  // 공유 데이터 로딩 중
+  if (sharedLoading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', gap: 16, background: 'var(--bg-cream, #FFFDF5)' }}>
+        <div style={{ width: 40, height: 40, border: '3px solid #e5e0d5', borderTopColor: '#c9a962', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <p style={{ fontSize: 15, color: '#8c8577' }}>운세 결과를 불러오는 중...</p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
   if (sharedView) {
     return (

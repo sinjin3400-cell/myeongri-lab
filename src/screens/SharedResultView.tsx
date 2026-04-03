@@ -189,8 +189,8 @@ export function SharedResultView({ userName, highlight, texts, onTryOwn }: Props
         </div>
       )}
 
-      {/* CTA */}
-      <div className="app-footer-cta" style={{ gap: 12 }}>
+      {/* CTA — 공유 페이지에서는 고정하지 않고 일반 흐름으로 배치 */}
+      <div style={{ gap: 12, display: 'flex', flexDirection: 'column', marginTop: 8, marginBottom: 24 }}>
         <div
           className="premium-card animate-slide-up"
           style={{

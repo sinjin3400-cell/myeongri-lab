@@ -1,8 +1,9 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { haptic } from '../utils/haptic';
 import { HeroIllustration } from '../components/HeroIllustration';
 import { LogoMark } from '../components/LogoMark';
 import { SijinSelect } from '../components/SijinSelect';
+import { useTossBanner, AD_IDS } from '../hooks/useAds';
 import type { UserInfo, Gender } from '../types';
 import { SIJIN_OPTIONS, type SijinId } from '../sijin';
 
@@ -56,6 +57,20 @@ function formatSijinLine(v: UserInfo): string {
 
 export function InfoStep({ value, onChange, onNext }: Props) {
   const genderFirstRef = useRef<HTMLButtonElement>(null);
+
+  // 배너 광고
+  const { isInitialized: bannerReady, attachBanner } = useTossBanner();
+  const bannerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!bannerReady || !bannerRef.current) return;
+    const attached = attachBanner(AD_IDS.BANNER, bannerRef.current, {
+      theme: 'light',
+      tone: 'blackAndWhite',
+      variant: 'card',
+    });
+    return () => { attached?.destroy(); };
+  }, [bannerReady, attachBanner]);
 
   const nameOk = value.name.trim().length >= 1;
   const dateOk = validBirthStored(value.birthDate);
@@ -289,6 +304,12 @@ export function InfoStep({ value, onChange, onNext }: Props) {
         >
           내 운세 보러 가기 →
         </button>
+
+        {/* 배너 광고 */}
+        <div
+          ref={bannerRef}
+          style={{ width: '100%', height: 96, marginTop: 16 }}
+        />
       </div>
     </div>
   );

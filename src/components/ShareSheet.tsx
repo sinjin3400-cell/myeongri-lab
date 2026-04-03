@@ -1,6 +1,4 @@
-import { useState } from 'react';
 import type { FortuneResult, FortuneHighlight } from '../types';
-import { buildShareUrl, encodeShareDataCompact } from '../utils/shareUrl';
 
 type Props = {
   result: FortuneResult;
@@ -8,272 +6,6 @@ type Props = {
   highlight?: FortuneHighlight;
   onClose: () => void;
 };
-
-function drawFortuneCard(result: FortuneResult, userName: string): HTMLCanvasElement {
-  const W = 720;
-  const pad = 48;
-  const contentW = W - pad * 2;
-
-  // 임시 캔버스로 높이 계산
-  const tmp = document.createElement('canvas');
-  tmp.width = W;
-  const tmpCtx = tmp.getContext('2d')!;
-  tmpCtx.font = '500 28px Pretendard, -apple-system, sans-serif';
-
-  function measureWrapped(ctx: CanvasRenderingContext2D, text: string, maxW: number, lineH: number): number {
-    const words = text.split('');
-    let line = '';
-    let lines = 1;
-    for (const char of words) {
-      const test = line + char;
-      if (ctx.measureText(test).width > maxW && line) {
-        lines++;
-        line = char;
-      } else {
-        line = test;
-      }
-    }
-    return lines * lineH;
-  }
-
-  // 섹션별 높이 계산
-  const sections = [
-    { icon: '☀️', title: '총운', text: result.overall },
-    { icon: '💕', title: '애정운', text: result.love },
-    { icon: '✨', title: '금전운', text: result.money },
-    { icon: '🌿', title: '건강운', text: result.health },
-  ];
-
-  tmpCtx.font = '400 26px Pretendard, -apple-system, sans-serif';
-  const sectionTextW = contentW - 40;
-  let totalH = 0;
-  totalH += 60;  // 상단 여백
-  totalH += 36;  // 날짜
-  totalH += 50;  // 제목
-  totalH += 20;  // 간격
-  totalH += 100; // 점수 영역
-  totalH += 30;  // 간격
-  // 행운 배지 높이 계산 (줄바꿈 반영)
-  tmpCtx.font = '600 20px Pretendard, -apple-system, sans-serif';
-  const badgeTexts = [
-    `● 행운색: ${result.lucky.color}`,
-    `🔢 행운숫자: ${result.lucky.number}`,
-    `🧭 행운방향: ${result.lucky.direction}`,
-    `🍀 행운아이템: ${result.lucky.item}`,
-  ];
-  let tmpBx = pad;
-  let badgeLineCount = 0;
-  for (const bt of badgeTexts) {
-    const bw = tmpCtx.measureText(bt).width + 24;
-    tmpBx += bw + 10;
-    if (tmpBx > W - pad - 100) {
-      tmpBx = pad;
-      badgeLineCount++;
-    }
-  }
-  totalH += badgeLineCount * 44 + 50;  // 행운 배지 (줄바꿈 반영)
-  totalH += 30;  // 간격
-
-  const sectionHeights: number[] = [];
-  for (const sec of sections) {
-    const textH = measureWrapped(tmpCtx, sec.text, sectionTextW, 38);
-    const h = 50 + textH + 30; // title + text + padding
-    sectionHeights.push(h);
-    totalH += h + 16; // + gap
-  }
-
-  totalH += 60; // 워터마크
-  totalH += 40; // 하단 여백
-
-  // 실제 캔버스
-  const canvas = document.createElement('canvas');
-  canvas.width = W;
-  canvas.height = totalH;
-  const ctx = canvas.getContext('2d')!;
-
-  // 배경
-  ctx.fillStyle = '#fdf8f3';
-  ctx.fillRect(0, 0, W, totalH);
-
-  let y = 60;
-
-  // 날짜 + 이름
-  const today = new Date();
-  const dateStr = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
-  const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][today.getDay()];
-  ctx.font = '600 22px Pretendard, -apple-system, sans-serif';
-  ctx.fillStyle = '#c9a962';
-  ctx.fillText(`${dateStr} (${dayOfWeek}) · ${userName}님의 오늘 운세`, pad, y);
-  y += 36;
-
-  // 제목
-  ctx.font = '800 36px Pretendard, -apple-system, sans-serif';
-  ctx.fillStyle = '#1a2744';
-  ctx.fillText('✨ 오늘의 운세가 도착했어요', pad, y);
-  y += 50;
-
-  // 점수 카드
-  const scoreCardY = y;
-  const scoreCardH = 100;
-  // 카드 배경
-  ctx.fillStyle = '#fffcf5';
-  ctx.beginPath();
-  ctx.roundRect(pad, scoreCardY, contentW, scoreCardH, 18);
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(201, 169, 98, 0.15)';
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
-  // 점수 원
-  const scoreX = pad + 56;
-  const scoreY = scoreCardY + scoreCardH / 2;
-  const scoreR = 34;
-  // 트랙
-  ctx.beginPath();
-  ctx.arc(scoreX, scoreY, scoreR, 0, Math.PI * 2);
-  ctx.strokeStyle = 'rgba(26, 39, 68, 0.06)';
-  ctx.lineWidth = 7;
-  ctx.stroke();
-  // 게이지
-  const scoreColor = result.score >= 80 ? '#c9a962' : result.score >= 60 ? '#3d5a8a' : '#8aa4cc';
-  const startAngle = -Math.PI / 2;
-  const endAngle = startAngle + (result.score / 100) * Math.PI * 2;
-  ctx.beginPath();
-  ctx.arc(scoreX, scoreY, scoreR, startAngle, endAngle);
-  ctx.strokeStyle = scoreColor;
-  ctx.lineWidth = 7;
-  ctx.lineCap = 'round';
-  ctx.stroke();
-  ctx.lineCap = 'butt';
-  // 점수 텍스트
-  ctx.font = '800 30px Pretendard, -apple-system, sans-serif';
-  ctx.fillStyle = scoreColor;
-  ctx.textAlign = 'center';
-  ctx.fillText(String(result.score), scoreX, scoreY + 6);
-  ctx.font = '600 14px Pretendard, -apple-system, sans-serif';
-  ctx.fillStyle = '#8aa4cc';
-  ctx.fillText('점', scoreX, scoreY + 22);
-  ctx.textAlign = 'left';
-
-  // 요약
-  ctx.font = '700 28px Pretendard, -apple-system, sans-serif';
-  ctx.fillStyle = '#1a2744';
-  ctx.fillText(result.summaryLine, pad + 120, scoreCardY + 45);
-  if (result.mbtiInsight) {
-    ctx.font = '500 22px Pretendard, -apple-system, sans-serif';
-    ctx.fillStyle = '#a68338';
-    ctx.fillText(result.mbtiInsight.slice(0, 30), pad + 120, scoreCardY + 75);
-  }
-
-  y += scoreCardH + 30;
-
-  // 행운 배지
-  const lucky = result.lucky;
-  const badges = [
-    `● 행운색: ${lucky.color}`,
-    `🔢 행운숫자: ${lucky.number}`,
-    `🧭 행운방향: ${lucky.direction}`,
-    `🍀 행운아이템: ${lucky.item}`,
-  ];
-  ctx.font = '600 20px Pretendard, -apple-system, sans-serif';
-  let bx = pad;
-  for (const badge of badges) {
-    const bw = ctx.measureText(badge).width + 24;
-    // 배지 배경
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.beginPath();
-    ctx.roundRect(bx, y, bw, 36, 18);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(26, 39, 68, 0.08)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    // 텍스트
-    ctx.fillStyle = '#233558';
-    ctx.fillText(badge, bx + 12, y + 25);
-
-    // 행운색 점
-    if (badge.startsWith('●')) {
-      ctx.beginPath();
-      ctx.arc(bx + 16, y + 18, 7, 0, Math.PI * 2);
-      ctx.fillStyle = lucky.colorHex || '#c9a962';
-      ctx.fill();
-      // 텍스트 다시
-      ctx.fillStyle = '#233558';
-      ctx.fillText(`행운색: ${lucky.color}`, bx + 28, y + 25);
-    }
-
-    bx += bw + 10;
-    if (bx > W - pad - 100) {
-      bx = pad;
-      y += 44;
-    }
-  }
-  y += 50;
-
-  // 운세 카드
-  const cardColors = [
-    'rgba(201, 169, 98, 0.06)',
-    'rgba(232, 98, 124, 0.05)',
-    'rgba(91, 141, 239, 0.05)',
-    'rgba(56, 176, 126, 0.05)',
-  ];
-
-  for (let i = 0; i < sections.length; i++) {
-    const sec = sections[i];
-    const cardH = sectionHeights[i];
-
-    // 카드 배경
-    ctx.fillStyle = cardColors[i];
-    ctx.beginPath();
-    ctx.roundRect(pad, y, contentW, cardH, 18);
-    ctx.fill();
-    // 흰색 오버레이
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-    ctx.beginPath();
-    ctx.roundRect(pad, y, contentW, cardH, 18);
-    ctx.fill();
-    // 테두리
-    ctx.strokeStyle = 'rgba(26, 39, 68, 0.05)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.roundRect(pad, y, contentW, cardH, 18);
-    ctx.stroke();
-
-    // 제목
-    ctx.font = '700 26px Pretendard, -apple-system, sans-serif';
-    ctx.fillStyle = '#1a2744';
-    ctx.fillText(`${sec.icon} ${sec.title}`, pad + 20, y + 36);
-
-    // 본문
-    ctx.font = '400 26px Pretendard, -apple-system, sans-serif';
-    ctx.fillStyle = '#3d5a8a';
-    let textY = y + 66;
-    let line = '';
-    for (const char of sec.text) {
-      const test = line + char;
-      if (ctx.measureText(test).width > sectionTextW && line) {
-        ctx.fillText(line, pad + 20, textY);
-        textY += 38;
-        line = char;
-      } else {
-        line = test;
-      }
-    }
-    if (line) ctx.fillText(line, pad + 20, textY);
-
-    y += cardH + 16;
-  }
-
-  // 워터마크
-  y += 10;
-  ctx.font = '600 20px Pretendard, -apple-system, sans-serif';
-  ctx.fillStyle = '#c9a962';
-  ctx.textAlign = 'center';
-  ctx.fillText('✨ 명리연구소 — AI 사주 운세', W / 2, y);
-  ctx.textAlign = 'left';
-
-  return canvas;
-}
 
 function loadKakaoSDK(): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -290,86 +22,62 @@ function loadKakaoSDK(): Promise<void> {
 }
 
 export function ShareSheet({ result, userName, highlight, onClose }: Props) {
-  const [saving, setSaving] = useState(false);
+  const kakaoBaseUrl = 'https://myeongri-lab.vercel.app';
 
-  // 공유 URL 생성 (highlight가 있으면 운세 데이터 포함)
-  const shareUrl = highlight
-    ? buildShareUrl(userName, highlight, {
-        overall: result.overall,
-        love: result.love,
-        money: result.money,
-        health: result.health,
-      })
-    : 'https://myeongri-lab.vercel.app';
-
-  const shareText = `✨ ${userName}님의 오늘 운세\n\n${result.summaryLine}\n🍀 행운색: ${result.lucky.color} | 행운숫자: ${result.lucky.number}\n\n${userName}님의 운세 보기 →\n${shareUrl}`;
-
-  const handleSaveImage = async () => {
-    if (saving) return;
-    setSaving(true);
-
+  /** 서버에 공유 데이터를 저장하고 짧은 URL을 반환 */
+  const getShortShareUrl = async (): Promise<string> => {
     try {
-      const canvas = drawFortuneCard(result, userName);
+      const apiBase = import.meta.env.VITE_API_BASE || '';
+      const shareRes = await fetch(`${apiBase}/api/share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          n: userName, sl: result.summaryLine, sc: result.score,
+          bc: highlight?.bestCategory || 'overall', bs: highlight?.bestSummary || '',
+          cc: highlight?.cautionCategory || 'health', cs: highlight?.cautionSummary || '',
+          lc: result.lucky.color, ln: result.lucky.number,
+          ld: result.lucky.direction, li: result.lucky.item,
+          ov: result.overall, lo: result.love, mo: result.money, he: result.health,
+        }),
+      });
+      const { id } = await shareRes.json();
+      if (id) return `${kakaoBaseUrl}/s/${id}`;
+    } catch { /* 실패 시 기본 URL */ }
+    return kakaoBaseUrl;
+  };
 
-      const blob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob(resolve, 'image/png')
-      );
+  const buildShareText = (url: string) =>
+    `✨ ${userName}님의 오늘 운세\n\n${result.summaryLine}\n🍀 행운색: ${result.lucky.color} | 행운숫자: ${result.lucky.number}\n\n${userName}님의 운세 보기 →\n${url}`;
 
-      if (!blob) {
-        alert('이미지 생성에 실패했어요.');
-        setSaving(false);
-        return;
-      }
-
-      // 모바일에서 Web Share API로 공유 시도
-      const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
-      if (isMobile && navigator.share && navigator.canShare) {
-        try {
-          const file = new File([blob], `myeongri-${userName}.png`, { type: 'image/png' });
-          const shareData = { files: [file], title: `${userName}님의 운세`, text: '명리연구소에서 나만의 운세 보기' };
-
-          if (navigator.canShare(shareData)) {
-            await navigator.share(shareData);
-            onClose();
-            setSaving(false);
-            return;
-          }
-        } catch (shareErr) {
-          if (shareErr instanceof Error && shareErr.name === 'AbortError') {
-            setSaving(false);
-            return;
-          }
-        }
-      }
-
-      // 이미지 다운로드
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `myeongri-${userName}.png`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      alert('운세 이미지가 저장되었어요! 📸');
+  /** 운세 링크만 복사 */
+  const handleCopyLink = async () => {
+    const url = await getShortShareUrl();
+    try {
+      await navigator.clipboard.writeText(url);
+      alert('운세 링크가 복사되었어요! 친구에게 공유해보세요 ✨');
       onClose();
-    } catch (err) {
-      console.error('이미지 캡처 에러:', err);
-      alert('이미지 저장에 실패했어요. 다시 시도해주세요.');
-    } finally {
-      setSaving(false);
+    } catch {
+      const textarea = document.createElement('textarea');
+      textarea.value = url;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      alert('운세 링크가 복사되었어요!');
+      onClose();
     }
   };
 
   const handleCopy = async () => {
+    const url = await getShortShareUrl();
+    const text = buildShareText(url);
     try {
-      await navigator.clipboard.writeText(shareText);
+      await navigator.clipboard.writeText(text);
       alert('운세가 복사되었어요! 친구에게 공유해보세요 ✨');
       onClose();
     } catch {
       const textarea = document.createElement('textarea');
-      textarea.value = shareText;
+      textarea.value = text;
       document.body.appendChild(textarea);
       textarea.select();
       document.execCommand('copy');
@@ -382,9 +90,10 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
   const handleNativeShare = async () => {
     if (navigator.share) {
       try {
+        const url = await getShortShareUrl();
         await navigator.share({
           title: `${userName}님의 운세 - 명리연구소`,
-          text: shareText,
+          text: buildShareText(url),
         });
         onClose();
         return;
@@ -409,9 +118,7 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
         }
         Kakao.init(key);
       }
-      const kakaoBaseUrl = 'https://myeongri-lab.vercel.app';
-      // 모바일 패킷 10KB 제한 회피를 위해 기본 URL만 사용
-      const kakaoShareUrl = kakaoBaseUrl;
+      const kakaoShareUrl = await getShortShareUrl();
       const desc = `🎯 오늘의 운세 점수: ${result.score}점\n"${result.summaryLine}"\n🍀 행운색: ${result.lucky.color} | 🔢 ${result.lucky.number}`;
       Kakao.Share.sendDefault({
         objectType: 'feed',
@@ -438,7 +145,8 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
     } catch {
       if (navigator.share) {
         try {
-          await navigator.share({ title: `${userName}님의 운세`, text: shareText });
+          const fallbackUrl = await getShortShareUrl();
+          await navigator.share({ title: `${userName}님의 운세`, text: buildShareText(fallbackUrl) });
           onClose();
         } catch { /* 취소 */ }
       } else {
@@ -447,8 +155,9 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
     }
   };
 
-  const handleSmsShare = () => {
-    const body = encodeURIComponent(shareText);
+  const handleSmsShare = async () => {
+    const url = await getShortShareUrl();
+    const body = encodeURIComponent(buildShareText(url));
     const isIOS = /iPhone|iPad/i.test(navigator.userAgent);
     window.location.href = isIOS ? `sms:&body=${body}` : `sms:?body=${body}`;
     onClose();
@@ -481,17 +190,20 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <button
-            className="btn-primary btn-gold"
-            onClick={handleSaveImage}
-            disabled={saving}
-            style={{ gap: 8 }}
+            onClick={handleCopyLink}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              gap: 8, width: '100%', padding: '14px 20px',
+              fontSize: 16, fontWeight: 700, color: '#fff',
+              border: 'none', borderRadius: 14, cursor: 'pointer',
+              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)',
+              boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)',
+            }}
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <rect x="3" y="3" width="14" height="14" rx="2" stroke="#fff" strokeWidth="1.5" />
-              <circle cx="7.5" cy="7.5" r="1.5" stroke="#fff" strokeWidth="1.2" />
-              <path d="M3 13l4-4 3 3 2.5-2.5L17 14" stroke="#fff" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M7.5 10.5l3-3M6.75 8.25l-1.28 1.28a2.5 2.5 0 003.53 3.53l1.28-1.28M11.25 9.75l1.28-1.28a2.5 2.5 0 00-3.53-3.53L7.72 6.22" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
-            {saving ? '이미지 생성 중...' : '이미지로 저장 / 공유'}
+            운세 링크 복사하기
           </button>
 
           <button

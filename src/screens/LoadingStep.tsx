@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { LoadingNightAnimation } from '../components/LoadingNightAnimation';
+import { useTossBanner, AD_IDS } from '../hooks/useAds';
 
 const MESSAGES = [
   '사주팔자를 펼치고 있어요 🔮',
@@ -12,6 +13,8 @@ const MESSAGES = [
   '맞춤 운세를 완성하고 있어요 💫',
 ] as const;
 
+const GOLDEN_MESSAGE = '🏆 오늘의 황금운세를 가지신 분께 1,000P를 드려요! 🎁';
+
 type Props = {
   onRun: () => Promise<void>;
 };
@@ -19,11 +22,37 @@ type Props = {
 export function LoadingStep({ onRun }: Props) {
   const [idx, setIdx] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [showGolden, setShowGolden] = useState(false);
   const ran = useRef(false);
 
+  // 배너 광고
+  const { isInitialized: bannerReady, attachBanner } = useTossBanner();
+  const bannerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
+    if (!bannerReady || !bannerRef.current) return;
+    const attached = attachBanner(AD_IDS.BANNER, bannerRef.current, {
+      theme: 'light',
+      tone: 'blackAndWhite',
+      variant: 'card',
+    });
+    return () => { attached?.destroy(); };
+  }, [bannerReady, attachBanner]);
+
+  // 일반 메시지 순환 + 중간에 황금운세 문구 3초간 표시
+  useEffect(() => {
+    let goldenShown = false;
     const t = window.setInterval(() => {
-      setIdx((i) => (i + 1) % MESSAGES.length);
+      setIdx((prev) => {
+        const next = (prev + 1) % MESSAGES.length;
+        // 4번째 메시지 후 황금운세 문구 표시 (한 번만)
+        if (next === 4 && !goldenShown) {
+          goldenShown = true;
+          setShowGolden(true);
+          setTimeout(() => setShowGolden(false), 3000);
+        }
+        return next;
+      });
     }, 1200);
     return () => clearInterval(t);
   }, []);
@@ -66,21 +95,42 @@ export function LoadingStep({ onRun }: Props) {
       </div>
 
       {/* 메시지 */}
-      <p
-        key={idx}
-        className="app-fade-line"
-        style={{
-          marginTop: 28,
-          textAlign: 'center',
-          lineHeight: 1.45,
-          fontSize: 18,
-          fontWeight: 700,
-          color: 'var(--navy-700)',
-          letterSpacing: '-0.02em',
-        }}
-      >
-        {MESSAGES[idx]}
-      </p>
+      {showGolden ? (
+        <p
+          key="golden"
+          className="app-fade-line"
+          style={{
+            marginTop: 28,
+            textAlign: 'center',
+            lineHeight: 1.55,
+            fontSize: 17,
+            fontWeight: 800,
+            background: 'linear-gradient(135deg, #FFD700, #FFA500, #FF6347)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            letterSpacing: '-0.01em',
+            filter: 'drop-shadow(0 0 8px rgba(255, 215, 0, 0.3))',
+          }}
+        >
+          {GOLDEN_MESSAGE}
+        </p>
+      ) : (
+        <p
+          key={idx}
+          className="app-fade-line"
+          style={{
+            marginTop: 28,
+            textAlign: 'center',
+            lineHeight: 1.45,
+            fontSize: 18,
+            fontWeight: 700,
+            color: 'var(--navy-700)',
+            letterSpacing: '-0.02em',
+          }}
+        >
+          {MESSAGES[idx]}
+        </p>
+      )}
 
       {/* 프로그레스 바 */}
       <div
@@ -120,6 +170,17 @@ export function LoadingStep({ onRun }: Props) {
         <br />
         조금만 기다려주세요
       </p>
+
+      {/* 배너 광고 */}
+      <div
+        ref={bannerRef}
+        style={{
+          width: '100%',
+          maxWidth: 320,
+          height: 96,
+          marginTop: 32,
+        }}
+      />
     </div>
   );
 }

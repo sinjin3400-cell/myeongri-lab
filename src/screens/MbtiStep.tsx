@@ -1,5 +1,7 @@
+import { useRef, useEffect } from 'react';
 import { haptic } from '../utils/haptic';
 import { MbtiHeroIllustration } from '../components/MbtiHeroIllustration';
+import { useTossBanner, AD_IDS } from '../hooks/useAds';
 import type { MbtiType } from '../api';
 import { MBTI_PROFILES } from '../data/mbtiProfiles';
 
@@ -26,6 +28,20 @@ export function MbtiStep({
   errorMessage,
 }: Props) {
   const selectedProfile = selected ? MBTI_PROFILES[selected] : null;
+
+  // 배너 광고
+  const { isInitialized: bannerReady, attachBanner } = useTossBanner();
+  const bannerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!bannerReady || !bannerRef.current) return;
+    const attached = attachBanner(AD_IDS.BANNER, bannerRef.current, {
+      theme: 'light',
+      tone: 'blackAndWhite',
+      variant: 'card',
+    });
+    return () => { attached?.destroy(); };
+  }, [bannerReady, attachBanner]);
 
   return (
     <div className="app-page">
@@ -186,6 +202,12 @@ export function MbtiStep({
             ? `${selected} 유형으로 운세 분석하기 ✨`
             : '먼저 MBTI를 선택해주세요'}
         </button>
+
+        {/* 배너 광고 */}
+        <div
+          ref={bannerRef}
+          style={{ width: '100%', height: 96, marginTop: 16 }}
+        />
       </div>
     </div>
   );

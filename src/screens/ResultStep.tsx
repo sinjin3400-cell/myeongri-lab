@@ -8,6 +8,7 @@ import type { MbtiType } from '../api';
 import { MBTI_PROFILES } from '../data/mbtiProfiles';
 import { mergeLucky } from '../utils/lucky';
 import { useTossBanner, useInterstitialAd, AD_IDS } from '../hooks/useAds';
+import { usePromotion } from '../hooks/usePromotion';
 
 type Props = {
   highlight: FortuneHighlight;
@@ -313,6 +314,10 @@ export function ResultStep({
   const { showAd: showInterstitial } = useInterstitialAd(AD_IDS.REWARDED);
   const bannerRef = useRef<HTMLDivElement>(null);
 
+  // 프로모션 포인트 지급
+  const { grantReward } = usePromotion();
+  const [rewardInfo, setRewardInfo] = useState<{ amount: number; isGolden: boolean } | null>(null);
+
   // 배너 광고 부착
   useEffect(() => {
     if (!bannerReady || !bannerRef.current) return;
@@ -339,7 +344,19 @@ export function ResultStep({
     // 광고와 운세 로딩을 동시에 시작 → 광고 끝나면 바로 결과 표시
     await Promise.all([showInterstitial(), onLoadFull()]);
     setLoadingFull(false);
-  }, [onLoadFull, showInterstitial]);
+
+    // 전체 운세 확인 완료 → 프로모션 포인트 지급
+    const reward = await grantReward();
+    if (reward.success) {
+      setRewardInfo({ amount: reward.amount, isGolden: reward.isGolden });
+    }
+  }, [onLoadFull, showInterstitial, grantReward]);
+
+  const handleChangePeriodWithAd = useCallback(async (newPeriod: FortunePeriod) => {
+    haptic();
+    await showInterstitial();
+    onChangePeriod(newPeriod);
+  }, [onChangePeriod, showInterstitial]);
 
   const handleTomorrow = useCallback(async () => {
     haptic();
@@ -425,8 +442,9 @@ export function ResultStep({
             type="button"
             className={`tab-item ${period === key ? 'active' : ''}`}
             onClick={() => {
-              haptic();
-              onChangePeriod(key);
+              if (key === period) return;
+              // 다른 기간으로 변경 시 리워드 광고 후 전환
+              handleChangePeriodWithAd(key);
             }}
           >
             {label}
@@ -547,6 +565,39 @@ export function ResultStep({
         </div>
       )}
 
+      {/* 포인트 지급 알림 */}
+      {rewardInfo && (
+        <div
+          className="animate-slide-up"
+          style={{
+            marginBottom: 16,
+            padding: '14px 18px',
+            borderRadius: 14,
+            background: rewardInfo.isGolden
+              ? 'linear-gradient(135deg, #FFD700, #FFA500)'
+              : 'linear-gradient(135deg, rgba(56, 176, 126, 0.1), rgba(56, 176, 126, 0.05))',
+            border: rewardInfo.isGolden
+              ? '1.5px solid rgba(255, 215, 0, 0.5)'
+              : '1px solid rgba(56, 176, 126, 0.2)',
+            textAlign: 'center',
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              fontSize: rewardInfo.isGolden ? 17 : 14,
+              fontWeight: 700,
+              color: rewardInfo.isGolden ? '#fff' : '#38B07E',
+              lineHeight: 1.5,
+            }}
+          >
+            {rewardInfo.isGolden
+              ? '🏆 축하합니다! 황금운세 1,000P가 지급되었어요!'
+              : `🎉 ${rewardInfo.amount}P가 지급되었어요!`}
+          </p>
+        </div>
+      )}
+
       {/* 전체 운세 카드들 — 새로운 운세 먼저, 이미 본 운세는 아래로 */}
       {fullResult && (
         <div
@@ -558,7 +609,7 @@ export function ResultStep({
             const newSections = SECTIONS.filter((s) => !seenKeys.includes(s.key));
             const seenSections = SECTIONS.filter((s) => seenKeys.includes(s.key));
             const sorted = [...newSections, ...seenSections];
-            return sorted.map((sec) => {
+            return sorted.map((sec, i) => {
               const isBest = sec.key === highlight.bestCategory;
               const isCaution = sec.key === highlight.cautionCategory;
               const badge = isBest
@@ -574,23 +625,48 @@ export function ResultStep({
                 : isCaution ? highlight.cautionDetail
                 : fullResult[sec.detailKey];
               return (
-                <AccordionCard
-                  key={sec.key}
-                  section={sec}
-                  body={body}
-                  detail={detail}
-                  badge={badge}
-                />
+                <div key={sec.key}>
+                  <AccordionCard
+                    section={sec}
+                    body={body}
+                    detail={detail}
+                    badge={badge}
+                  />
+                  {/* 2번째와 3번째 카드 사이에 배너 광고 */}
+                  {i === 1 && (
+                    <div
+                      ref={bannerRef}
+                      style={{ width: '100%', height: 96, marginTop: 14 }}
+                    />
+                  )}
+                </div>
               );
             });
           })()}
         </div>
       )}
 
-      {/* 공유 버튼 */}
+      {/* 공유 버튼 — 숨겨진 운세 버튼과 동일한 그라데이션 */}
       <button
-        className="btn-secondary animate-fade-in"
-        style={{ marginBottom: 12, gap: 8 }}
+        className="animate-fade-in"
+        style={{
+          width: '100%',
+          marginBottom: 12,
+          gap: 8,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '15px 20px',
+          fontSize: 16,
+          fontWeight: 700,
+          color: '#fff',
+          border: 'none',
+          borderRadius: 16,
+          cursor: 'pointer',
+          background: 'linear-gradient(135deg, #e88a3a 0%, #d45fa0 50%, #9b59d0 100%)',
+          boxShadow: '0 4px 16px rgba(212, 95, 160, 0.35), 0 2px 6px rgba(155, 89, 208, 0.2)',
+          letterSpacing: '-0.01em',
+        }}
         onClick={() => {
           haptic();
           setShowShare(true);
@@ -599,19 +675,21 @@ export function ResultStep({
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
           <path
             d="M13.5 6a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5zM4.5 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5zM13.5 16.5a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5zM6.44 10.24l5.13 2.77M11.56 5l-5.12 2.75"
-            stroke="var(--navy-400)"
+            stroke="#fff"
             strokeWidth="1.5"
             strokeLinecap="round"
           />
         </svg>
-        친구에게 운세 공유하기
+        ✨ 친구에게 운세 공유하기
       </button>
 
-      {/* 배너 광고 */}
-      <div
-        ref={bannerRef}
-        style={{ width: '100%', height: '96px', marginBottom: 16 }}
-      />
+      {/* 배너 광고 (fullResult 없을 때 하단 표시) */}
+      {!fullResult && (
+        <div
+          ref={bannerRef}
+          style={{ width: '100%', height: 96, marginBottom: 16 }}
+        />
+      )}
 
       {/* CTA */}
       <div className="app-footer-cta">
