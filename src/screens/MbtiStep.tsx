@@ -1,4 +1,4 @@
-import { generateHapticFeedback } from '@apps-in-toss/web-framework';
+import { haptic } from '../utils/haptic';
 import { MbtiHeroIllustration } from '../components/MbtiHeroIllustration';
 import type { MbtiType } from '../api';
 import { MBTI_PROFILES } from '../data/mbtiProfiles';
@@ -122,7 +122,7 @@ export function MbtiStep({
                   type="button"
                   className={`btn-chip ${selected === m ? 'selected' : ''}`}
                   onClick={() => {
-                    generateHapticFeedback({ type: 'softMedium' });
+                    haptic();
                     onSelect(m);
                   }}
                 >

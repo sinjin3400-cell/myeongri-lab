@@ -157,11 +157,14 @@ html, body {
 
 .accordion-arrow {
   display: inline-flex;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   color: var(--gold-500);
 }
 
-.accordion-arrow.open {
+.accordion-arrow svg {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.accordion-arrow.open svg {
   transform: rotate(180deg);
 }
 

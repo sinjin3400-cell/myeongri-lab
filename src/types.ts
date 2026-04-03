@@ -4,7 +4,7 @@ export type Gender = 'male' | 'female' | 'other';
 
 export type Step = 'info' | 'mbti' | 'loading' | 'error' | 'result';
 
-export type FortunePeriod = 'today' | 'week' | 'month';
+export type FortunePeriod = 'today' | 'tomorrow' | 'week' | 'month';
 
 export interface UserInfo {
   name: string;

@@ -410,6 +410,7 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
         Kakao.init(key);
       }
       const kakaoBaseUrl = 'https://myeongri-lab.vercel.app';
+      const kakaoShareUrl = shareUrl;
       const score = result.score;
       const desc = [
         `🎯 오늘의 운세 점수: ${score}점`,
@@ -428,16 +429,16 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
           description: desc,
           imageUrl: `${kakaoBaseUrl}/og-image.png`,
           link: {
-            mobileWebUrl: kakaoBaseUrl,
-            webUrl: kakaoBaseUrl,
+            mobileWebUrl: kakaoShareUrl,
+            webUrl: kakaoShareUrl,
           },
         },
         buttons: [
           {
             title: '나도 운세 보기 🔮',
             link: {
-              mobileWebUrl: kakaoBaseUrl,
-              webUrl: kakaoBaseUrl,
+              mobileWebUrl: kakaoShareUrl,
+              webUrl: kakaoShareUrl,
             },
           },
         ],

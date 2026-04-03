@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { generateHapticFeedback } from '@apps-in-toss/web-framework';
+import { haptic } from '../utils/haptic';
 import { HeroIllustration } from '../components/HeroIllustration';
 import { LogoMark } from '../components/LogoMark';
 import { SijinSelect } from '../components/SijinSelect';
@@ -233,7 +233,7 @@ export function InfoStep({ value, onChange, onNext }: Props) {
                 type="button"
                 className={`gender-chip ${value.gender === g ? 'selected' : ''}`}
                 onClick={() => {
-                  generateHapticFeedback({ type: 'softMedium' });
+                  haptic();
                   onChange({ ...value, gender: g as Gender });
                 }}
               >

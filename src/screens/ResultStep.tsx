@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { generateHapticFeedback } from '@apps-in-toss/web-framework';
+import { haptic } from '../utils/haptic';
 import { ResultSparkleDecor } from '../components/ResultSparkleDecor';
 import { ScoreRing } from '../components/ScoreRing';
 import { ShareSheet } from '../components/ShareSheet';
@@ -87,7 +87,7 @@ function AccordionCard({
       style={{ background: section.gradient, cursor: hasDetail ? 'pointer' : 'default' }}
       onClick={() => {
         if (hasDetail) {
-          generateHapticFeedback({ type: 'softMedium' });
+          haptic();
           setOpen(!open);
         }
       }}
@@ -131,11 +131,11 @@ function AccordionCard({
         </div>
         {hasDetail && (
           <span
-            className={`accordion-arrow ${open ? 'open' : ''}`}
+            className="accordion-arrow"
             style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 500 }}
           >
             <span style={{ color: 'var(--navy-300)' }}>{open ? '접기' : '더보기'}</span>
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ transition: 'transform 0.3s', transform: open ? 'rotate(180deg)' : 'none' }}>
               <path
                 d="M5 7l4 4 4-4"
                 stroke="currentColor"
@@ -194,25 +194,27 @@ function HighlightCard({
   summary,
   detail,
   gradient,
+  periodLabel,
 }: {
   type: 'best' | 'caution';
   category: FortuneCategory;
   summary: string;
   detail: string;
   gradient: string;
+  periodLabel: string;
 }) {
   const [open, setOpen] = useState(false);
   const label = CATEGORY_LABEL[category];
   const badge = type === 'best'
-    ? { text: '🌟 오늘 가장 좋은 운', bg: 'rgba(201, 169, 98, 0.15)', color: 'var(--gold-600)' }
-    : { text: '🛡️ 오늘 조심할 운', bg: 'rgba(232, 98, 124, 0.12)', color: '#c4566a' };
+    ? { text: `🌟 ${periodLabel} 가장 좋은 운`, bg: 'rgba(201, 169, 98, 0.15)', color: 'var(--gold-600)' }
+    : { text: `🛡️ ${periodLabel} 조심할 운`, bg: 'rgba(232, 98, 124, 0.12)', color: '#c4566a' };
 
   return (
     <section
       className={`premium-card ${open ? 'active' : ''}`}
       style={{ background: gradient, cursor: 'pointer' }}
       onClick={() => {
-        generateHapticFeedback({ type: 'softMedium' });
+        haptic();
         setOpen(!open);
       }}
     >
@@ -231,11 +233,11 @@ function HighlightCard({
           {badge.text}
         </span>
         <span
-          className={`accordion-arrow ${open ? 'open' : ''}`}
+          className="accordion-arrow"
           style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 500 }}
         >
           <span style={{ color: 'var(--navy-300)' }}>{open ? '접기' : '상세보기'}</span>
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ transition: 'transform 0.3s', transform: open ? 'rotate(180deg)' : 'none' }}>
             <path d="M5 7l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </span>
@@ -308,7 +310,7 @@ export function ResultStep({
 
   // 광고
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
-  const { showAd: showInterstitial } = useInterstitialAd(AD_IDS.INTERSTITIAL);
+  const { showAd: showInterstitial } = useInterstitialAd(AD_IDS.REWARDED);
   const bannerRef = useRef<HTMLDivElement>(null);
 
   // 배너 광고 부착
@@ -322,20 +324,28 @@ export function ResultStep({
     return () => { attached?.destroy(); };
   }, [bannerReady, attachBanner]);
 
-  const periodLabel = period === 'today' ? '오늘' : period === 'week' ? '이번 주' : '이번 달';
+  const periodLabel = period === 'today' ? '오늘' : period === 'tomorrow' ? '내일' : period === 'week' ? '이번 주' : '이번 달';
 
   const today = new Date();
-  const dateStr = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
-  const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][today.getDay()];
+  const targetDate = period === 'tomorrow'
+    ? new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1)
+    : today;
+  const dateStr = `${targetDate.getFullYear()}.${String(targetDate.getMonth() + 1).padStart(2, '0')}.${String(targetDate.getDate()).padStart(2, '0')}`;
+  const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][targetDate.getDay()];
 
   const handleLoadFull = useCallback(async () => {
     setLoadingFull(true);
-    generateHapticFeedback({ type: 'softMedium' });
-    // 전면 광고 표시 후 전체 운세 로딩
-    await showInterstitial();
-    await onLoadFull();
+    haptic();
+    // 광고와 운세 로딩을 동시에 시작 → 광고 끝나면 바로 결과 표시
+    await Promise.all([showInterstitial(), onLoadFull()]);
     setLoadingFull(false);
   }, [onLoadFull, showInterstitial]);
+
+  const handleTomorrow = useCallback(async () => {
+    haptic();
+    await showInterstitial();
+    onTomorrow();
+  }, [onTomorrow, showInterstitial]);
 
   // 공유용 결과 조합
   const shareResult: FortuneResult = fullResult ?? {
@@ -400,7 +410,8 @@ export function ResultStep({
         )}
       </header>
 
-      {/* 기간 탭 */}
+      {/* 기간 탭 (내일 운세에서는 숨김) */}
+      {period !== 'tomorrow' && (
       <div className="tab-bar animate-fade-in" style={{ marginBottom: 20, animationDelay: '0.1s' }}>
         {(
           [
@@ -414,7 +425,7 @@ export function ResultStep({
             type="button"
             className={`tab-item ${period === key ? 'active' : ''}`}
             onClick={() => {
-              generateHapticFeedback({ type: 'softMedium' });
+              haptic();
               onChangePeriod(key);
             }}
           >
@@ -422,6 +433,7 @@ export function ResultStep({
           </button>
         ))}
       </div>
+      )}
 
       {/* 점수 + 한줄 요약 */}
       <div
@@ -464,27 +476,29 @@ export function ResultStep({
         </div>
       </div>
 
-      {/* 행운 정보 */}
-      <div
-        className="animate-slide-up"
-        style={{
-          display: 'flex',
-          gap: 8,
-          marginBottom: 24,
-          overflowX: 'auto',
-          paddingBottom: 4,
-          animationDelay: '0.2s',
-          flexWrap: 'wrap',
-        }}
-      >
-        <div className="lucky-badge">
-          <span className="lucky-color-dot" style={{ background: lucky.colorHex }} />
-          행운색: {lucky.color}
+      {/* 행운 정보 (오늘 운세에서만 표시) */}
+      {period === 'today' && (
+        <div
+          className="animate-slide-up"
+          style={{
+            display: 'flex',
+            gap: 8,
+            marginBottom: 24,
+            overflowX: 'auto',
+            paddingBottom: 4,
+            animationDelay: '0.2s',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div className="lucky-badge">
+            <span className="lucky-color-dot" style={{ background: lucky.colorHex }} />
+            행운색: {lucky.color}
+          </div>
+          <div className="lucky-badge">🔢 행운숫자: {lucky.number}</div>
+          <div className="lucky-badge">🧭 행운방향: {lucky.direction}</div>
+          <div className="lucky-badge">🍀 행운아이템: {lucky.item}</div>
         </div>
-        <div className="lucky-badge">🔢 행운숫자: {lucky.number}</div>
-        <div className="lucky-badge">🧭 행운방향: {lucky.direction}</div>
-        <div className="lucky-badge">🍀 행운아이템: {lucky.item}</div>
-      </div>
+      )}
 
       {/* 하이라이트 카드 2개 */}
       {!fullResult && (
@@ -498,6 +512,7 @@ export function ResultStep({
             summary={highlight.bestSummary}
             detail={highlight.bestDetail}
             gradient="linear-gradient(135deg, rgba(201, 169, 98, 0.08) 0%, rgba(255, 255, 255, 0.9) 100%)"
+            periodLabel={periodLabel}
           />
           <HighlightCard
             type="caution"
@@ -505,6 +520,7 @@ export function ResultStep({
             summary={highlight.cautionSummary}
             detail={highlight.cautionDetail}
             gradient="linear-gradient(135deg, rgba(232, 98, 124, 0.05) 0%, rgba(255, 255, 255, 0.9) 100%)"
+            periodLabel={periodLabel}
           />
 
           {/* 나머지 운세 보기 버튼 */}
@@ -543,17 +559,26 @@ export function ResultStep({
             const seenSections = SECTIONS.filter((s) => seenKeys.includes(s.key));
             const sorted = [...newSections, ...seenSections];
             return sorted.map((sec) => {
-              const badge = sec.key === highlight.bestCategory
+              const isBest = sec.key === highlight.bestCategory;
+              const isCaution = sec.key === highlight.cautionCategory;
+              const badge = isBest
                 ? { text: '✨ BEST', bg: 'rgba(201, 169, 98, 0.15)', color: 'var(--gold-600)' }
-                : sec.key === highlight.cautionCategory
+                : isCaution
                   ? { text: '⚠️ 주의', bg: 'rgba(232, 98, 124, 0.12)', color: '#c4566a' }
                   : null;
+              // 좋은 운/조심할 운은 하이라이트 텍스트 유지
+              const body = isBest ? highlight.bestSummary
+                : isCaution ? highlight.cautionSummary
+                : fullResult[sec.key];
+              const detail = isBest ? highlight.bestDetail
+                : isCaution ? highlight.cautionDetail
+                : fullResult[sec.detailKey];
               return (
                 <AccordionCard
                   key={sec.key}
                   section={sec}
-                  body={fullResult[sec.key]}
-                  detail={fullResult[sec.detailKey]}
+                  body={body}
+                  detail={detail}
                   badge={badge}
                 />
               );
@@ -567,7 +592,7 @@ export function ResultStep({
         className="btn-secondary animate-fade-in"
         style={{ marginBottom: 12, gap: 8 }}
         onClick={() => {
-          generateHapticFeedback({ type: 'softMedium' });
+          haptic();
           setShowShare(true);
         }}
       >
@@ -590,9 +615,15 @@ export function ResultStep({
 
       {/* CTA */}
       <div className="app-footer-cta">
-        <button className="btn-secondary" onClick={onTomorrow}>
-          내일 운세도 궁금해요 🔮
-        </button>
+        {period !== 'tomorrow' ? (
+          <button className="btn-secondary" onClick={handleTomorrow}>
+            내일 운세도 궁금해요 🔮
+          </button>
+        ) : (
+          <button className="btn-secondary" onClick={onRestart}>
+            오늘 운세 다시 보기 ☀️
+          </button>
+        )}
         <button className="btn-primary" onClick={onRestart}>
           처음부터 다시 보기
         </button>
@@ -603,6 +634,7 @@ export function ResultStep({
         <ShareSheet
           result={shareResult}
           userName={displayName}
+          highlight={highlight}
           onClose={() => setShowShare(false)}
         />
       )}

@@ -6,11 +6,18 @@ import {
 } from '@apps-in-toss/web-framework';
 import type { TossAdsAttachBannerOptions } from '@apps-in-toss/web-framework';
 
-// 테스트용 ID — 콘솔에서 발급받은 운영 ID로 교체 필요
 export const AD_IDS = {
-  INTERSTITIAL: 'ait-ad-test-interstitial-id',
-  BANNER: 'ait-ad-test-banner-id',
+  REWARDED: 'ait.v2.live.6092731822e14b96',
+  BANNER: 'ait.v2.live.15a1f64067844a40',
 } as const;
+
+function safeIsSupported(fn: { isSupported: () => boolean }): boolean {
+  try {
+    return fn.isSupported();
+  } catch {
+    return false;
+  }
+}
 
 // --- 배너 광고 훅 ---
 
@@ -19,7 +26,7 @@ export function useTossBanner() {
 
   useEffect(() => {
     if (isInitialized) return;
-    if (!TossAds.initialize.isSupported()) return;
+    if (!safeIsSupported(TossAds.initialize)) return;
 
     TossAds.initialize({
       callbacks: {
@@ -42,14 +49,14 @@ export function useTossBanner() {
   return { isInitialized, attachBanner };
 }
 
-// --- 전면 광고 훅 ---
+// --- 리워드/전면 광고 훅 ---
 
 export function useInterstitialAd(adGroupId: string) {
   const [isLoaded, setIsLoaded] = useState(false);
   const unregisterRef = useRef<(() => void) | null>(null);
 
   const loadAd = useCallback(() => {
-    if (!loadFullScreenAd.isSupported()) return;
+    if (!safeIsSupported(loadFullScreenAd)) return;
 
     setIsLoaded(false);
     unregisterRef.current = loadFullScreenAd({
@@ -72,26 +79,31 @@ export function useInterstitialAd(adGroupId: string) {
     };
   }, [loadAd]);
 
-  const showAd = useCallback((): Promise<void> => {
+  const showAd = useCallback((): Promise<boolean> => {
     return new Promise((resolve) => {
-      if (!isLoaded || !showFullScreenAd.isSupported()) {
-        resolve();
+      if (!isLoaded || !safeIsSupported(showFullScreenAd)) {
+        resolve(false);
         return;
       }
+
+      let rewarded = false;
 
       showFullScreenAd({
         options: { adGroupId },
         onEvent: (event) => {
+          if (event.type === 'userEarnedReward') {
+            rewarded = true;
+          }
           if (event.type === 'dismissed' || event.type === 'failedToShow') {
             setIsLoaded(false);
-            loadAd(); // 다음 광고 미리 로드
-            resolve();
+            loadAd();
+            resolve(rewarded);
           }
         },
         onError: () => {
           setIsLoaded(false);
           loadAd();
-          resolve();
+          resolve(false);
         },
       });
     });
