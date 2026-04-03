@@ -8,7 +8,7 @@ import { MbtiStep } from './screens/MbtiStep';
 import { LoadingStep } from './screens/LoadingStep';
 import { ResultStep } from './screens/ResultStep';
 import { SharedResultView } from './screens/SharedResultView';
-import { decodeShareData, sharedDataToHighlight } from './utils/shareUrl';
+import { decodeShareData, decodeShareDataCompact, sharedDataToHighlight } from './utils/shareUrl';
 import type { FortuneTexts } from './utils/shareUrl';
 
 // URL에서 공유 데이터 확인 (/s/base64data, ?s=base64data, #s=base64data)
@@ -28,7 +28,8 @@ function getSharedData(): { userName: string; highlight: FortuneHighlight; texts
     if (hash.startsWith('#s=')) encoded = hash.slice(3);
   }
   if (!encoded) return null;
-  const data = decodeShareData(encoded);
+  // JSON 형식 먼저 시도, 실패하면 compact 형식 시도
+  const data = decodeShareData(encoded) || decodeShareDataCompact(encoded);
   if (!data) return null;
   return sharedDataToHighlight(data);
 }

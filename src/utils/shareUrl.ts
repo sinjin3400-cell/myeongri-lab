@@ -31,6 +31,57 @@ export interface FortuneTexts {
   health?: string;
 }
 
+/** 카카오용 초경량 인코딩 (URL 최대한 짧게) */
+export function encodeShareDataCompact(userName: string, highlight: FortuneHighlight): string {
+  // 카테고리를 1글자로 압축
+  const catMap: Record<FortuneCategory, string> = { overall: 'o', love: 'l', money: 'm', health: 'h' };
+  const data = [
+    truncate(userName, 6),
+    highlight.score,
+    truncate(highlight.summaryLine, 20),
+    catMap[highlight.bestCategory],
+    truncate(highlight.bestSummary, 20),
+    catMap[highlight.cautionCategory],
+    truncate(highlight.cautionSummary, 20),
+    highlight.lucky.color,
+    highlight.lucky.number,
+    highlight.lucky.direction,
+    highlight.lucky.item,
+  ].join('|');
+
+  return btoa(unescape(encodeURIComponent(data)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+/** 카카오용 초경량 디코딩 */
+export function decodeShareDataCompact(encoded: string): SharedFortuneData | null {
+  try {
+    const catRevMap: Record<string, FortuneCategory> = { o: 'overall', l: 'love', m: 'money', h: 'health' };
+    let b64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4) b64 += '=';
+    const str = decodeURIComponent(escape(atob(b64)));
+    const parts = str.split('|');
+    if (parts.length < 11) return null;
+    return {
+      n: parts[0],
+      sc: Number(parts[1]),
+      sl: parts[2],
+      bc: catRevMap[parts[3]] || 'overall',
+      bs: parts[4],
+      cc: catRevMap[parts[5]] || 'health',
+      cs: parts[6],
+      lc: parts[7],
+      ln: Number(parts[8]),
+      ld: parts[9],
+      li: parts[10],
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function encodeShareData(userName: string, highlight: FortuneHighlight, texts?: FortuneTexts): string {
   const data: SharedFortuneData = {
     n: truncate(userName, 10),
