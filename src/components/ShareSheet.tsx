@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FortuneResult, FortuneHighlight } from '../types';
-import { buildShareUrl } from '../utils/shareUrl';
+import { buildShareUrl, encodeShareDataCompact } from '../utils/shareUrl';
 
 type Props = {
   result: FortuneResult;
@@ -410,18 +410,12 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
         Kakao.init(key);
       }
       const kakaoBaseUrl = 'https://myeongri-lab.vercel.app';
-      const kakaoShareUrl = shareUrl;
-      const score = result.score;
-      const desc = [
-        `🎯 오늘의 운세 점수: ${score}점`,
-        `"${result.summaryLine}"`,
-        '',
-        `☀️ 총운: ${result.overall.slice(0, 40)}...`,
-        `💕 애정운: ${result.love.slice(0, 40)}...`,
-        '',
-        `🍀 행운색: ${result.lucky.color} | 🔢 ${result.lucky.number}`,
-        `🧭 ${result.lucky.direction} | 🍀 ${result.lucky.item}`,
-      ].join('\n');
+      // 카카오용 compact URL (10KB 패킷 제한 회피)
+      const compactData = highlight ? encodeShareDataCompact(userName, highlight) : '';
+      const kakaoShareUrl = compactData
+        ? `${kakaoBaseUrl}/s/${compactData}`
+        : kakaoBaseUrl;
+      const desc = `🎯 ${result.score}점 "${result.summaryLine}"\n🍀 행운색: ${result.lucky.color} | 🔢 ${result.lucky.number}`;
       Kakao.Share.sendDefault({
         objectType: 'feed',
         content: {
