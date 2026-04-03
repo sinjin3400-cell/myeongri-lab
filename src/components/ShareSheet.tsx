@@ -409,34 +409,37 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
         }
         Kakao.init(key);
       }
-      const kakaoBaseUrl = 'https://myeongri-lab.vercel.app';
-      // query parameter 방식 공유 URL (해시는 카카오 SDK 4002 에러)
-      const kakaoShareUrl = highlight
-        ? buildShareUrl(userName, highlight)
-        : kakaoBaseUrl;
+      // 카카오 SDK는 등록된 도메인과 정확히 일치하는 URL만 허용
+      // 해시(#), query parameter(?) 모두 4002 에러 발생
+      const kakaoUrl = 'https://myeongri-lab.vercel.app';
       const score = result.score;
       const desc = [
         `🎯 오늘의 운세 점수: ${score}점`,
         `"${result.summaryLine}"`,
+        '',
+        `☀️ 총운: ${result.overall.slice(0, 50)}...`,
+        `💕 애정운: ${result.love.slice(0, 50)}...`,
+        '',
         `🍀 행운색: ${result.lucky.color} | 🔢 ${result.lucky.number}`,
+        `🧭 ${result.lucky.direction} | 🍀 ${result.lucky.item}`,
       ].join('\n');
       Kakao.Share.sendDefault({
         objectType: 'feed',
         content: {
           title: `✨ ${userName}님의 오늘 운세`,
           description: desc,
-          imageUrl: `${kakaoBaseUrl}/og-image.png?v=3`,
+          imageUrl: `${kakaoUrl}/og-image.png?v=3`,
           link: {
-            mobileWebUrl: kakaoShareUrl,
-            webUrl: kakaoShareUrl,
+            mobileWebUrl: kakaoUrl,
+            webUrl: kakaoUrl,
           },
         },
         buttons: [
           {
-            title: `${userName}님의 운세 보기 🔮`,
+            title: '나도 운세 보기 🔮',
             link: {
-              mobileWebUrl: kakaoShareUrl,
-              webUrl: kakaoShareUrl,
+              mobileWebUrl: kakaoUrl,
+              webUrl: kakaoUrl,
             },
           },
         ],
