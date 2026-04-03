@@ -1,12 +1,26 @@
-import { useCallback, useState } from 'react';
-import { generateHapticFeedback } from '@apps-in-toss/web-framework';
-import type { FortuneResult, FortuneHighlight, FortunePeriod, Step, UserInfo } from './types';
+import { useCallback, useRef, useState } from 'react';
+import { haptic } from './utils/haptic';
+import type { FortuneResult, FortuneHighlight, FortuneCategory, FortunePeriod, Step, UserInfo } from './types';
 import type { MbtiType } from './api';
 import { requestFortuneHighlight, requestFortuneFull } from './api';
 import { InfoStep } from './screens/InfoStep';
 import { MbtiStep } from './screens/MbtiStep';
 import { LoadingStep } from './screens/LoadingStep';
 import { ResultStep } from './screens/ResultStep';
+import { SharedResultView } from './screens/SharedResultView';
+import { decodeShareData, sharedDataToHighlight } from './utils/shareUrl';
+import type { FortuneTexts } from './utils/shareUrl';
+
+// URL 해시에서 공유 데이터 확인 (#s=base64data)
+function getSharedData(): { userName: string; highlight: FortuneHighlight; texts: FortuneTexts } | null {
+  const hash = window.location.hash;
+  if (!hash.startsWith('#s=')) return null;
+  const encoded = hash.slice(3); // '#s=' 제거
+  if (!encoded) return null;
+  const data = decodeShareData(encoded);
+  if (!data) return null;
+  return sharedDataToHighlight(data);
+}
 
 const initialInfo: UserInfo = {
   name: '',
@@ -17,6 +31,7 @@ const initialInfo: UserInfo = {
 };
 
 export default function App() {
+  const [sharedView, setSharedView] = useState(() => getSharedData());
   const [step, setStep] = useState<Step>('info');
   const [info, setInfo] = useState<UserInfo>(initialInfo);
   const [mbti, setMbti] = useState<MbtiType | null>(null);
@@ -26,12 +41,12 @@ export default function App() {
   const [period, setPeriod] = useState<FortunePeriod>('today');
 
   const goNextFromInfo = useCallback(() => {
-    generateHapticFeedback({ type: 'softMedium' });
+    haptic();
     setStep('mbti');
   }, []);
 
   const goNextFromMbti = useCallback(() => {
-    generateHapticFeedback({ type: 'softMedium' });
+    haptic();
     setLoadError(null);
     setStep('loading');
   }, []);
@@ -41,14 +56,23 @@ export default function App() {
     goNextFromMbti();
   }, [goNextFromMbti]);
 
-  // 1단계: 하이라이트만 빠르게 로딩
+  // 프리페치된 전체 운세를 캐시 (상태 변경 없이 저장만)
+  const prefetchedRef = useRef<FortuneResult | null>(null);
+
+  // 1단계: 하이라이트 로딩 + 전체 운세 백그라운드 프리페치
   const runAnalysis = useCallback(async () => {
     try {
       const data = await requestFortuneHighlight(info, mbti, period);
       setHighlight(data);
       setFullResult(null);
+      prefetchedRef.current = null;
       setStep('result');
-      generateHapticFeedback({ type: 'softMedium' });
+      haptic();
+      // 나머지 2개 운세만 백그라운드에서 미리 로딩 (상태는 변경하지 않음)
+      const exclude: FortuneCategory[] = [data.bestCategory, data.cautionCategory];
+      requestFortuneFull(info, mbti, period, exclude)
+        .then((full) => { prefetchedRef.current = full; })
+        .catch(() => {});
     } catch (e) {
       const msg = e instanceof Error ? e.message : '분석에 실패했어요. 다시 시도해주세요.';
       setLoadError(msg);
@@ -56,16 +80,24 @@ export default function App() {
     }
   }, [info, mbti, period]);
 
-  // 2단계: 전체 운세 로딩
+  // 2단계: 나머지 운세 로딩 (프리페치 완료됐으면 즉시 사용)
   const loadFullResult = useCallback(async () => {
     try {
-      const data = await requestFortuneFull(info, mbti, period);
+      if (prefetchedRef.current) {
+        setFullResult(prefetchedRef.current);
+        haptic();
+        return;
+      }
+      const exclude: FortuneCategory[] = highlight
+        ? [highlight.bestCategory, highlight.cautionCategory]
+        : [];
+      const data = await requestFortuneFull(info, mbti, period, exclude);
       setFullResult(data);
-      generateHapticFeedback({ type: 'softMedium' });
+      haptic();
     } catch {
       // 전체 로딩 실패해도 하이라이트는 유지
     }
-  }, [info, mbti, period]);
+  }, [info, mbti, period, highlight]);
 
   const handleChangePeriod = useCallback(
     (newPeriod: FortunePeriod) => {
@@ -80,16 +112,17 @@ export default function App() {
   );
 
   const handleTomorrow = useCallback(() => {
-    generateHapticFeedback({ type: 'softMedium' });
-    setPeriod('today');
+    haptic();
+    setPeriod('tomorrow');
     setHighlight(null);
     setFullResult(null);
+    prefetchedRef.current = null;
     setLoadError(null);
     setStep('loading');
   }, []);
 
   const restart = useCallback(() => {
-    generateHapticFeedback({ type: 'softMedium' });
+    haptic();
     setInfo(initialInfo);
     setMbti(null);
     setHighlight(null);
@@ -98,6 +131,23 @@ export default function App() {
     setPeriod('today');
     setStep('info');
   }, []);
+
+  const dismissShared = useCallback(() => {
+    setSharedView(null);
+    // URL 해시 제거
+    window.history.replaceState({}, '', window.location.pathname);
+  }, []);
+
+  if (sharedView) {
+    return (
+      <SharedResultView
+        userName={sharedView.userName}
+        highlight={sharedView.highlight}
+        texts={sharedView.texts}
+        onTryOwn={dismissShared}
+      />
+    );
+  }
 
   return (
     <>

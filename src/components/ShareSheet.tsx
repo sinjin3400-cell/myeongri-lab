@@ -294,7 +294,12 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
 
   // 공유 URL 생성 (highlight가 있으면 운세 데이터 포함)
   const shareUrl = highlight
-    ? buildShareUrl(userName, highlight)
+    ? buildShareUrl(userName, highlight, {
+        overall: result.overall,
+        love: result.love,
+        money: result.money,
+        health: result.health,
+      })
     : 'https://myeongri-lab.vercel.app';
 
   const shareText = `✨ ${userName}님의 오늘 운세\n\n${result.summaryLine}\n🍀 행운색: ${result.lucky.color} | 행운숫자: ${result.lucky.number}\n\n${userName}님의 운세 보기 →\n${shareUrl}`;
@@ -423,7 +428,7 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
         content: {
           title: `✨ ${userName}님의 오늘 운세`,
           description: desc,
-          imageUrl: `${kakaoBaseUrl}/og-image.png`,
+          imageUrl: `${kakaoBaseUrl}/og-image.png?v=2`,
           link: {
             mobileWebUrl: kakaoShareUrl,
             webUrl: kakaoShareUrl,
