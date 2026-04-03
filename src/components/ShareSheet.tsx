@@ -410,15 +410,18 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
         Kakao.init(key);
       }
       const kakaoBaseUrl = 'https://myeongri-lab.vercel.app';
-      // 카카오 SDK는 패킷 10KB 제한 → 운세 텍스트 없이 최소 데이터만 포함
-      const kakaoShareUrl = highlight
-        ? buildShareUrl(userName, highlight)
-        : kakaoBaseUrl;
+      // 카카오 SDK는 해시 프래그먼트가 포함된 URL을 거부(4002 에러)
+      // → 기본 URL만 사용하고, description에 운세 내용을 상세히 표시
       const score = result.score;
       const desc = [
-        `🎯 운세 점수: ${score}점`,
+        `🎯 오늘의 운세 점수: ${score}점`,
         `"${result.summaryLine}"`,
+        '',
+        `☀️ 총운: ${result.overall.slice(0, 40)}...`,
+        `💕 애정운: ${result.love.slice(0, 40)}...`,
+        '',
         `🍀 행운색: ${result.lucky.color} | 🔢 ${result.lucky.number}`,
+        `🧭 ${result.lucky.direction} | 🍀 ${result.lucky.item}`,
       ].join('\n');
       Kakao.Share.sendDefault({
         objectType: 'feed',
@@ -427,16 +430,16 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
           description: desc,
           imageUrl: `${kakaoBaseUrl}/og-image.png?v=2`,
           link: {
-            mobileWebUrl: kakaoShareUrl,
-            webUrl: kakaoShareUrl,
+            mobileWebUrl: kakaoBaseUrl,
+            webUrl: kakaoBaseUrl,
           },
         },
         buttons: [
           {
-            title: `${userName}님의 운세 보기 🔮`,
+            title: '나도 운세 보기 🔮',
             link: {
-              mobileWebUrl: kakaoShareUrl,
-              webUrl: kakaoShareUrl,
+              mobileWebUrl: kakaoBaseUrl,
+              webUrl: kakaoBaseUrl,
             },
           },
         ],
