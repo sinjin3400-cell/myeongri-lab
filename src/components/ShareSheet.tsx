@@ -418,7 +418,7 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
         content: {
           title: `✨ ${userName}님의 오늘 운세`,
           description: desc,
-          imageUrl: `${kakaoBaseUrl}/og-image.png`,
+          imageUrl: `${kakaoBaseUrl}/og-image.png?v=3`,
           link: {
             mobileWebUrl: kakaoShareUrl,
             webUrl: kakaoShareUrl,
