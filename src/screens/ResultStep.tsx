@@ -313,12 +313,14 @@ export function ResultStep({
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
   const { showAd: showInterstitial } = useInterstitialAd(AD_IDS.REWARDED);
   const bannerRef = useRef<HTMLDivElement>(null);
+  const fullCardsRef = useRef<HTMLDivElement>(null);
 
   // 프로모션 포인트 지급
   const { grantReward } = usePromotion();
   const [rewardInfo, setRewardInfo] = useState<{ amount: number; isGolden: boolean } | null>(null);
 
-  // 배너 광고 부착
+  // 배너 광고 부착 (fullResult 변경 시 ref가 새 DOM으로 이동하므로 재부착 필요)
+  const hasFullResult = !!fullResult;
   useEffect(() => {
     if (!bannerReady || !bannerRef.current) return;
     const attached = attachBanner(AD_IDS.BANNER, bannerRef.current, {
@@ -327,7 +329,7 @@ export function ResultStep({
       variant: 'card',
     });
     return () => { attached?.destroy(); };
-  }, [bannerReady, attachBanner]);
+  }, [bannerReady, attachBanner, hasFullResult]);
 
   const periodLabel = period === 'today' ? '오늘' : period === 'tomorrow' ? '내일' : period === 'week' ? '이번 주' : '이번 달';
 
@@ -344,6 +346,11 @@ export function ResultStep({
     // 광고와 운세 로딩을 동시에 시작 → 광고 끝나면 바로 결과 표시
     await Promise.all([showInterstitial(), onLoadFull()]);
     setLoadingFull(false);
+
+    // 숨겨진 운세 카드가 먼저 보이도록 스크롤
+    requestAnimationFrame(() => {
+      fullCardsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
 
     // 전체 운세 확인 완료 → 프로모션 포인트 지급
     const reward = await grantReward();
@@ -601,6 +608,7 @@ export function ResultStep({
       {/* 전체 운세 카드들 — 새로운 운세 먼저, 이미 본 운세는 아래로 */}
       {fullResult && (
         <div
+          ref={fullCardsRef}
           className="stagger-children"
           style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}
         >
