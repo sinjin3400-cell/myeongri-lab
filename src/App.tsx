@@ -9,6 +9,7 @@ import {
 import type { FortuneResult, FortuneHighlight, FortuneCategory, FortunePeriod, Step, UserInfo } from './types';
 import type { MbtiType } from './api';
 import { requestFortuneHighlight, requestFortuneFull } from './api';
+import { HomeScreen } from './screens/HomeScreen';
 import { InfoStep } from './screens/InfoStep';
 import { MbtiStep } from './screens/MbtiStep';
 import { LoadingStep } from './screens/LoadingStep';
@@ -77,7 +78,7 @@ export default function App() {
       })
       .finally(() => setSharedLoading(false));
   }, []);
-  const [step, setStep] = useState<Step>('info');
+  const [step, setStep] = useState<Step>('home');
   const [info, setInfo] = useState<UserInfo>(initialInfo);
   const [mbti, setMbti] = useState<MbtiType | null>(null);
   const [highlight, setHighlight] = useState<FortuneHighlight | null>(null);
@@ -185,14 +186,22 @@ export default function App() {
   const restart = useCallback(() => {
     haptic();
     trackRestart();
-    trackStepView('info');
+    trackStepView('home');
     setInfo(initialInfo);
     setMbti(null);
     setHighlight(null);
     setFullResult(null);
     setLoadError(null);
     setPeriod('today');
-    setStep('info');
+    setStep('home');
+  }, []);
+
+  const handleFeatureSelect = useCallback((feature: string) => {
+    if (feature === 'fortune') {
+      trackStepView('info');
+      setStep('info');
+    }
+    // 다른 기능들은 추후 구현
   }, []);
 
   const dismissShared = useCallback(() => {
@@ -225,6 +234,9 @@ export default function App() {
 
   return (
     <>
+      {step === 'home' && (
+        <HomeScreen onSelect={handleFeatureSelect} />
+      )}
       {step === 'info' && (
         <InfoStep value={info} onChange={setInfo} onNext={goNextFromInfo} />
       )}

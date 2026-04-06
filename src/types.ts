@@ -2,7 +2,9 @@ import type { SijinId } from './sijin';
 
 export type Gender = 'male' | 'female' | 'other';
 
-export type Step = 'info' | 'mbti' | 'loading' | 'error' | 'result';
+export type Step = 'home' | 'info' | 'mbti' | 'loading' | 'error' | 'result';
+
+export type AppFeature = 'fortune' | 'dream' | 'zodiac' | 'compatibility';
 
 export type FortunePeriod = 'today' | 'tomorrow' | 'week' | 'month';
 
