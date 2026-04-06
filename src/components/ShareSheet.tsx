@@ -1,4 +1,5 @@
 import type { FortuneResult, FortuneHighlight } from '../types';
+import { trackShareMethod } from '../utils/analytics';
 
 type Props = {
   result: FortuneResult;
@@ -51,6 +52,7 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
 
   /** 운세 링크만 복사 */
   const handleCopyLink = async () => {
+    trackShareMethod('copy_link');
     const url = await getShortShareUrl();
     try {
       await navigator.clipboard.writeText(url);
@@ -69,6 +71,7 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
   };
 
   const handleCopy = async () => {
+    trackShareMethod('copy_text');
     const url = await getShortShareUrl();
     const text = buildShareText(url);
     try {
@@ -88,6 +91,7 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
   };
 
   const handleNativeShare = async () => {
+    trackShareMethod('native_share');
     if (navigator.share) {
       try {
         const url = await getShortShareUrl();
@@ -106,6 +110,7 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
   };
 
   const handleKakaoShare = async () => {
+    trackShareMethod('kakao');
     try {
       await loadKakaoSDK();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -156,6 +161,7 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
   };
 
   const handleSmsShare = async () => {
+    trackShareMethod('sms');
     const url = await getShortShareUrl();
     const body = encodeURIComponent(buildShareText(url));
     const isIOS = /iPhone|iPad/i.test(navigator.userAgent);

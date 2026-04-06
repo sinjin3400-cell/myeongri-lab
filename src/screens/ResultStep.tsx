@@ -9,6 +9,7 @@ import { MBTI_PROFILES } from '../data/mbtiProfiles';
 import { mergeLucky } from '../utils/lucky';
 import { useTossBanner, useInterstitialAd, AD_IDS } from '../hooks/useAds';
 import { usePromotion } from '../hooks/usePromotion';
+import { trackFullFortuneClicked, trackFortuneCardExpanded, trackShareButtonClicked, trackRewardGranted } from '../utils/analytics';
 
 type Props = {
   highlight: FortuneHighlight;
@@ -89,6 +90,7 @@ function AccordionCard({
       onClick={() => {
         if (hasDetail) {
           haptic();
+          if (!open) trackFortuneCardExpanded(section.key);
           setOpen(!open);
         }
       }}
@@ -216,6 +218,7 @@ function HighlightCard({
       style={{ background: gradient, cursor: 'pointer' }}
       onClick={() => {
         haptic();
+        if (!open) trackFortuneCardExpanded(category);
         setOpen(!open);
       }}
     >
@@ -343,6 +346,7 @@ export function ResultStep({
   const handleLoadFull = useCallback(async () => {
     setLoadingFull(true);
     haptic();
+    trackFullFortuneClicked();
     // 광고와 운세 로딩을 동시에 시작 → 광고 끝나면 바로 결과 표시
     await Promise.all([showInterstitial(), onLoadFull()]);
     setLoadingFull(false);
@@ -355,6 +359,7 @@ export function ResultStep({
     // 전체 운세 확인 완료 → 프로모션 포인트 지급
     const reward = await grantReward();
     if (reward.success) {
+      trackRewardGranted(reward.amount, reward.isGolden);
       setRewardInfo({ amount: reward.amount, isGolden: reward.isGolden });
     }
   }, [onLoadFull, showInterstitial, grantReward]);
@@ -677,6 +682,7 @@ export function ResultStep({
         }}
         onClick={() => {
           haptic();
+          trackShareButtonClicked();
           setShowShare(true);
         }}
       >

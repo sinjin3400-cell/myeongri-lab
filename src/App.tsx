@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { haptic } from './utils/haptic';
+import {
+  trackStepView, trackFormSubmit, trackMbtiSelected, trackMbtiSkipped,
+  trackAnalysisStart, trackAnalysisComplete, trackAnalysisError,
+  trackPeriodChanged, trackTomorrowClicked, trackRestart,
+  setUserProperties,
+} from './utils/analytics';
 import type { FortuneResult, FortuneHighlight, FortuneCategory, FortunePeriod, Step, UserInfo } from './types';
 import type { MbtiType } from './api';
 import { requestFortuneHighlight, requestFortuneFull } from './api';
@@ -81,17 +87,26 @@ export default function App() {
 
   const goNextFromInfo = useCallback(() => {
     haptic();
+    trackFormSubmit(info.gender, !!info.birthSijin || info.birthTimeUnknown);
+    trackStepView('mbti');
     setStep('mbti');
-  }, []);
+  }, [info.gender, info.birthSijin, info.birthTimeUnknown]);
 
   const goNextFromMbti = useCallback(() => {
     haptic();
     setLoadError(null);
+    if (mbti) {
+      trackMbtiSelected(mbti);
+      setUserProperties({ has_mbti: true, mbti_type: mbti });
+    }
+    trackStepView('loading');
     setStep('loading');
-  }, []);
+  }, [mbti]);
 
   const skipMbti = useCallback(() => {
     setMbti(null);
+    trackMbtiSkipped();
+    setUserProperties({ has_mbti: false });
     goNextFromMbti();
   }, [goNextFromMbti]);
 
@@ -100,11 +115,15 @@ export default function App() {
 
   // 1단계: 하이라이트 로딩 + 전체 운세 백그라운드 프리페치
   const runAnalysis = useCallback(async () => {
+    const startTime = Date.now();
+    trackAnalysisStart(period, !!mbti);
     try {
       const data = await requestFortuneHighlight(info, mbti, period);
+      trackAnalysisComplete(period, data.score, Date.now() - startTime);
       setHighlight(data);
       setFullResult(null);
       prefetchedRef.current = null;
+      trackStepView('result');
       setStep('result');
       haptic();
       // 나머지 2개 운세만 백그라운드에서 미리 로딩 (상태는 변경하지 않음)
@@ -114,6 +133,7 @@ export default function App() {
         .catch(() => {});
     } catch (e) {
       const msg = e instanceof Error ? e.message : '분석에 실패했어요. 다시 시도해주세요.';
+      trackAnalysisError(msg);
       setLoadError(msg);
       setStep('error');
     }
@@ -141,6 +161,7 @@ export default function App() {
   const handleChangePeriod = useCallback(
     (newPeriod: FortunePeriod) => {
       if (newPeriod === period) return;
+      trackPeriodChanged(period, newPeriod);
       setPeriod(newPeriod);
       setHighlight(null);
       setFullResult(null);
@@ -152,6 +173,7 @@ export default function App() {
 
   const handleTomorrow = useCallback(() => {
     haptic();
+    trackTomorrowClicked();
     setPeriod('tomorrow');
     setHighlight(null);
     setFullResult(null);
@@ -162,6 +184,8 @@ export default function App() {
 
   const restart = useCallback(() => {
     haptic();
+    trackRestart();
+    trackStepView('info');
     setInfo(initialInfo);
     setMbti(null);
     setHighlight(null);
