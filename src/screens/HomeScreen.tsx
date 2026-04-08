@@ -1,6 +1,9 @@
+import { useEffect, useRef } from 'react';
 import { haptic } from '../utils/haptic';
 import { LogoMark } from '../components/LogoMark';
 import { trackEvent } from '../utils/analytics';
+import { FortuneIcon, DreamIcon, ZodiacIcon, CompatibilityIcon } from '../components/FeatureIcons';
+import { useTossBanner, AD_IDS } from '../hooks/useAds';
 import type { AppFeature } from '../types';
 
 type Props = {
@@ -9,7 +12,8 @@ type Props = {
 
 const FEATURES: {
   key: AppFeature;
-  icon: string;
+  icon: React.ReactNode;
+  bgIcon: React.ReactNode;
   title: string;
   description: string;
   gradient: string;
@@ -19,7 +23,8 @@ const FEATURES: {
 }[] = [
   {
     key: 'fortune',
-    icon: '🔮',
+    icon: <FortuneIcon size={36} />,
+    bgIcon: <FortuneIcon size={90} />,
     title: '오늘의 사주풀이',
     description: 'AI가 사주와 MBTI를 결합해\n나만의 운세를 풀어드려요',
     gradient: 'linear-gradient(135deg, #1a2744 0%, #2d446c 100%)',
@@ -28,7 +33,8 @@ const FEATURES: {
   },
   {
     key: 'dream',
-    icon: '🌙',
+    icon: <DreamIcon size={36} />,
+    bgIcon: <DreamIcon size={90} />,
     title: '꿈해몽',
     description: '간밤의 꿈이 알려주는 메시지\n행운의 로또번호까지!',
     gradient: 'linear-gradient(135deg, #2d1b69 0%, #4a2d8a 100%)',
@@ -38,27 +44,41 @@ const FEATURES: {
   },
   {
     key: 'zodiac',
-    icon: '🐉',
+    icon: <ZodiacIcon size={36} />,
+    bgIcon: <ZodiacIcon size={90} />,
     title: '띠별 운세',
     description: '내 띠로 보는 오늘의 운세\n12간지의 지혜를 만나보세요',
     gradient: 'linear-gradient(135deg, #7c2d12 0%, #b45309 100%)',
     accentColor: '#fbbf24',
-    ready: false,
-    tag: '준비 중',
+    ready: true,
   },
   {
     key: 'compatibility',
-    icon: '💕',
+    icon: <CompatibilityIcon size={36} />,
+    bgIcon: <CompatibilityIcon size={90} />,
     title: '궁합 보기',
-    description: '우리 딸과 배우자의 궁합이\n어떤지 확인해보세요',
+    description: '우리 사이 얼마나 잘 맞을까?\n부부·가족·연인 궁합 풀이',
     gradient: 'linear-gradient(135deg, #9f1239 0%, #e11d48 100%)',
     accentColor: '#fda4af',
-    ready: false,
-    tag: '준비 중',
+    ready: true,
   },
 ];
 
 export function HomeScreen({ onSelect }: Props) {
+  // 하단 배너 광고
+  const { isInitialized: bannerReady, attachBanner } = useTossBanner();
+  const bannerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!bannerReady || !bannerRef.current) return;
+    const attached = attachBanner(AD_IDS.BANNER, bannerRef.current, {
+      theme: 'light',
+      tone: 'blackAndWhite',
+      variant: 'card',
+    });
+    return () => { attached?.destroy(); };
+  }, [bannerReady, attachBanner]);
+
   const today = new Date();
   const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
   const dateStr = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')} (${dayNames[today.getDay()]})`;
@@ -195,18 +215,13 @@ export function HomeScreen({ onSelect }: Props) {
             <div
               style={{
                 position: 'absolute',
-                top: -10,
-                right: -10,
-                width: 110,
-                height: 110,
+                top: -8,
+                right: -8,
                 pointerEvents: 'none',
-                opacity: 0.15,
-                fontSize: 80,
-                lineHeight: 1,
-                textAlign: 'center',
+                opacity: 0.12,
               }}
             >
-              {feature.icon}
+              {feature.bgIcon}
             </div>
             <div
               style={{
@@ -242,15 +257,14 @@ export function HomeScreen({ onSelect }: Props) {
             )}
 
             {/* 아이콘 */}
-            <span
+            <div
               style={{
-                fontSize: 32,
                 marginBottom: 12,
-                filter: feature.ready ? 'none' : 'grayscale(0.3)',
+                filter: feature.ready ? 'none' : 'grayscale(0.3) opacity(0.7)',
               }}
             >
               {feature.icon}
-            </span>
+            </div>
 
             {/* 타이틀 */}
             <p
@@ -298,6 +312,18 @@ export function HomeScreen({ onSelect }: Props) {
       >
         동양 철학과 현대 AI가 만나는 곳 ✨
       </p>
+
+      {/* 하단 배너 광고 */}
+      <div
+        ref={bannerRef}
+        style={{
+          marginTop: 20,
+          minHeight: 80,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      />
     </div>
   );
 }

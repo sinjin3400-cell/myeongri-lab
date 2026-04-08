@@ -2,7 +2,10 @@ import type { SijinId } from './sijin';
 
 export type Gender = 'male' | 'female' | 'other';
 
-export type Step = 'home' | 'info' | 'mbti' | 'loading' | 'error' | 'result';
+export type Step =
+  | 'home' | 'info' | 'mbti' | 'loading' | 'error' | 'result'
+  | 'zodiac-input' | 'zodiac-loading' | 'zodiac-result'
+  | 'compat-input' | 'compat-loading' | 'compat-result';
 
 export type AppFeature = 'fortune' | 'dream' | 'zodiac' | 'compatibility';
 
@@ -54,4 +57,62 @@ export interface FortuneResult {
   lucky: LuckyInfo;
   score: number; // 0~100 오늘의 운세 점수
   mbtiInsight?: string; // MBTI 기반 한줄 인사이트
+}
+
+// --- 띠별운세 ---
+
+export interface ZodiacAnimal {
+  name: string;       // 쥐, 소, 호랑이 ...
+  emoji: string;      // 🐭, 🐂, 🐯 ...
+  hanja: string;      // 子, 丑, 寅 ...
+  element: string;    // 오행
+}
+
+export interface ZodiacInput {
+  name: string;
+  birthYear: string;  // YYYY
+  gender: Gender | '';
+}
+
+export type ZodiacPrimaryCategory = 'overall' | 'love' | 'money' | 'health' | 'work';
+
+export interface ZodiacResult {
+  animal: string;
+  emoji: string;
+  summaryLine: string;
+  score: number;
+  /** 오늘 띠에 가장 영향이 큰 단일 핵심 운세 카테고리 */
+  primaryCategory: ZodiacPrimaryCategory;
+  primaryTitle: string;   // 예: "오늘의 핵심 - 금전운"
+  primaryBody: string;    // 8~10문장 깊이 있는 풀이
+  primaryDetail: string;  // 추가 디테일/실천 조언
+  advice: string;
+}
+
+// --- 궁합보기 ---
+
+export interface CompatPerson {
+  name: string;
+  birthYear: string;
+  gender: Gender | '';
+}
+
+export interface CompatInput {
+  person1: CompatPerson;
+  person2: CompatPerson;
+}
+
+export interface CompatResult {
+  score: number;                // 0~100
+  summaryLine: string;
+  person1Animal: string;
+  person1Emoji: string;
+  person2Animal: string;
+  person2Emoji: string;
+  overall: string;              // 전체 궁합
+  overallDetail: string;
+  love: string;                 // 애정 궁합
+  money: string;                // 재물 궁합
+  communication: string;        // 소통 궁합
+  advice: string;               // 관계 조언
 }

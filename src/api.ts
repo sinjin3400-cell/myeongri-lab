@@ -1,5 +1,6 @@
-import type { FortuneResult, FortuneHighlight, FortuneCategory, FortunePeriod, UserInfo } from './types';
+import type { FortuneResult, FortuneHighlight, FortuneCategory, FortunePeriod, UserInfo, ZodiacInput, ZodiacResult, CompatInput, CompatResult } from './types';
 import { calculateSaju, analyzeOhaeng, getTodayDayPillar } from './utils/saju';
+import { getZodiacAnimal } from './utils/zodiac';
 import { MBTI_PROFILES } from './data/mbtiProfiles';
 
 const MBTI_TYPES = [
@@ -385,4 +386,161 @@ ${saju.time ? `- 시주: ${saju.time.cheonganHanja}${saju.time.jijiHanja} (${saj
 위 사주팔자와 일진을 기반으로 ${periodLabel} 운세를 분석해주세요.
 오행 간의 상생·상극 관계, 일진과 일주의 관계를 구체적으로 반영하세요.
 반드시 JSON 형식으로만 응답하세요.`;
+}
+
+// ============================================================
+// 띠별운세
+// ============================================================
+
+export async function requestZodiacFortune(input: ZodiacInput): Promise<ZodiacResult> {
+  const today = new Date().toISOString().slice(0, 10);
+  const cacheKey = `zodiac:${input.name}:${input.birthYear}:${input.gender}:${today}`;
+  const cached = getCache<ZodiacResult>(cacheKey);
+  if (cached) return cached;
+
+  const year = parseInt(input.birthYear, 10);
+  const animal = getZodiacAnimal(year);
+  const todayPillar = getTodayDayPillar();
+  const gender = input.gender === 'male' ? '남성' : input.gender === 'female' ? '여성' : '기타';
+
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일`;
+  const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][now.getDay()];
+
+  const seed = simpleHash(`${animal.name}:${today}`);
+
+  const systemPrompt = `당신은 "명리연구소"의 띠별 운세 전문가입니다.
+12간지(12지신)에 대한 깊은 이해를 바탕으로 따뜻하고 친근하게 운세를 풀어줍니다.
+
+${FRIENDLY_TONE}
+
+## 핵심 원칙
+1. ${animal.name}띠의 특성과 오늘의 일진(${todayPillar.cheonganHanja}${todayPillar.jijiHanja})의 상호작용을 분석합니다.
+2. ${animal.name}띠(${animal.hanja}, ${animal.element}행)와 오늘 일진의 상생·상극 관계를 반영합니다.
+3. 40~60대 사용자가 많으므로 존댓말로 따뜻하고 친근하게 작성하세요.
+4. "~하실 거예요", "~해보세요", "~좋으실 거예요" 같은 존칭 구어체를 사용하세요.
+5. 사주 한자 용어는 사용하지 마세요. 일반인이 읽기 쉬운 말로만 풀어주세요.
+6. 구체적인 상황 예시와 실천 가능한 조언을 포함하세요.
+
+## 단일 핵심 운세 원칙 (매우 중요)
+- 띠별 운세는 "오늘의 사주풀이"와 차별화하기 위해 **딱 한 가지 운세**만 깊고 구체적으로 풀어드립니다.
+- 오늘 일진과 ${animal.name}띠의 상호작용에서 **가장 영향이 큰 영역 한 가지**를 골라주세요.
+- 선택 가능한 영역: "love"(애정/관계), "money"(금전/재물), "health"(건강), "work"(일/사회운), "overall"(전반)
+- 선택한 영역의 풀이는 평소보다 훨씬 깊이 있게: 8~10문장, 구체적 상황 2~3개 예시, 실천 조언 포함.
+- 절대로 4가지 운세를 모두 나열하지 마세요. 하나만 깊게.
+
+## 출력 형식 (반드시 이 JSON, 다른 필드 추가 금지)
+{
+  "summaryLine": "오늘의 핵심 한줄 (25자 이내, 이모지 1개, 존댓말)",
+  "score": 오늘의 운세 점수 (${(seed % 36) + 55}~${(seed % 36) + 65} 범위),
+  "primaryCategory": "love" | "money" | "health" | "work" | "overall" 중 하나,
+  "primaryTitle": "오늘의 핵심 - OO운 (예: '오늘의 핵심 - 금전운')",
+  "primaryBody": "선택한 영역의 핵심 풀이 (8~10문장, 이모지 1~2개, 구체적 상황 예시, ${animal.name}띠 특성 반영)",
+  "primaryDetail": "추가 실천 조언과 디테일 (4~5문장, 오늘 하루 어떻게 행동하면 좋은지)",
+  "advice": "오늘 하루를 위한 따뜻한 응원 한 단락 (3~4문장)"
+}`;
+
+  const userPrompt = `## 분석 대상
+- 이름: ${input.name}
+- 성별: ${gender}
+- 출생년도: ${input.birthYear}년
+- 띠: ${animal.name}띠 (${animal.hanja}, ${animal.element}행)
+- 띠 이모지: ${animal.emoji}
+
+## 운세 날짜
+- ${dateStr} (${dayOfWeek}요일)
+- 오늘의 일진: ${todayPillar.cheonganHanja}${todayPillar.jijiHanja}
+
+${animal.name}띠의 특성과 오늘 일진의 관계를 바탕으로 오늘의 띠별 운세를 분석해주세요.
+반드시 JSON 형식으로만 응답하세요.`;
+
+  const result = await callFortuneApi(systemPrompt, userPrompt, {
+    type: 'zodiac', name: input.name, birthYear: input.birthYear,
+  }) as ZodiacResult;
+
+  result.animal = animal.name;
+  result.emoji = animal.emoji;
+
+  setCache(cacheKey, result);
+  return result;
+}
+
+// ============================================================
+// 궁합보기
+// ============================================================
+
+export async function requestCompatibility(input: CompatInput): Promise<CompatResult> {
+  const today = new Date().toISOString().slice(0, 10);
+  const cacheKey = `compat:${input.person1.name}:${input.person1.birthYear}:${input.person2.name}:${input.person2.birthYear}:${today}`;
+  const cached = getCache<CompatResult>(cacheKey);
+  if (cached) return cached;
+
+  const year1 = parseInt(input.person1.birthYear, 10);
+  const year2 = parseInt(input.person2.birthYear, 10);
+  const animal1 = getZodiacAnimal(year1);
+  const animal2 = getZodiacAnimal(year2);
+  const gender1 = input.person1.gender === 'male' ? '남성' : input.person1.gender === 'female' ? '여성' : '기타';
+  const gender2 = input.person2.gender === 'male' ? '남성' : input.person2.gender === 'female' ? '여성' : '기타';
+
+  const seed = simpleHash(`${input.person1.name}:${input.person1.birthYear}:${input.person2.name}:${input.person2.birthYear}:${today}`);
+
+  const systemPrompt = `당신은 "명리연구소"의 궁합 전문가입니다.
+12간지와 오행의 상생·상극 관계를 바탕으로 두 사람의 궁합을 따뜻하고 재미있게 풀어줍니다.
+
+${FRIENDLY_TONE}
+
+## 핵심 원칙
+1. ${animal1.name}띠(${animal1.hanja}, ${animal1.element}행)와 ${animal2.name}띠(${animal2.hanja}, ${animal2.element}행)의 궁합을 분석합니다.
+2. 오행의 상생·상극 관계를 기반으로 하되, 한자 용어는 쓰지 마세요.
+3. 40~60대 사용자가 많으므로 따뜻한 존댓말을 사용하세요.
+4. 부부, 가족, 연인 등 다양한 관계에 적용 가능하게 작성하세요.
+5. 부정적인 면도 긍정적으로 전환하며 조언을 포함하세요.
+6. 두 사람의 이름을 넣어 개인화된 느낌을 주세요.
+
+## 점수 규칙
+- 궁합 점수는 ${(seed % 26) + 65}~${(seed % 26) + 75} 범위에서 띠 궁합에 맞게 설정
+- 상생 관계면 높게(80+), 상극이면 중간(65~75), 같은 띠면 75~85
+
+## 출력 형식 (반드시 이 JSON)
+{
+  "score": 궁합 점수 (0~100),
+  "summaryLine": "궁합 핵심 한줄 (25자 이내, 이모지 1개, 존댓말)",
+  "overall": "전체 궁합 (6~7문장, 두 띠의 조합이 만드는 시너지와 주의점, 이모지 포함)",
+  "overallDetail": "전체 궁합 상세 (7~8문장, 구체적 상황 예시와 조언)",
+  "love": "애정 궁합 (5~6문장, 감정적 교감과 소통 스타일 분석)",
+  "money": "재물 궁합 (5~6문장, 함께하는 경제생활 조언)",
+  "communication": "소통 궁합 (5~6문장, 갈등 해결법과 대화 팁)",
+  "advice": "관계를 더 좋게 만드는 특별 조언 (4~5문장, 구체적 실천법, 응원과 격려)"
+}`;
+
+  const userPrompt = `## 궁합 분석 대상
+
+### 첫 번째 분
+- 이름: ${input.person1.name}
+- 성별: ${gender1}
+- 출생년도: ${input.person1.birthYear}년
+- 띠: ${animal1.name}띠 (${animal1.emoji}, ${animal1.element}행)
+
+### 두 번째 분
+- 이름: ${input.person2.name}
+- 성별: ${gender2}
+- 출생년도: ${input.person2.birthYear}년
+- 띠: ${animal2.name}띠 (${animal2.emoji}, ${animal2.element}행)
+
+두 분의 띠별 궁합을 따뜻하고 재미있게 분석해주세요.
+반드시 JSON 형식으로만 응답하세요.`;
+
+  const result = await callFortuneApi(systemPrompt, userPrompt, {
+    type: 'compatibility',
+    person1: { name: input.person1.name, birthYear: input.person1.birthYear },
+    person2: { name: input.person2.name, birthYear: input.person2.birthYear },
+  }) as CompatResult;
+
+  result.person1Animal = animal1.name;
+  result.person1Emoji = animal1.emoji;
+  result.person2Animal = animal2.name;
+  result.person2Emoji = animal2.emoji;
+
+  setCache(cacheKey, result);
+  return result;
 }

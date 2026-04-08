@@ -4,16 +4,21 @@ import {
   trackStepView, trackFormSubmit, trackMbtiSelected, trackMbtiSkipped,
   trackAnalysisStart, trackAnalysisComplete, trackAnalysisError,
   trackPeriodChanged, trackTomorrowClicked, trackRestart,
-  setUserProperties,
+  setUserProperties, trackEvent,
 } from './utils/analytics';
-import type { FortuneResult, FortuneHighlight, FortuneCategory, FortunePeriod, Step, UserInfo } from './types';
+import type { FortuneResult, FortuneHighlight, FortuneCategory, FortunePeriod, Step, UserInfo, ZodiacInput, ZodiacResult, CompatInput, CompatResult } from './types';
 import type { MbtiType } from './api';
-import { requestFortuneHighlight, requestFortuneFull } from './api';
+import { requestFortuneHighlight, requestFortuneFull, requestZodiacFortune, requestCompatibility } from './api';
 import { HomeScreen } from './screens/HomeScreen';
 import { InfoStep } from './screens/InfoStep';
 import { MbtiStep } from './screens/MbtiStep';
 import { LoadingStep } from './screens/LoadingStep';
 import { ResultStep } from './screens/ResultStep';
+import { ZodiacInputStep } from './screens/ZodiacInputStep';
+import { ZodiacResultStep } from './screens/ZodiacResultStep';
+import { CompatInputStep } from './screens/CompatInputStep';
+import { CompatResultStep } from './screens/CompatResultStep';
+import { SimpleLoadingStep } from './screens/SimpleLoadingStep';
 import { SharedResultView } from './screens/SharedResultView';
 import { decodeShareData, decodeShareDataCompact, sharedDataToHighlight } from './utils/shareUrl';
 import type { SharedFortuneData, FortuneTexts } from './utils/shareUrl';
@@ -85,6 +90,17 @@ export default function App() {
   const [fullResult, setFullResult] = useState<FortuneResult | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [period, setPeriod] = useState<FortunePeriod>('today');
+
+  // 띠별운세 상태
+  const [zodiacInput, setZodiacInput] = useState<ZodiacInput>({ name: '', birthYear: '', gender: '' });
+  const [zodiacResult, setZodiacResult] = useState<ZodiacResult | null>(null);
+
+  // 궁합보기 상태
+  const [compatInput, setCompatInput] = useState<CompatInput>({
+    person1: { name: '', birthYear: '', gender: '' },
+    person2: { name: '', birthYear: '', gender: '' },
+  });
+  const [compatResult, setCompatResult] = useState<CompatResult | null>(null);
 
   const goNextFromInfo = useCallback(() => {
     haptic();
@@ -193,6 +209,10 @@ export default function App() {
     setFullResult(null);
     setLoadError(null);
     setPeriod('today');
+    setZodiacInput({ name: '', birthYear: '', gender: '' });
+    setZodiacResult(null);
+    setCompatInput({ person1: { name: '', birthYear: '', gender: '' }, person2: { name: '', birthYear: '', gender: '' } });
+    setCompatResult(null);
     setStep('home');
   }, []);
 
@@ -200,9 +220,48 @@ export default function App() {
     if (feature === 'fortune') {
       trackStepView('info');
       setStep('info');
+    } else if (feature === 'zodiac') {
+      trackStepView('zodiac-input');
+      setStep('zodiac-input');
+    } else if (feature === 'compatibility') {
+      trackStepView('compat-input');
+      setStep('compat-input');
     }
-    // 다른 기능들은 추후 구현
   }, []);
+
+  // --- 띠별운세 ---
+  const runZodiac = useCallback(async () => {
+    trackEvent('zodiac_analysis_start', {});
+    try {
+      const data = await requestZodiacFortune(zodiacInput);
+      setZodiacResult(data);
+      trackEvent('zodiac_analysis_complete', { animal: data.animal, score: data.score });
+      setStep('zodiac-result');
+      haptic();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '분석에 실패했어요.';
+      trackEvent('zodiac_analysis_error', { error: msg });
+      setLoadError(msg);
+      setStep('error');
+    }
+  }, [zodiacInput]);
+
+  // --- 궁합보기 ---
+  const runCompat = useCallback(async () => {
+    trackEvent('compat_analysis_start', {});
+    try {
+      const data = await requestCompatibility(compatInput);
+      setCompatResult(data);
+      trackEvent('compat_analysis_complete', { score: data.score });
+      setStep('compat-result');
+      haptic();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '분석에 실패했어요.';
+      trackEvent('compat_analysis_error', { error: msg });
+      setLoadError(msg);
+      setStep('error');
+    }
+  }, [compatInput]);
 
   const dismissShared = useCallback(() => {
     setSharedView(null);
@@ -281,6 +340,72 @@ export default function App() {
           onChangePeriod={handleChangePeriod}
           onRestart={restart}
           onTomorrow={handleTomorrow}
+        />
+      )}
+
+      {/* 띠별운세 */}
+      {step === 'zodiac-input' && (
+        <ZodiacInputStep
+          value={zodiacInput}
+          onChange={setZodiacInput}
+          onNext={() => { setLoadError(null); setStep('zodiac-loading'); }}
+          onBack={restart}
+        />
+      )}
+      {step === 'zodiac-loading' && (
+        <SimpleLoadingStep
+          title="띠별 운세 분석 중..."
+          messages={[
+            '🐲 12간지의 기운을 살피고 있어요',
+            '🌟 오늘의 일진과 띠의 궁합을 보고 있어요',
+            '🍀 행운의 기운을 찾고 있어요',
+            '✨ 운세를 정리하고 있어요',
+            '📝 따뜻한 조언을 준비하고 있어요',
+          ]}
+          onRun={runZodiac}
+        />
+      )}
+      {step === 'zodiac-result' && zodiacResult && (
+        <ZodiacResultStep
+          result={zodiacResult}
+          userName={zodiacInput.name}
+          onRestart={() => { setZodiacResult(null); setStep('zodiac-input'); }}
+          onHome={restart}
+          onSelectFeature={(feature) => {
+            setZodiacResult(null);
+            handleFeatureSelect(feature);
+          }}
+        />
+      )}
+
+      {/* 궁합보기 */}
+      {step === 'compat-input' && (
+        <CompatInputStep
+          value={compatInput}
+          onChange={setCompatInput}
+          onNext={() => { setLoadError(null); setStep('compat-loading'); }}
+          onBack={restart}
+        />
+      )}
+      {step === 'compat-loading' && (
+        <SimpleLoadingStep
+          title="궁합 분석 중..."
+          messages={[
+            '💕 두 분의 띠를 살펴보고 있어요',
+            '🔮 오행의 상생 관계를 분석 중이에요',
+            '🌟 애정 궁합을 풀어보고 있어요',
+            '💰 재물 궁합도 확인하고 있어요',
+            '💬 소통 스타일을 비교하고 있어요',
+            '✨ 따뜻한 조언을 준비하고 있어요',
+          ]}
+          onRun={runCompat}
+        />
+      )}
+      {step === 'compat-result' && compatResult && (
+        <CompatResultStep
+          result={compatResult}
+          onRestart={() => { setCompatResult(null); setStep('compat-input'); }}
+          onHome={restart}
         />
       )}
     </>
