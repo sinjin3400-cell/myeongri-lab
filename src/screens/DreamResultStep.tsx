@@ -23,7 +23,7 @@ const TYPE_STYLE: Record<DreamResult['type'], { bg: string; color: string; emoji
 
 export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortune }: Props) {
   const hasSaju = !!result.interpretation.sajuLinked;
-  const [tab, setTab] = useState<Tab>('traditional');
+  const [tab, setTab] = useState<Tab>(hasSaju ? 'sajuLinked' : 'traditional');
   const [unlocked, setUnlocked] = useState(false);
 
   const { isLoaded: rewardLoaded, showAd } = useInterstitialAd(AD_IDS.REWARDED);
@@ -134,20 +134,26 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
           >
             {visibleTabs.map((t) => {
               const active = tab === t.key;
+              const isSaju = t.key === 'sajuLinked';
+              const activeBg = isSaju
+                ? 'linear-gradient(135deg, #f5d98a 0%, #c9a962 60%, #a07a2e 100%)'
+                : 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)';
+              const activeShadow = isSaju
+                ? '0 4px 14px rgba(201, 169, 98, 0.5)'
+                : '0 4px 12px rgba(124, 58, 237, 0.35)';
               return (
                 <button
                   key={t.key}
                   type="button"
                   onClick={() => { haptic(); setTab(t.key); }}
                   style={{
+                    position: 'relative',
                     flex: 1,
-                    padding: '14px 8px',
+                    padding: '14px 6px',
                     border: 'none',
-                    background: active
-                      ? 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)'
-                      : 'transparent',
-                    color: active ? '#fff' : 'var(--navy-400)',
-                    fontWeight: active ? 800 : 600,
+                    background: active ? activeBg : 'transparent',
+                    color: active ? '#fff' : (isSaju ? 'var(--gold-600)' : 'var(--navy-400)'),
+                    fontWeight: (active || isSaju) ? 800 : 600,
                     fontSize: 13,
                     cursor: 'pointer',
                     fontFamily: 'inherit',
@@ -155,14 +161,34 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: 5,
-                    boxShadow: active ? '0 4px 12px rgba(124, 58, 237, 0.35)' : 'none',
+                    gap: 4,
+                    boxShadow: active ? activeShadow : 'none',
+                    textShadow: active && isSaju ? '0 1px 2px rgba(0,0,0,0.25)' : 'none',
                   }}
                 >
-                  {active && (
+                  {active && !isSaju && (
                     <span style={{ fontSize: 11, lineHeight: 1 }}>👁</span>
                   )}
+                  {isSaju && <span style={{ fontSize: 12, lineHeight: 1 }}>✨</span>}
                   {t.label}
+                  {isSaju && !active && (
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: 4,
+                        right: 6,
+                        fontSize: 8,
+                        fontWeight: 800,
+                        color: '#fff',
+                        background: 'linear-gradient(135deg, #c9a962, #a07a2e)',
+                        padding: '2px 5px',
+                        borderRadius: 6,
+                        letterSpacing: '0.05em',
+                      }}
+                    >
+                      개인화
+                    </span>
+                  )}
                 </button>
               );
             })}
