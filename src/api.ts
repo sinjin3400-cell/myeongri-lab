@@ -397,7 +397,7 @@ export async function requestZodiacFortune(input: ZodiacInput): Promise<ZodiacRe
   const year = parseInt(input.birthYear, 10);
   const monthN = input.birthMonth ? parseInt(input.birthMonth, 10) : undefined;
   const dayN = input.birthDay ? parseInt(input.birthDay, 10) : undefined;
-  const zodiacInfo = getZodiacByDate(year, monthN, dayN);
+  const zodiacInfo = getZodiacByDate(year, monthN, dayN, input.criterion ?? 'solar');
   const animal = zodiacInfo.animal;
   const cacheKey = `zodiac:${animal.name}:${today}`;
   const cached = getCache<ZodiacResult>(cacheKey);

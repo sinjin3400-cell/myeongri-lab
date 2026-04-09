@@ -68,11 +68,14 @@ export interface ZodiacAnimal {
   element: string;    // 오행
 }
 
+export type ZodiacCriterion = 'solar' | 'lunar';
+
 export interface ZodiacInput {
   name: string;
   birthYear: string;  // YYYY
   birthMonth?: string; // MM (선택, 음력 설 보정용)
   birthDay?: string;   // DD (선택)
+  criterion?: ZodiacCriterion; // 띠 기준 (양력/음력)
   gender: Gender | '';
 }
 

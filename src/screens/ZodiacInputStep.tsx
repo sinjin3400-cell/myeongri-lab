@@ -3,7 +3,7 @@ import { haptic } from '../utils/haptic';
 import { trackEvent } from '../utils/analytics';
 import { getZodiacByDate } from '../utils/zodiac';
 import { LogoMark } from '../components/LogoMark';
-import type { ZodiacInput, Gender } from '../types';
+import type { ZodiacInput, Gender, ZodiacCriterion } from '../types';
 
 type Props = {
   value: ZodiacInput;
@@ -16,6 +16,12 @@ export function ZodiacInputStep({ value, onChange, onNext, onBack }: Props) {
   const [touched, setTouched] = useState(false);
   const [month, setMonth] = useState<string>(value.birthMonth ?? '');
   const [day, setDay] = useState<string>(value.birthDay ?? '');
+  const criterion: ZodiacCriterion = value.criterion ?? 'solar';
+
+  const setCriterion = (c: ZodiacCriterion) => {
+    haptic();
+    onChange({ ...value, criterion: c });
+  };
 
   const yearNum = parseInt(value.birthYear, 10);
   const monthNum = parseInt(month, 10);
@@ -24,15 +30,16 @@ export function ZodiacInputStep({ value, onChange, onNext, onBack }: Props) {
   const isValidMonth = !isNaN(monthNum) && monthNum >= 1 && monthNum <= 12;
   const isValidDay = !isNaN(dayNum) && dayNum >= 1 && dayNum <= 31;
 
-  // 1~2월생인데 월/일 미입력 → 안내 필요
-  const needsLunarPrompt = isValidYear && (!isValidMonth || !isValidDay);
-  const showLunarHelper = isValidYear; // 항상 월/일 입력 권장
+  // 음력 기준일 때만 월/일 입력 필요
+  const showLunarHelper = isValidYear && criterion === 'lunar';
+  const needsLunarPrompt = showLunarHelper && (!isValidMonth || !isValidDay);
 
   const zodiacInfo = isValidYear
     ? getZodiacByDate(
         yearNum,
         isValidMonth ? monthNum : undefined,
         isValidMonth && isValidDay ? dayNum : undefined,
+        criterion,
       )
     : null;
 
@@ -119,11 +126,52 @@ export function ZodiacInputStep({ value, onChange, onNext, onBack }: Props) {
           )}
         </div>
 
+        {/* 띠 기준 (양력/음력) */}
+        <div>
+          <label style={labelStyle}>🌗 띠 기준</label>
+          <div style={{ display: 'flex', gap: 10 }}>
+            {([
+              ['solar', '양력 기준', '양력 1월 1일'],
+              ['lunar', '음력 기준', '음력 설날'],
+            ] as const).map(([key, label, sub]) => {
+              const selected = criterion === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setCriterion(key)}
+                  style={{
+                    flex: 1,
+                    padding: '12px 10px',
+                    borderRadius: 12,
+                    border: selected ? '2px solid var(--gold-500)' : '1.5px solid var(--navy-100)',
+                    background: selected ? 'var(--gold-50, #fff8e7)' : '#fff',
+                    color: 'var(--navy-700)',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 2,
+                    transition: 'all 0.18s ease',
+                  }}
+                >
+                  <span style={{ fontSize: 14, fontWeight: 800 }}>{label}</span>
+                  <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--navy-300)' }}>{sub}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p style={{ margin: '8px 0 0', fontSize: 11.5, color: 'var(--navy-300)', lineHeight: 1.55 }}>
+            💡 띠를 정하는 방식은 사람마다 달라요. 흔히 양력 1월 1일 기준을 쓰지만, 전통적으로는 음력 설날을 기준으로 보기도 합니다.
+          </p>
+        </div>
+
         {/* 태어난 월/일 (정확한 띠 계산용) */}
         {showLunarHelper && (
           <div className="animate-fade-in">
             <label style={labelStyle}>
-              🗓️ 태어난 월·일 <span style={{ fontWeight: 500, color: 'var(--navy-300)', fontSize: 12 }}>(정확한 띠 계산)</span>
+              🗓️ 태어난 월·일 <span style={{ fontWeight: 500, color: 'var(--navy-300)', fontSize: 12 }}>(음력 설 보정용)</span>
             </label>
             <div style={{ display: 'flex', gap: 10 }}>
               <input

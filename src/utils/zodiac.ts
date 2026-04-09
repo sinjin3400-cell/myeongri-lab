@@ -46,14 +46,25 @@ const LUNAR_NEW_YEAR: Record<number, [number, number]> = {
 };
 
 /**
- * 양력 생년월일로 띠를 계산. 월/일이 없으면 단순히 연도 기준.
- * 1~2월 출생자는 음력 설 이전이면 이전 연도 띠를 사용.
+ * 띠 계산.
+ * - criterion='solar' (양력 기준): 양력 1월 1일 기준. 출생연도로 단순 계산.
+ * - criterion='lunar' (음력 설 기준): 1~2월생이면 음력 설 이전 여부에 따라 보정.
+ *   월/일이 없으면 보정 불가 → 연도 기준으로 계산.
  */
-export function getZodiacByDate(year: number, month?: number, day?: number): {
+export function getZodiacByDate(
+  year: number,
+  month?: number,
+  day?: number,
+  criterion: 'solar' | 'lunar' = 'solar',
+): {
   animal: ZodiacAnimal;
   effectiveYear: number;
   adjusted: boolean;
 } {
+  if (criterion === 'solar') {
+    return { animal: getZodiacAnimal(year), effectiveYear: year, adjusted: false };
+  }
+  // lunar
   if (!month || !day || month > 2) {
     return { animal: getZodiacAnimal(year), effectiveYear: year, adjusted: false };
   }
