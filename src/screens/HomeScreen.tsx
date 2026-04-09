@@ -130,14 +130,14 @@ export function HomeScreen({ onSelect }: Props) {
         <div
           style={{
             marginLeft: 'auto',
-            background: 'rgba(255, 255, 255, 0.45)',
+            background: 'linear-gradient(135deg, rgba(255,250,230,0.7), rgba(255,243,200,0.5))',
             backdropFilter: 'blur(12px)',
             WebkitBackdropFilter: 'blur(12px)',
             borderRadius: 14,
             padding: '7px 12px',
             textAlign: 'center',
-            border: '1px solid rgba(255, 255, 255, 0.6)',
-            boxShadow: '0 4px 16px rgba(201, 169, 98, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.7)',
+            border: '1.5px solid rgba(212, 175, 55, 0.5)',
+            boxShadow: '0 4px 16px rgba(212, 175, 55, 0.2), 0 0 8px rgba(250, 220, 50, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.8)',
           }}
         >
           <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--navy-700)', display: 'block', lineHeight: 1.4, opacity: 0.75 }}>
