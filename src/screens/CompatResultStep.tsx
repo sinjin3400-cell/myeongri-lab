@@ -22,19 +22,14 @@ const CARD_META: { key: CardKey; icon: string; title: string; gradient: string }
 ];
 
 export function CompatResultStep({ result, onRestart, onHome, onSelectFeature }: Props) {
-  const recommendations: { key: AppFeature; icon: string; title: string; desc: string; gradient: string; borderColor: string; iconBg: string }[] = [
+  const recommendations: { key: AppFeature; icon: string; title: string; desc: string; iconBg: string; tag?: string; tagColor?: string }[] = [
     { key: 'fortune', icon: '🔮', title: '오늘의 사주풀이', desc: '내 사주로 보는 자세한 운세',
-      gradient: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-      borderColor: 'rgba(202, 138, 4, 0.35)',
       iconBg: 'linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 100%)' },
     { key: 'zodiac', icon: '🐲', title: '띠별 운세', desc: '내 띠로 보는 오늘의 운세',
-      gradient: 'linear-gradient(135deg, #fed7aa 0%, #fdba74 100%)',
-      borderColor: 'rgba(194, 65, 12, 0.35)',
       iconBg: 'linear-gradient(135deg, #854d0e 0%, #ca8a04 100%)' },
-    { key: 'dream', icon: '💭', title: '꿈해몽', desc: '간밤의 꿈 풀이 (준비 중)',
-      gradient: 'linear-gradient(135deg, #c7d2fe 0%, #a5b4fc 100%)',
-      borderColor: 'rgba(67, 56, 202, 0.38)',
-      iconBg: 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)' },
+    { key: 'dream', icon: '💭', title: '꿈해몽', desc: '간밤의 꿈 풀이',
+      iconBg: 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
+      tag: '준비 중', tagColor: '#6366f1' },
   ];
 
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
@@ -323,36 +318,52 @@ export function CompatResultStep({ result, onRestart, onHome, onSelectFeature }:
               style={{
                 display: 'flex', alignItems: 'center', gap: 14,
                 padding: '16px 18px',
-                background: rec.gradient,
-                border: `1.5px solid ${rec.borderColor}`,
+                background: '#ffffff',
+                border: '1px solid rgba(15, 23, 42, 0.08)',
                 borderRadius: 18,
                 cursor: 'pointer',
                 fontFamily: 'inherit',
                 textAlign: 'left',
                 transition: 'all 0.2s ease',
-                boxShadow: '0 3px 10px rgba(30,41,59,0.10), 0 12px 28px rgba(30,41,59,0.10)',
+                boxShadow: '0 1px 2px rgba(15,23,42,0.04), 0 6px 18px rgba(15,23,42,0.06)',
               }}
             >
               <span
                 style={{
-                  width: 42, height: 42, borderRadius: 12,
+                  width: 44, height: 44, borderRadius: 13,
                   background: rec.iconBg,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 22, flexShrink: 0,
-                  boxShadow: '0 2px 8px rgba(30,41,59,0.18)',
+                  boxShadow: '0 4px 12px rgba(30,41,59,0.18)',
                 }}
               >
                 {rec.icon}
               </span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--navy-700)' }}>
-                  {rec.title}
-                </p>
-                <p style={{ margin: '2px 0 0', fontSize: 12, fontWeight: 500, color: 'var(--navy-400)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--navy-700)' }}>
+                    {rec.title}
+                  </p>
+                  {rec.tag && (
+                    <span style={{
+                      padding: '2px 7px', fontSize: 10, fontWeight: 700,
+                      color: rec.tagColor, background: `${rec.tagColor}15`,
+                      border: `1px solid ${rec.tagColor}33`,
+                      borderRadius: 6, letterSpacing: '0.02em',
+                    }}>{rec.tag}</span>
+                  )}
+                </div>
+                <p style={{ margin: '3px 0 0', fontSize: 12.5, fontWeight: 500, color: 'var(--navy-400)' }}>
                   {rec.desc}
                 </p>
               </div>
-              <span style={{ fontSize: 18, color: 'var(--gold-600, #b08c47)', fontWeight: 700 }}>›</span>
+              <span style={{
+                width: 26, height: 26, borderRadius: 999,
+                background: 'rgba(15,23,42,0.05)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 13, color: 'var(--navy-400)', fontWeight: 700,
+                flexShrink: 0,
+              }}>›</span>
             </button>
           ))}
         </div>
