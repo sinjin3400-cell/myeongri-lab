@@ -318,8 +318,17 @@ export function InfoStep({ value, onChange, onNext, onHome }: Props) {
         {/* 배너 광고 */}
         <div
           ref={bannerRef}
-          style={{ width: '100%', height: 96, marginTop: 16 }}
-        />
+          style={{
+            width: '100%', minHeight: 80, marginTop: 16,
+            display: 'flex', justifyContent: 'center', alignItems: 'center',
+            border: bannerReady ? 'none' : '1.5px dashed var(--navy-200, #cbd5e1)',
+            borderRadius: 12,
+            background: bannerReady ? 'transparent' : 'rgba(0,0,0,0.02)',
+            color: 'var(--navy-300)', fontSize: 12, fontWeight: 600,
+          }}
+        >
+          {!bannerReady && '🎯 배너 광고 영역 (테스트)'}
+        </div>
       </div>
     </div>
   );
