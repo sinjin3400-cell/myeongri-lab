@@ -15,12 +15,14 @@ type Props = {
 
 function PersonForm({
   label,
-  emoji,
+  index,
+  accent,
   person,
   onChange,
 }: {
   label: string;
-  emoji: string;
+  index: number;
+  accent: string;
   person: CompatPerson;
   onChange: (p: CompatPerson) => void;
 }) {
@@ -33,9 +35,23 @@ function PersonForm({
       className="premium-card"
       style={{ padding: '18px 18px 20px', overflow: 'visible' }}
     >
-      <p style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 700, color: 'var(--navy-700)' }}>
-        {emoji} {label}
-      </p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 0 14px' }}>
+        <span
+          style={{
+            width: 26, height: 26, borderRadius: 999,
+            background: accent,
+            color: '#fff', fontSize: 13, fontWeight: 800,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 6px rgba(15,23,42,0.18)',
+            letterSpacing: 0,
+          }}
+        >
+          {index}
+        </span>
+        <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--navy-700)' }}>
+          {label}
+        </p>
+      </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {/* 이름 */}
@@ -135,17 +151,28 @@ export function CompatInputStep({ value, onChange, onNext, onBack }: Props) {
       <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <PersonForm
           label="첫 번째 분"
-          emoji="👤"
+          index={1}
+          accent="linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 100%)"
           person={value.person1}
           onChange={(p) => onChange({ ...value, person1: p })}
         />
 
-        {/* 중간 하트 */}
-        <div style={{ textAlign: 'center', fontSize: 28, lineHeight: 1 }}>💕</div>
+        {/* 중간 디바이더 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '2px 8px' }}>
+          <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, transparent, rgba(201,169,98,0.35), transparent)' }} />
+          <span style={{
+            fontSize: 11, fontWeight: 800, letterSpacing: '0.18em',
+            color: 'var(--gold-600, #b08c47)',
+          }}>
+            ✦  AND  ✦
+          </span>
+          <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, transparent, rgba(201,169,98,0.35), transparent)' }} />
+        </div>
 
         <PersonForm
           label="두 번째 분"
-          emoji="👤"
+          index={2}
+          accent="linear-gradient(135deg, #b08c47 0%, #d4af6a 100%)"
           person={value.person2}
           onChange={(p) => onChange({ ...value, person2: p })}
         />
