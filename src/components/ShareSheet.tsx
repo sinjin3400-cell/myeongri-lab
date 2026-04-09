@@ -1,5 +1,6 @@
 import type { FortuneResult, FortuneHighlight } from '../types';
 import { trackShareMethod } from '../utils/analytics';
+import { Analytics } from '@apps-in-toss/web-framework';
 
 type Props = {
   result: FortuneResult;
@@ -53,6 +54,7 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
   /** 운세 링크만 복사 */
   const handleCopyLink = async () => {
     trackShareMethod('copy_link');
+    try { Analytics.click({ log_name: 'fortune_share', method: 'copy_link' }); } catch (_) { /* noop */ }
     const url = await getShortShareUrl();
     try {
       await navigator.clipboard.writeText(url);
@@ -72,6 +74,7 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
 
   const handleCopy = async () => {
     trackShareMethod('copy_text');
+    try { Analytics.click({ log_name: 'fortune_share', method: 'copy_text' }); } catch (_) { /* noop */ }
     const url = await getShortShareUrl();
     const text = buildShareText(url);
     try {
@@ -92,6 +95,7 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
 
   const handleNativeShare = async () => {
     trackShareMethod('native_share');
+    try { Analytics.click({ log_name: 'fortune_share', method: 'native_share' }); } catch (_) { /* noop */ }
     if (navigator.share) {
       try {
         const url = await getShortShareUrl();
@@ -111,6 +115,7 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
 
   const handleKakaoShare = async () => {
     trackShareMethod('kakao');
+    try { Analytics.click({ log_name: 'fortune_share', method: 'kakao' }); } catch (_) { /* noop */ }
     try {
       await loadKakaoSDK();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -162,6 +167,7 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
 
   const handleSmsShare = async () => {
     trackShareMethod('sms');
+    try { Analytics.click({ log_name: 'fortune_share', method: 'sms' }); } catch (_) { /* noop */ }
     const url = await getShortShareUrl();
     const body = encodeURIComponent(buildShareText(url));
     const isIOS = /iPhone|iPad/i.test(navigator.userAgent);

@@ -10,6 +10,7 @@ import { mergeLucky } from '../utils/lucky';
 import { useTossBanner, useInterstitialAd, AD_IDS } from '../hooks/useAds';
 import { usePromotion } from '../hooks/usePromotion';
 import { trackFullFortuneClicked, trackFortuneCardExpanded, trackShareButtonClicked, trackRewardGranted } from '../utils/analytics';
+import { Analytics } from '@apps-in-toss/web-framework';
 
 type Props = {
   highlight: FortuneHighlight;
@@ -324,6 +325,11 @@ export function ResultStep({
   const { grantReward } = usePromotion();
   const [rewardInfo, setRewardInfo] = useState<{ amount: number; isGolden: boolean } | null>(null);
 
+  // 앱인토스 전환지표: 운세 결과 화면 도달
+  useEffect(() => {
+    try { Analytics.impression({ log_name: 'fortune_result_view' }); } catch (_) { /* noop */ }
+  }, []);
+
   // 배너 광고 부착 (fullResult 변경 시 ref가 새 DOM으로 이동하므로 재부착 필요)
   const hasFullResult = !!fullResult;
   useEffect(() => {
@@ -349,6 +355,7 @@ export function ResultStep({
     setLoadingFull(true);
     haptic();
     trackFullFortuneClicked();
+    try { Analytics.click({ log_name: 'hidden_fortune_unlock' }); } catch (_) { /* noop */ }
     // 광고와 운세 로딩을 동시에 시작 → 광고 끝나면 바로 결과 표시
     await Promise.all([showInterstitial(), onLoadFull()]);
     setLoadingFull(false);
