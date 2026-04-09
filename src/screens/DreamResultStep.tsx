@@ -12,6 +12,7 @@ type Props = {
   userName?: string;
   onRestart: () => void;
   onHome: () => void;
+  onGoFortune?: () => void;
 };
 
 const TYPE_STYLE: Record<DreamResult['type'], { bg: string; color: string; emoji: string }> = {
@@ -20,7 +21,7 @@ const TYPE_STYLE: Record<DreamResult['type'], { bg: string; color: string; emoji
   중립: { bg: 'rgba(100, 116, 139, 0.12)', color: '#475569', emoji: '🌙' },
 };
 
-export function DreamResultStep({ result, userName, onRestart, onHome }: Props) {
+export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortune }: Props) {
   const hasSaju = !!result.interpretation.sajuLinked;
   const [tab, setTab] = useState<Tab>('traditional');
   const [unlocked, setUnlocked] = useState(false);
@@ -174,24 +175,42 @@ export function DreamResultStep({ result, userName, onRestart, onHome }: Props) 
         </div>
       )}
 
-      {/* 사주 결합 안내 (사주 없는 경우) */}
+      {/* 사주 결합 안내 (사주 없는 경우) → 클릭 시 사주풀이로 이동 */}
       {!hasSaju && (
-        <div
+        <button
+          type="button"
+          onClick={() => {
+            if (!onGoFortune) return;
+            haptic();
+            onGoFortune();
+          }}
           className="premium-card"
           style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            width: '100%',
             padding: 14,
             marginBottom: 16,
-            background: 'linear-gradient(135deg, rgba(201, 169, 98, 0.08) 0%, rgba(255,255,255,0.95) 100%)',
-            border: '1px dashed rgba(201, 169, 98, 0.4)',
+            background: 'linear-gradient(135deg, rgba(201, 169, 98, 0.10) 0%, rgba(255,255,255,0.95) 100%)',
+            border: '1px dashed rgba(201, 169, 98, 0.45)',
+            cursor: onGoFortune ? 'pointer' : 'default',
+            textAlign: 'left',
+            fontFamily: 'inherit',
           }}
         >
-          <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: 'var(--gold-600)' }}>
-            🔮 더 정확한 해석을 원하시나요?
-          </p>
-          <p style={{ margin: 0, fontSize: 12, color: 'var(--navy-400)', lineHeight: 1.55 }}>
-            "오늘의 사주풀이"를 먼저 보고 오시면, 일주의 깊은 흐름과 결합한 개인화 꿈해몽을 받을 수 있어요.
-          </p>
-        </div>
+          <div style={{ flex: 1 }}>
+            <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: 'var(--gold-600)' }}>
+              🔮 더 정확한 해석을 원하시나요?
+            </p>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--navy-400)', lineHeight: 1.55 }}>
+              "오늘의 사주풀이"를 먼저 보고 오시면, 일주의 깊은 흐름과 결합한 개인화 꿈해몽을 받을 수 있어요.
+            </p>
+          </div>
+          {onGoFortune && (
+            <span style={{ fontSize: 18, color: 'var(--gold-600)', flexShrink: 0 }}>→</span>
+          )}
+        </button>
       )}
 
       {/* 배너 광고 */}

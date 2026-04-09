@@ -466,6 +466,10 @@ export default function App() {
           userName={info.name || undefined}
           onRestart={() => { setDreamResult(null); setStep('dream-input'); }}
           onHome={restart}
+          onGoFortune={() => {
+            setDreamResult(null);
+            handleFeatureSelect('fortune');
+          }}
         />
       )}
 
