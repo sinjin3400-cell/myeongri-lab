@@ -71,6 +71,8 @@ export interface ZodiacAnimal {
 export interface ZodiacInput {
   name: string;
   birthYear: string;  // YYYY
+  birthMonth?: string; // MM (선택, 음력 설 보정용)
+  birthDay?: string;   // DD (선택)
   gender: Gender | '';
 }
 

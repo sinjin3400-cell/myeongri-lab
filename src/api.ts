@@ -1,6 +1,6 @@
 import type { FortuneResult, FortuneHighlight, FortuneCategory, FortunePeriod, UserInfo, ZodiacInput, ZodiacResult, CompatInput, CompatResult } from './types';
 import { calculateSaju, analyzeOhaeng, getTodayDayPillar } from './utils/saju';
-import { getZodiacAnimal } from './utils/zodiac';
+import { getZodiacAnimal, getZodiacByDate } from './utils/zodiac';
 import { MBTI_PROFILES } from './data/mbtiProfiles';
 
 const MBTI_TYPES = [
@@ -394,12 +394,14 @@ ${saju.time ? `- 시주: ${saju.time.cheonganHanja}${saju.time.jijiHanja} (${saj
 
 export async function requestZodiacFortune(input: ZodiacInput): Promise<ZodiacResult> {
   const today = new Date().toISOString().slice(0, 10);
-  const cacheKey = `zodiac:${input.name}:${input.birthYear}:${input.gender}:${today}`;
+  const year = parseInt(input.birthYear, 10);
+  const monthN = input.birthMonth ? parseInt(input.birthMonth, 10) : undefined;
+  const dayN = input.birthDay ? parseInt(input.birthDay, 10) : undefined;
+  const zodiacInfo = getZodiacByDate(year, monthN, dayN);
+  const animal = zodiacInfo.animal;
+  const cacheKey = `zodiac:${animal.name}:${today}`;
   const cached = getCache<ZodiacResult>(cacheKey);
   if (cached) return cached;
-
-  const year = parseInt(input.birthYear, 10);
-  const animal = getZodiacAnimal(year);
   const todayPillar = getTodayDayPillar();
   const gender = input.gender === 'male' ? '남성' : input.gender === 'female' ? '여성' : '기타';
 

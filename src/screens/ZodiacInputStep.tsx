@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { haptic } from '../utils/haptic';
 import { trackEvent } from '../utils/analytics';
-import { ZODIAC_ANIMALS, getRepresentativeYear, getZodiacYears } from '../utils/zodiac';
+import { getZodiacByDate } from '../utils/zodiac';
 import { LogoMark } from '../components/LogoMark';
 import type { ZodiacInput, Gender } from '../types';
 
@@ -13,20 +13,44 @@ type Props = {
 };
 
 export function ZodiacInputStep({ value, onChange, onNext, onBack }: Props) {
-  const [selectedAnimal, setSelectedAnimal] = useState<string | null>(() => {
-    if (!value.birthYear) return null;
-    const y = parseInt(value.birthYear, 10);
-    if (isNaN(y)) return null;
-    const idx = ((y - 4) % 12 + 12) % 12;
-    return ZODIAC_ANIMALS[idx]?.name ?? null;
-  });
+  const [touched, setTouched] = useState(false);
+  const [month, setMonth] = useState<string>(value.birthMonth ?? '');
+  const [day, setDay] = useState<string>(value.birthDay ?? '');
 
-  const canSubmit = value.name.trim().length >= 1 && selectedAnimal !== null && value.gender !== '';
+  const yearNum = parseInt(value.birthYear, 10);
+  const monthNum = parseInt(month, 10);
+  const dayNum = parseInt(day, 10);
+  const isValidYear = !isNaN(yearNum) && yearNum >= 1930 && yearNum <= 2010;
+  const isValidMonth = !isNaN(monthNum) && monthNum >= 1 && monthNum <= 12;
+  const isValidDay = !isNaN(dayNum) && dayNum >= 1 && dayNum <= 31;
 
-  const handleAnimalSelect = (animalName: string) => {
-    haptic();
-    setSelectedAnimal(animalName);
-    onChange({ ...value, birthYear: String(getRepresentativeYear(animalName)) });
+  // 1~2월생인데 월/일 미입력 → 안내 필요
+  const needsLunarPrompt = isValidYear && (!isValidMonth || !isValidDay);
+  const showLunarHelper = isValidYear; // 항상 월/일 입력 권장
+
+  const zodiacInfo = isValidYear
+    ? getZodiacByDate(
+        yearNum,
+        isValidMonth ? monthNum : undefined,
+        isValidMonth && isValidDay ? dayNum : undefined,
+      )
+    : null;
+
+  const canSubmit = value.name.trim().length >= 1 && isValidYear && value.gender !== '';
+
+  const handleYearChange = (raw: string) => {
+    const digits = raw.replace(/\D/g, '').slice(0, 4);
+    onChange({ ...value, birthYear: digits });
+  };
+  const handleMonthChange = (raw: string) => {
+    const digits = raw.replace(/\D/g, '').slice(0, 2);
+    setMonth(digits);
+    onChange({ ...value, birthMonth: digits });
+  };
+  const handleDayChange = (raw: string) => {
+    const digits = raw.replace(/\D/g, '').slice(0, 2);
+    setDay(digits);
+    onChange({ ...value, birthDay: digits });
   };
 
   return (
@@ -50,19 +74,19 @@ export function ZodiacInputStep({ value, onChange, onNext, onBack }: Props) {
       {/* 안내 문구 */}
       <div
         className="premium-card gold-accent animate-slide-up"
-        style={{ marginBottom: 24, padding: '18px 20px' }}
+        style={{ marginBottom: 28, padding: '18px 20px' }}
       >
         <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: 'var(--navy-700)', lineHeight: 1.6 }}>
-          🐲 내 띠를 선택해주세요!
+          🐲 태어난 해를 알려주시면
           <br />
           <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--navy-400)' }}>
-            12간지 중 본인의 띠를 골라주시면 오늘의 운세를 풀어드릴게요.
+            오늘의 띠별 운세를 풀어드릴게요.
           </span>
         </p>
       </div>
 
       {/* 입력 폼 */}
-      <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+      <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         {/* 이름 */}
         <div>
           <label style={labelStyle}>😊 이름을 알려주세요</label>
@@ -75,52 +99,86 @@ export function ZodiacInputStep({ value, onChange, onNext, onBack }: Props) {
           />
         </div>
 
-        {/* 띠 그리드 */}
+        {/* 태어난 해 */}
         <div>
-          <label style={labelStyle}>🐯 내 띠 선택</label>
+          <label style={labelStyle}>📅 태어난 해</label>
+          <input
+            type="tel"
+            inputMode="numeric"
+            placeholder="예: 1965"
+            value={value.birthYear}
+            onChange={(e) => handleYearChange(e.target.value)}
+            onBlur={() => setTouched(true)}
+            maxLength={4}
+            style={inputStyle}
+          />
+          {touched && value.birthYear.length === 4 && !isValidYear && (
+            <p style={{ margin: '6px 0 0', fontSize: 12, color: '#e11d48' }}>
+              1930~2010년 사이로 입력해주세요
+            </p>
+          )}
+        </div>
+
+        {/* 태어난 월/일 (정확한 띠 계산용) */}
+        {showLunarHelper && (
+          <div className="animate-fade-in">
+            <label style={labelStyle}>
+              🗓️ 태어난 월·일 <span style={{ fontWeight: 500, color: 'var(--navy-300)', fontSize: 12 }}>(정확한 띠 계산)</span>
+            </label>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <input
+                type="tel"
+                inputMode="numeric"
+                placeholder="월"
+                value={month}
+                onChange={(e) => handleMonthChange(e.target.value)}
+                maxLength={2}
+                style={{ ...inputStyle, flex: 1, textAlign: 'center' }}
+              />
+              <input
+                type="tel"
+                inputMode="numeric"
+                placeholder="일"
+                value={day}
+                onChange={(e) => handleDayChange(e.target.value)}
+                maxLength={2}
+                style={{ ...inputStyle, flex: 1, textAlign: 'center' }}
+              />
+            </div>
+            <p style={{ margin: '8px 0 0', fontSize: 11.5, color: 'var(--navy-300)', lineHeight: 1.55 }}>
+              💡 1~2월에 태어나신 분은 음력 설 이전이면 띠가 한 해 전으로 바뀌어요.
+              {needsLunarPrompt && yearNum && (
+                <> 정확한 띠를 보려면 월·일을 함께 입력해주세요.</>
+              )}
+            </p>
+          </div>
+        )}
+
+        {/* 띠 미리보기 */}
+        {zodiacInfo && (
           <div
+            className="animate-fade-in"
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: 10,
+              padding: '14px 18px',
+              background: 'linear-gradient(135deg, #7c2d12 0%, #b45309 100%)',
+              borderRadius: 14,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
             }}
           >
-            {ZODIAC_ANIMALS.map((animal) => {
-              const isSelected = selectedAnimal === animal.name;
-              const years = getZodiacYears(animal.name, 4);
-              return (
-                <button
-                  key={animal.name}
-                  type="button"
-                  onClick={() => handleAnimalSelect(animal.name)}
-                  style={{
-                    padding: '14px 8px',
-                    borderRadius: 14,
-                    border: isSelected ? '2px solid var(--gold-500)' : '1.5px solid var(--navy-100)',
-                    background: isSelected
-                      ? 'linear-gradient(135deg, #7c2d12 0%, #b45309 100%)'
-                      : '#fff',
-                    color: isSelected ? '#fff' : 'var(--navy-700)',
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    transition: 'all 0.18s ease',
-                    boxShadow: isSelected ? '0 4px 14px rgba(180,83,9,0.25)' : 'none',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: 4,
-                  }}
-                >
-                  <span style={{ fontSize: 28 }}>{animal.emoji}</span>
-                  <span style={{ fontSize: 14, fontWeight: 800 }}>{animal.name}띠</span>
-                  <span style={{ fontSize: 10, fontWeight: 500, opacity: 0.75, lineHeight: 1.3 }}>
-                    {years.join(', ')}
-                  </span>
-                </button>
-              );
-            })}
+            <span style={{ fontSize: 36 }}>{zodiacInfo.animal.emoji}</span>
+            <div style={{ flex: 1 }}>
+              <p style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#fff' }}>
+                {zodiacInfo.animal.name}띠
+              </p>
+              <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,0.8)' }}>
+                {value.birthYear}년생
+                {zodiacInfo.adjusted && ' · 음력 설 이전 출생으로 보정됨'}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 성별 */}
         <div>
@@ -151,11 +209,11 @@ export function ZodiacInputStep({ value, onChange, onNext, onBack }: Props) {
           disabled={!canSubmit}
           onClick={() => {
             haptic();
-            trackEvent('zodiac_submit', { animal: selectedAnimal ?? '' });
+            trackEvent('zodiac_submit', { animal: zodiacInfo?.animal.name ?? '' });
             onNext();
           }}
         >
-          {selectedAnimal ? `${ZODIAC_ANIMALS.find(a => a.name === selectedAnimal)?.emoji} ${selectedAnimal}띠 운세 보기` : '운세 보기'} ✨
+          {zodiacInfo ? `${zodiacInfo.animal.emoji} ${zodiacInfo.animal.name}띠 운세 보기` : '운세 보기'} ✨
         </button>
         <button className="btn-secondary" onClick={() => { haptic(); onBack(); }}>
           ← 홈으로 돌아가기
