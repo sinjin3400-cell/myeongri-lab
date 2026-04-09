@@ -130,18 +130,21 @@ export function HomeScreen({ onSelect }: Props) {
         <div
           style={{
             marginLeft: 'auto',
-            background: 'linear-gradient(135deg, #fbbf24, #d97706)',
-            borderRadius: 10,
-            padding: '6px 10px',
+            background: 'rgba(255, 255, 255, 0.45)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            borderRadius: 14,
+            padding: '7px 12px',
             textAlign: 'center',
-            boxShadow: '0 2px 8px rgba(251, 191, 36, 0.3)',
+            border: '1px solid rgba(255, 255, 255, 0.6)',
+            boxShadow: '0 4px 16px rgba(201, 169, 98, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.7)',
           }}
         >
-          <span style={{ fontSize: 10, fontWeight: 700, color: '#fff', display: 'block', lineHeight: 1.3 }}>
-            운세 확인하면
+          <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--navy-700)', display: 'block', lineHeight: 1.4, opacity: 0.75 }}>
+            오늘의 사주 보면
           </span>
-          <span style={{ fontSize: 13, fontWeight: 900, color: '#fff', display: 'block', lineHeight: 1.3 }}>
-            최대 1,000원
+          <span style={{ fontSize: 13, fontWeight: 900, color: 'var(--gold-600)', display: 'block', lineHeight: 1.3 }}>
+            최대 1,000원 🎁
           </span>
         </div>
       </header>
