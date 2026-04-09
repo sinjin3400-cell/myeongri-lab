@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { haptic } from '../utils/haptic';
 import { trackEvent } from '../utils/analytics';
+import { Analytics } from '@apps-in-toss/web-framework';
 import { ScoreRing } from '../components/ScoreRing';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
 import type { ZodiacResult, AppFeature } from '../types';
@@ -27,6 +28,11 @@ const CATEGORY_META: Record<string, { icon: string; gradient: string }> = {
 };
 
 export function ZodiacResultStep({ result, userName, onRestart, onHome, onSelectFeature }: Props) {
+  // 앱인토스 전환지표: 띠운세 결과 화면 도달
+  useEffect(() => {
+    try { Analytics.impression({ log_name: 'fortune_result_view', feature: 'zodiac' }); } catch (_) { /* noop */ }
+  }, []);
+
   // 하단 배너 광고
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
   const bannerRef = useRef<HTMLDivElement>(null);

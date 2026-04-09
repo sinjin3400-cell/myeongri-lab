@@ -3,6 +3,7 @@ import { haptic } from '../utils/haptic';
 import { PageHeader } from '../components/PageHeader';
 import { useInterstitialAd, useTossBanner, AD_IDS } from '../hooks/useAds';
 import { trackEvent } from '../utils/analytics';
+import { Analytics } from '@apps-in-toss/web-framework';
 import type { DreamResult } from '../types';
 
 type Tab = 'traditional' | 'psychological' | 'sajuLinked';
@@ -29,6 +30,11 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
   const { isLoaded: rewardLoaded, showAd } = useInterstitialAd(AD_IDS.REWARDED);
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
   const bannerRef = useRef<HTMLDivElement>(null);
+
+  // 앱인토스 전환지표: 꿈해몽 결과 화면 도달
+  useEffect(() => {
+    try { Analytics.impression({ log_name: 'fortune_result_view', feature: 'dream' }); } catch (_) { /* noop */ }
+  }, []);
 
   useEffect(() => {
     if (!bannerReady || !bannerRef.current) return;
