@@ -43,15 +43,18 @@ export function ZodiacResultStep({ result, userName, onRestart, onHome, onSelect
 
   const meta = CATEGORY_META[result.primaryCategory] ?? CATEGORY_META.overall;
 
-  const recommendations: { key: AppFeature; icon: string; title: string; desc: string; gradient: string; iconBg: string }[] = [
+  const recommendations: { key: AppFeature; icon: string; title: string; desc: string; gradient: string; borderColor: string; iconBg: string }[] = [
     { key: 'fortune', icon: '🔮', title: '오늘의 사주풀이', desc: '내 사주로 보는 자세한 운세',
-      gradient: 'linear-gradient(135deg, #fdfbf6 0%, #fff8e7 100%)',
+      gradient: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+      borderColor: 'rgba(202, 138, 4, 0.35)',
       iconBg: 'linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 100%)' },
     { key: 'compatibility', icon: '💞', title: '궁합 보기', desc: '소중한 사람과 나의 궁합',
-      gradient: 'linear-gradient(135deg, #fff5f7 0%, #ffe4ec 100%)',
+      gradient: 'linear-gradient(135deg, #fecdd3 0%, #fda4af 100%)',
+      borderColor: 'rgba(225, 29, 72, 0.32)',
       iconBg: 'linear-gradient(135deg, #9f1239 0%, #e11d48 100%)' },
     { key: 'dream', icon: '💭', title: '꿈해몽', desc: '간밤의 꿈 풀이 (준비 중)',
-      gradient: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)',
+      gradient: 'linear-gradient(135deg, #c7d2fe 0%, #a5b4fc 100%)',
+      borderColor: 'rgba(67, 56, 202, 0.38)',
       iconBg: 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)' },
   ];
 
@@ -230,13 +233,13 @@ export function ZodiacResultStep({ result, userName, onRestart, onHome, onSelect
                 gap: 14,
                 padding: '16px 18px',
                 background: rec.gradient,
-                border: '1px solid rgba(201, 169, 98, 0.18)',
+                border: `1.5px solid ${rec.borderColor}`,
                 borderRadius: 18,
                 cursor: 'pointer',
                 fontFamily: 'inherit',
                 textAlign: 'left',
                 transition: 'all 0.2s ease',
-                boxShadow: '0 2px 6px rgba(30,41,59,0.04), 0 8px 20px rgba(30,41,59,0.05)',
+                boxShadow: '0 3px 10px rgba(30,41,59,0.10), 0 12px 28px rgba(30,41,59,0.10)',
               }}
             >
               <span
