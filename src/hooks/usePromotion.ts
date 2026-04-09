@@ -1,8 +1,8 @@
 import { useCallback, useRef } from 'react';
 import { grantPromotionReward } from '@apps-in-toss/web-framework';
 
-// 프로모션 코드 (앱인토스 콘솔에서 프로모션 승인 후 실제 코드로 교체 필요)
-const PROMOTION_CODE = 'MYEONGRI_FORTUNE';
+// 프로모션 코드 (테스트 완료 후 실제 코드로 교체: 01KNB2A4MNJDVJWVRRKGK4QFK7)
+const PROMOTION_CODE = 'TEST_01KNB2A4MNJDVJWVRRKGK4QFK7';
 
 /**
  * 확률 기반 포인트 금액 결정
