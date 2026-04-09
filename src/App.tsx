@@ -297,7 +297,7 @@ export default function App() {
         <HomeScreen onSelect={handleFeatureSelect} />
       )}
       {step === 'info' && (
-        <InfoStep value={info} onChange={setInfo} onNext={goNextFromInfo} />
+        <InfoStep value={info} onChange={setInfo} onNext={goNextFromInfo} onHome={restart} />
       )}
       {step === 'mbti' && (
         <MbtiStep

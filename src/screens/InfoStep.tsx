@@ -11,6 +11,7 @@ type Props = {
   value: UserInfo;
   onChange: (v: UserInfo) => void;
   onNext: () => void;
+  onHome?: () => void;
 };
 
 function digitsOnly(s: string): string {
@@ -55,7 +56,7 @@ function formatSijinLine(v: UserInfo): string {
   return '';
 }
 
-export function InfoStep({ value, onChange, onNext }: Props) {
+export function InfoStep({ value, onChange, onNext, onHome }: Props) {
   const genderFirstRef = useRef<HTMLButtonElement>(null);
 
   // 배너 광고
@@ -304,6 +305,15 @@ export function InfoStep({ value, onChange, onNext }: Props) {
         >
           내 운세 보러 가기 →
         </button>
+        {onHome && (
+          <button
+            className="btn-secondary"
+            onClick={() => { haptic(); onHome(); }}
+            style={{ marginTop: 10 }}
+          >
+            ← 홈으로 돌아가기
+          </button>
+        )}
 
         {/* 배너 광고 */}
         <div
