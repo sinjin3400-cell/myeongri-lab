@@ -3,12 +3,13 @@ import { haptic } from '../utils/haptic';
 import { trackEvent } from '../utils/analytics';
 import { ScoreRing } from '../components/ScoreRing';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
-import type { CompatResult } from '../types';
+import type { CompatResult, AppFeature } from '../types';
 
 type Props = {
   result: CompatResult;
   onRestart: () => void;
   onHome: () => void;
+  onSelectFeature?: (feature: AppFeature) => void;
 };
 
 type CardKey = 'overall' | 'love' | 'money' | 'communication';
@@ -20,7 +21,19 @@ const CARD_META: { key: CardKey; icon: string; title: string; gradient: string }
   { key: 'communication', icon: '💬', title: '소통 궁합', gradient: 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)' },
 ];
 
-export function CompatResultStep({ result, onRestart, onHome }: Props) {
+export function CompatResultStep({ result, onRestart, onHome, onSelectFeature }: Props) {
+  const recommendations: { key: AppFeature; icon: string; title: string; desc: string; gradient: string; iconBg: string }[] = [
+    { key: 'fortune', icon: '🔮', title: '오늘의 사주풀이', desc: '내 사주로 보는 자세한 운세',
+      gradient: 'linear-gradient(135deg, #fdfbf6 0%, #fff8e7 100%)',
+      iconBg: 'linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 100%)' },
+    { key: 'zodiac', icon: '🐲', title: '띠별 운세', desc: '내 띠로 보는 오늘의 운세',
+      gradient: 'linear-gradient(135deg, #fefce8 0%, #fef3c7 100%)',
+      iconBg: 'linear-gradient(135deg, #854d0e 0%, #ca8a04 100%)' },
+    { key: 'dream', icon: '💭', title: '꿈해몽', desc: '간밤의 꿈 풀이 (준비 중)',
+      gradient: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)',
+      iconBg: 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)' },
+  ];
+
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
 
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
@@ -287,6 +300,60 @@ export function CompatResultStep({ result, onRestart, onHome }: Props) {
           </p>
         </div>
       )}
+
+      {/* 다른 기능 추천 CTA */}
+      <div className="animate-slide-up" style={{ marginTop: 24, animationDelay: '0.45s' }}>
+        <p style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: 'var(--navy-600)', textAlign: 'center' }}>
+          ✨ 명리연구소의 다른 기능도 만나보세요
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {recommendations.map((rec) => (
+            <button
+              key={rec.key}
+              type="button"
+              onClick={() => {
+                haptic();
+                trackEvent('compat_cta_click', { feature: rec.key });
+                if (onSelectFeature) onSelectFeature(rec.key);
+                else onHome();
+              }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 14,
+                padding: '16px 18px',
+                background: rec.gradient,
+                border: '1px solid rgba(201, 169, 98, 0.18)',
+                borderRadius: 18,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                textAlign: 'left',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 6px rgba(30,41,59,0.04), 0 8px 20px rgba(30,41,59,0.05)',
+              }}
+            >
+              <span
+                style={{
+                  width: 42, height: 42, borderRadius: 12,
+                  background: rec.iconBg,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 22, flexShrink: 0,
+                  boxShadow: '0 2px 8px rgba(30,41,59,0.18)',
+                }}
+              >
+                {rec.icon}
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--navy-700)' }}>
+                  {rec.title}
+                </p>
+                <p style={{ margin: '2px 0 0', fontSize: 12, fontWeight: 500, color: 'var(--navy-400)' }}>
+                  {rec.desc}
+                </p>
+              </div>
+              <span style={{ fontSize: 18, color: 'var(--gold-600, #b08c47)', fontWeight: 700 }}>›</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* 하단 배너 광고 */}
       <div

@@ -406,6 +406,10 @@ export default function App() {
           result={compatResult}
           onRestart={() => { setCompatResult(null); setStep('compat-input'); }}
           onHome={restart}
+          onSelectFeature={(feature) => {
+            setCompatResult(null);
+            handleFeatureSelect(feature);
+          }}
         />
       )}
     </>

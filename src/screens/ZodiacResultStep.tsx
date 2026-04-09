@@ -43,10 +43,16 @@ export function ZodiacResultStep({ result, userName, onRestart, onHome, onSelect
 
   const meta = CATEGORY_META[result.primaryCategory] ?? CATEGORY_META.overall;
 
-  const recommendations: { key: AppFeature; icon: string; title: string; desc: string }[] = [
-    { key: 'fortune', icon: '🔮', title: '오늘의 사주풀이', desc: '내 사주로 보는 자세한 운세' },
-    { key: 'compatibility', icon: '💞', title: '궁합 보기', desc: '소중한 사람과 나의 궁합' },
-    { key: 'dream', icon: '💭', title: '꿈해몽', desc: '간밤의 꿈 풀이 (준비 중)' },
+  const recommendations: { key: AppFeature; icon: string; title: string; desc: string; gradient: string; iconBg: string }[] = [
+    { key: 'fortune', icon: '🔮', title: '오늘의 사주풀이', desc: '내 사주로 보는 자세한 운세',
+      gradient: 'linear-gradient(135deg, #fdfbf6 0%, #fff8e7 100%)',
+      iconBg: 'linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 100%)' },
+    { key: 'compatibility', icon: '💞', title: '궁합 보기', desc: '소중한 사람과 나의 궁합',
+      gradient: 'linear-gradient(135deg, #fff5f7 0%, #ffe4ec 100%)',
+      iconBg: 'linear-gradient(135deg, #9f1239 0%, #e11d48 100%)' },
+    { key: 'dream', icon: '💭', title: '꿈해몽', desc: '간밤의 꿈 풀이 (준비 중)',
+      gradient: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)',
+      iconBg: 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)' },
   ];
 
   return (
@@ -222,26 +228,37 @@ export function ZodiacResultStep({ result, userName, onRestart, onHome, onSelect
                 display: 'flex',
                 alignItems: 'center',
                 gap: 14,
-                padding: '14px 16px',
-                background: '#fff',
-                border: '1.5px solid var(--navy-100)',
-                borderRadius: 14,
+                padding: '16px 18px',
+                background: rec.gradient,
+                border: '1px solid rgba(201, 169, 98, 0.18)',
+                borderRadius: 18,
                 cursor: 'pointer',
                 fontFamily: 'inherit',
                 textAlign: 'left',
-                transition: 'all 0.18s ease',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 6px rgba(30,41,59,0.04), 0 8px 20px rgba(30,41,59,0.05)',
               }}
             >
-              <span style={{ fontSize: 26 }}>{rec.icon}</span>
-              <div style={{ flex: 1 }}>
+              <span
+                style={{
+                  width: 42, height: 42, borderRadius: 12,
+                  background: rec.iconBg,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 22, flexShrink: 0,
+                  boxShadow: '0 2px 8px rgba(30,41,59,0.18)',
+                }}
+              >
+                {rec.icon}
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--navy-700)' }}>
                   {rec.title}
                 </p>
-                <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: 'var(--navy-400)' }}>
+                <p style={{ margin: '2px 0 0', fontSize: 12, fontWeight: 500, color: 'var(--navy-400)' }}>
                   {rec.desc}
                 </p>
               </div>
-              <span style={{ fontSize: 16, color: 'var(--navy-300)' }}>›</span>
+              <span style={{ fontSize: 18, color: 'var(--gold-600, #b08c47)', fontWeight: 700 }}>›</span>
             </button>
           ))}
         </div>
