@@ -127,6 +127,23 @@ export function HomeScreen({ onSelect }: Props) {
             AI 사주 × MBTI 운세
           </p>
         </div>
+        <div
+          style={{
+            marginLeft: 'auto',
+            background: 'linear-gradient(135deg, #fbbf24, #d97706)',
+            borderRadius: 10,
+            padding: '6px 10px',
+            textAlign: 'center',
+            boxShadow: '0 2px 8px rgba(251, 191, 36, 0.3)',
+          }}
+        >
+          <span style={{ fontSize: 10, fontWeight: 700, color: '#fff', display: 'block', lineHeight: 1.3 }}>
+            운세 확인하면
+          </span>
+          <span style={{ fontSize: 13, fontWeight: 900, color: '#fff', display: 'block', lineHeight: 1.3 }}>
+            최대 1,000원
+          </span>
+        </div>
       </header>
 
       {/* 날짜 */}
