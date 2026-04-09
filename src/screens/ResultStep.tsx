@@ -21,6 +21,7 @@ type Props = {
   onChangePeriod: (p: FortunePeriod) => void;
   onRestart: () => void;
   onTomorrow: () => void;
+  onGoDream?: () => void;
 };
 
 type FortuneSection = {
@@ -305,6 +306,7 @@ export function ResultStep({
   onChangePeriod,
   onRestart,
   onTomorrow,
+  onGoDream,
 }: Props) {
   const [showShare, setShowShare] = useState(false);
   const [loadingFull, setLoadingFull] = useState(false);
@@ -696,6 +698,41 @@ export function ResultStep({
         </svg>
         ✨ 친구에게 운세 공유하기
       </button>
+
+      {/* 꿈해몽 크로스 진입 카드 (사주 정보 유지된 채로 이동) */}
+      {onGoDream && (
+        <button
+          type="button"
+          onClick={() => { haptic(); onGoDream(); }}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 14,
+            padding: '16px 18px',
+            marginBottom: 14,
+            background: 'linear-gradient(135deg, #2d1b69 0%, #4a2d8a 100%)',
+            border: 'none',
+            borderRadius: 16,
+            color: '#fff',
+            cursor: 'pointer',
+            textAlign: 'left',
+            fontFamily: 'inherit',
+            boxShadow: '0 4px 14px rgba(124, 58, 237, 0.25)',
+          }}
+        >
+          <span style={{ fontSize: 28 }}>🌙</span>
+          <span style={{ flex: 1 }}>
+            <span style={{ display: 'block', fontSize: 14, fontWeight: 800, marginBottom: 2 }}>
+              꿈해몽도 보러가실래요?
+            </span>
+            <span style={{ display: 'block', fontSize: 11, color: 'rgba(255,255,255,0.75)', lineHeight: 1.5 }}>
+              지금 본 사주 정보가 자동으로 결합돼서<br />더 정확한 꿈 풀이를 받을 수 있어요 ✨
+            </span>
+          </span>
+          <span style={{ fontSize: 18, color: 'rgba(255,255,255,0.8)' }}>→</span>
+        </button>
+      )}
 
       {/* 배너 광고 (fullResult 없을 때 하단 표시) */}
       {!fullResult && (

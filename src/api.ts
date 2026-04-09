@@ -1,4 +1,5 @@
-import type { FortuneResult, FortuneHighlight, FortuneCategory, FortunePeriod, UserInfo, ZodiacInput, ZodiacResult, CompatInput, CompatResult } from './types';
+import type { FortuneResult, FortuneHighlight, FortuneCategory, FortunePeriod, UserInfo, ZodiacInput, ZodiacResult, CompatInput, CompatResult, DreamInput, DreamResult } from './types';
+import { normalizeKeywords, buildLottoSets } from './utils/lottoFromKeywords';
 import { calculateSaju, analyzeOhaeng, getTodayDayPillar } from './utils/saju';
 import { getZodiacAnimal, getZodiacByDate } from './utils/zodiac';
 import { MBTI_PROFILES } from './data/mbtiProfiles';
@@ -552,4 +553,99 @@ ${FRIENDLY_TONE}
 
   setCache(cacheKey, result);
   return result;
+}
+
+// ============================================================
+// 꿈해몽
+// ============================================================
+
+/**
+ * 꿈해몽 분석. userInfo가 채워져 있고 input.useSaju=true면 사주 결합 해석을 시도한다.
+ * 캐싱은 의도적으로 적용하지 않음(같은 꿈을 다시 풀이할 일이 거의 없음).
+ */
+export async function requestDreamInterpretation(
+  input: DreamInput,
+  userInfo?: UserInfo | null,
+): Promise<DreamResult> {
+  const trimmed = input.text.trim();
+  if (!trimmed) throw new Error('꿈 내용을 입력해 주세요.');
+
+  const sajuFilled = !!(userInfo && userInfo.name && userInfo.birthDate);
+  const useSaju = !!input.useSaju && sajuFilled;
+
+  let sajuBlock = '';
+  if (useSaju && userInfo) {
+    const saju = calculateSaju(userInfo.birthDate, userInfo.birthSijin);
+    const ohaeng = analyzeOhaeng(saju.ohaengBalance);
+    const todayPillar = getTodayDayPillar();
+    sajuBlock = `\n\n## 사주 정보 (참고용, 한자/오행 용어는 출력에 노출 금지)
+- 이름: ${userInfo.name}
+- 일주: ${saju.summary}
+- 오행 균형: ${ohaeng}
+- 오늘 일진: ${todayPillar.cheonganHanja}${todayPillar.jijiHanja}
+위 정보를 바탕으로 "interpretation.sajuLinked" 필드에 이 사람의 사주 흐름과 꿈을 연결한 개인화 해석(2~3문장)을 작성하세요.`;
+  }
+
+  const systemPrompt = `당신은 한국 전통 해몽과 융 심리학을 모두 깊이 이해하는 "명리연구소"의 꿈 해석 전문가입니다.
+
+${FRIENDLY_TONE}
+
+## 핵심 원칙
+1. 따뜻하고 친근한 존댓말 ("~할 수 있어요", "~의 의미일 수 있어요").
+2. 단정짓지 마세요. 흉몽이어도 희망적 조언과 함께 전달하세요. 공포심 조장 금지.
+3. 꿈에서 핵심 명사(사물·동물·장소·인물·행위)를 3~5개 추출합니다.
+4. 각 키워드마다 한국 전통 꿈풀이 사물별 번호 사전(예: 고래·물·돈·불 등)에 근거해 1~45 사이 로또 번호를 2~3개 배정하고, 그 근거를 한 줄로 설명합니다.
+5. 모든 로또 번호는 1 이상 45 이하 정수만 허용. 한 키워드 안에서 중복 금지.
+6. 한자/오행 용어를 직접 노출하지 마세요. 사주 정보가 있으면 자연스럽게 풀어 설명만 하세요.
+7. 반드시 아래 JSON 형식으로만 응답하세요. 다른 필드 추가 금지.
+
+## 출력 JSON 형식
+{
+  "summary": "한 줄 요약 (20자 이내, 이모지 1개 가능)",
+  "type": "길몽" | "흉몽" | "중립",
+  "interpretation": {
+    "traditional": "한국 전통 해몽 관점 풀이 (3~4문장)",
+    "psychological": "융/현대 심리학 관점 풀이 (2~3문장)",
+    "sajuLinked": "사주 결합 개인화 해석 (사주 정보가 주어졌을 때만, 2~3문장)"
+  },
+  "advice": "오늘의 조언 한 문장 (따뜻한 응원 톤)",
+  "keywords": [
+    {
+      "word": "고래",
+      "numbers": [7, 23],
+      "reason": "전통 꿈풀이에서 큰 동물·풍요의 상징, 7은 행운수와 연결돼요"
+    }
+  ]
+}`;
+
+  const userPrompt = `## 꿈 내용
+${trimmed}${sajuBlock}
+
+위 꿈을 위 JSON 형식으로 해석해 주세요. 키워드 3~5개 추출, 각 키워드당 로또 번호 2~3개 배정 필수.`;
+
+  const raw = await callFortuneApi(systemPrompt, userPrompt, {
+    type: 'dream',
+    useSaju,
+  }) as Partial<DreamResult> & { keywords?: DreamResult['keywords'] };
+
+  // --- 응답 검증/보정 ---
+  const safeType: DreamResult['type'] =
+    raw.type === '길몽' || raw.type === '흉몽' || raw.type === '중립' ? raw.type : '중립';
+
+  const normalizedKeywords = normalizeKeywords(raw.keywords ?? []);
+  const luckyNumbers = buildLottoSets(normalizedKeywords);
+
+  return {
+    summary: raw.summary || '꿈의 메시지를 살펴봤어요',
+    type: safeType,
+    interpretation: {
+      traditional: raw.interpretation?.traditional || '',
+      psychological: raw.interpretation?.psychological || '',
+      sajuLinked: useSaju ? raw.interpretation?.sajuLinked : undefined,
+    },
+    advice: raw.advice || '오늘 하루도 평안하시길 바라요.',
+    keywords: normalizedKeywords,
+    luckyNumbers,
+    sajuLinked: useSaju && !!raw.interpretation?.sajuLinked,
+  };
 }

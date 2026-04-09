@@ -6,9 +6,9 @@ import {
   trackPeriodChanged, trackTomorrowClicked, trackRestart,
   setUserProperties, trackEvent,
 } from './utils/analytics';
-import type { FortuneResult, FortuneHighlight, FortuneCategory, FortunePeriod, Step, UserInfo, ZodiacInput, ZodiacResult, CompatInput, CompatResult } from './types';
+import type { FortuneResult, FortuneHighlight, FortuneCategory, FortunePeriod, Step, UserInfo, ZodiacInput, ZodiacResult, CompatInput, CompatResult, DreamInput, DreamResult } from './types';
 import type { MbtiType } from './api';
-import { requestFortuneHighlight, requestFortuneFull, requestZodiacFortune, requestCompatibility } from './api';
+import { requestFortuneHighlight, requestFortuneFull, requestZodiacFortune, requestCompatibility, requestDreamInterpretation } from './api';
 import { HomeScreen } from './screens/HomeScreen';
 import { InfoStep } from './screens/InfoStep';
 import { MbtiStep } from './screens/MbtiStep';
@@ -18,6 +18,8 @@ import { ZodiacInputStep } from './screens/ZodiacInputStep';
 import { ZodiacResultStep } from './screens/ZodiacResultStep';
 import { CompatInputStep } from './screens/CompatInputStep';
 import { CompatResultStep } from './screens/CompatResultStep';
+import { DreamInputStep } from './screens/DreamInputStep';
+import { DreamResultStep } from './screens/DreamResultStep';
 import { SimpleLoadingStep } from './screens/SimpleLoadingStep';
 import { SharedResultView } from './screens/SharedResultView';
 import { decodeShareData, decodeShareDataCompact, sharedDataToHighlight } from './utils/shareUrl';
@@ -101,6 +103,10 @@ export default function App() {
     person2: { name: '', birthYear: '', gender: '' },
   });
   const [compatResult, setCompatResult] = useState<CompatResult | null>(null);
+
+  // 꿈해몽 상태
+  const [dreamInput, setDreamInput] = useState<DreamInput>({ text: '', useSaju: true });
+  const [dreamResult, setDreamResult] = useState<DreamResult | null>(null);
 
   const goNextFromInfo = useCallback(() => {
     haptic();
@@ -213,6 +219,8 @@ export default function App() {
     setZodiacResult(null);
     setCompatInput({ person1: { name: '', birthYear: '', gender: '' }, person2: { name: '', birthYear: '', gender: '' } });
     setCompatResult(null);
+    setDreamInput({ text: '', useSaju: true });
+    setDreamResult(null);
     setStep('home');
   }, []);
 
@@ -226,6 +234,9 @@ export default function App() {
     } else if (feature === 'compatibility') {
       trackStepView('compat-input');
       setStep('compat-input');
+    } else if (feature === 'dream') {
+      trackStepView('dream-input');
+      setStep('dream-input');
     }
   }, []);
 
@@ -245,6 +256,23 @@ export default function App() {
       setStep('error');
     }
   }, [zodiacInput]);
+
+  // --- 꿈해몽 ---
+  const runDream = useCallback(async () => {
+    trackEvent('dream_analysis_start', { useSaju: dreamInput.useSaju, length: dreamInput.text.length });
+    try {
+      const data = await requestDreamInterpretation(dreamInput, info);
+      setDreamResult(data);
+      trackEvent('dream_analysis_complete', { type: data.type, sajuLinked: data.sajuLinked });
+      setStep('dream-result');
+      haptic();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '꿈 해석에 실패했어요.';
+      trackEvent('dream_analysis_error', { error: msg });
+      setLoadError(msg);
+      setStep('error');
+    }
+  }, [dreamInput, info]);
 
   // --- 궁합보기 ---
   const runCompat = useCallback(async () => {
@@ -340,6 +368,12 @@ export default function App() {
           onChangePeriod={handleChangePeriod}
           onRestart={restart}
           onTomorrow={handleTomorrow}
+          onGoDream={() => {
+            // info를 유지한 채로 꿈해몽으로 이동 → 사주 결합 모드 자동 활성
+            trackStepView('dream-input');
+            setDreamInput({ text: '', useSaju: true });
+            setStep('dream-input');
+          }}
         />
       )}
 
@@ -401,6 +435,40 @@ export default function App() {
           onRun={runCompat}
         />
       )}
+      {/* 꿈해몽 */}
+      {step === 'dream-input' && (
+        <DreamInputStep
+          value={dreamInput}
+          onChange={setDreamInput}
+          onNext={() => { setLoadError(null); setStep('dream-loading'); }}
+          onBack={restart}
+          hasSajuInfo={!!(info.name && info.birthDate)}
+          userInfo={info}
+        />
+      )}
+      {step === 'dream-loading' && (
+        <SimpleLoadingStep
+          title="꿈을 풀이하고 있어요..."
+          messages={[
+            '🌙 꿈 속 상징을 살펴보고 있어요',
+            '📖 한국 전통 해몽 사전을 펼치고 있어요',
+            '✨ 사주 정보가 있으면 더 정확해져요',
+            '🔮 숨겨진 운세까지 보면 일주의 깊은 의미가 더해져요',
+            '🔑 꿈 속 키워드를 뽑고 있어요',
+            '🎰 행운의 번호를 정리하고 있어요',
+          ]}
+          onRun={runDream}
+        />
+      )}
+      {step === 'dream-result' && dreamResult && (
+        <DreamResultStep
+          result={dreamResult}
+          userName={info.name || undefined}
+          onRestart={() => { setDreamResult(null); setStep('dream-input'); }}
+          onHome={restart}
+        />
+      )}
+
       {step === 'compat-result' && compatResult && (
         <CompatResultStep
           result={compatResult}

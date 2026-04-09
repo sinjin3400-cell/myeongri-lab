@@ -5,7 +5,8 @@ export type Gender = 'male' | 'female' | 'other';
 export type Step =
   | 'home' | 'info' | 'mbti' | 'loading' | 'error' | 'result'
   | 'zodiac-input' | 'zodiac-loading' | 'zodiac-result'
-  | 'compat-input' | 'compat-loading' | 'compat-result';
+  | 'compat-input' | 'compat-loading' | 'compat-result'
+  | 'dream-input' | 'dream-loading' | 'dream-result';
 
 export type AppFeature = 'fortune' | 'dream' | 'zodiac' | 'compatibility';
 
@@ -129,4 +130,51 @@ export interface CompatResult {
   money: string;                // 재물 궁합
   communication: string;        // 소통 궁합
   advice: string;               // 관계 조언
+}
+
+// --- 꿈해몽 ---
+
+export interface DreamInput {
+  /** 꿈 내용 자유서술 */
+  text: string;
+  /** 사주 결합 해석 사용 여부 */
+  useSaju: boolean;
+}
+
+export type DreamType = '길몽' | '흉몽' | '중립';
+
+export interface DreamKeyword {
+  /** 꿈에서 추출한 핵심 단어 (예: "고래") */
+  word: string;
+  /** 이 키워드에 배정된 1~45 로또 번호 (2~3개) */
+  numbers: number[];
+  /** 한국 전통 해몽 근거 한 줄 */
+  reason: string;
+}
+
+export interface DreamInterpretation {
+  /** 전통 해몽 관점 */
+  traditional: string;
+  /** 심리학적 관점 */
+  psychological: string;
+  /** 사주 결합 개인화 해석 (사주 입력 시에만) */
+  sajuLinked?: string;
+}
+
+export interface DreamResult {
+  /** 한 줄 요약 */
+  summary: string;
+  /** 길몽/흉몽/중립 */
+  type: DreamType;
+  interpretation: DreamInterpretation;
+  /** 오늘의 조언 한 문장 */
+  advice: string;
+  keywords: DreamKeyword[];
+  /**
+   * 5세트의 로또 번호 (각 세트 6개, 1~45, 중복 없음, 정렬)
+   * [0]은 무료 공개, [1~4]는 리워드 광고 후 공개
+   */
+  luckyNumbers: number[][];
+  /** 사주 결합이 실제로 적용되었는지 */
+  sajuLinked: boolean;
 }

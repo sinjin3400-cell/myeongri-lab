@@ -39,8 +39,8 @@ const FEATURES: {
     description: '간밤의 꿈이 알려주는 메시지\n행운의 로또번호까지!',
     gradient: 'linear-gradient(135deg, #2d1b69 0%, #4a2d8a 100%)',
     accentColor: '#a78bfa',
-    ready: false,
-    tag: '준비 중',
+    ready: true,
+    tag: 'NEW',
   },
   {
     key: 'zodiac',
