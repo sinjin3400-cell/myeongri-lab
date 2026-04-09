@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { haptic } from '../utils/haptic';
 import { PageHeader } from '../components/PageHeader';
-import { useInterstitialAd, AD_IDS } from '../hooks/useAds';
+import { useInterstitialAd, useTossBanner, AD_IDS } from '../hooks/useAds';
 import { trackEvent } from '../utils/analytics';
 import type { DreamResult } from '../types';
 
@@ -26,6 +26,18 @@ export function DreamResultStep({ result, userName, onRestart, onHome }: Props) 
   const [unlocked, setUnlocked] = useState(false);
 
   const { isLoaded: rewardLoaded, showAd } = useInterstitialAd(AD_IDS.REWARDED);
+  const { isInitialized: bannerReady, attachBanner } = useTossBanner();
+  const bannerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!bannerReady || !bannerRef.current) return;
+    const attached = attachBanner(AD_IDS.BANNER, bannerRef.current, {
+      theme: 'light',
+      tone: 'blackAndWhite',
+      variant: 'card',
+    });
+    return () => { attached?.destroy(); };
+  }, [bannerReady, attachBanner]);
 
   const typeStyle = TYPE_STYLE[result.type];
 
@@ -102,39 +114,60 @@ export function DreamResultStep({ result, userName, onRestart, onHome }: Props) 
       {visibleTabs.length > 0 && (
         <div
           className="premium-card animate-slide-up"
-          style={{ padding: 0, marginBottom: 16, animationDelay: '0.05s', overflow: 'hidden' }}
+          style={{
+            padding: 0,
+            marginBottom: 16,
+            animationDelay: '0.05s',
+            overflow: 'hidden',
+            background: 'linear-gradient(160deg, #f5f0ff 0%, #ede4ff 45%, #e6dbff 100%)',
+            border: '1px solid rgba(167, 139, 250, 0.25)',
+          }}
         >
           <div
             style={{
               display: 'flex',
-              borderBottom: '1px solid rgba(0,0,0,0.06)',
+              borderBottom: '1px solid rgba(124, 58, 237, 0.12)',
+              background: 'rgba(255,255,255,0.55)',
+              backdropFilter: 'blur(6px)',
             }}
           >
-            {visibleTabs.map((t) => (
-              <button
-                key={t.key}
-                type="button"
-                onClick={() => { haptic(); setTab(t.key); }}
-                style={{
-                  flex: 1,
-                  padding: '14px 8px',
-                  border: 'none',
-                  background: tab === t.key ? 'rgba(167, 139, 250, 0.08)' : 'transparent',
-                  color: tab === t.key ? '#6b21a8' : 'var(--navy-400)',
-                  fontWeight: tab === t.key ? 800 : 600,
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  borderBottom: tab === t.key ? '2px solid #a78bfa' : '2px solid transparent',
-                  transition: 'all 0.2s',
-                }}
-              >
-                {t.label}
-              </button>
-            ))}
+            {visibleTabs.map((t) => {
+              const active = tab === t.key;
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => { haptic(); setTab(t.key); }}
+                  style={{
+                    flex: 1,
+                    padding: '14px 8px',
+                    border: 'none',
+                    background: active
+                      ? 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)'
+                      : 'transparent',
+                    color: active ? '#fff' : 'var(--navy-400)',
+                    fontWeight: active ? 800 : 600,
+                    fontSize: 13,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 5,
+                    boxShadow: active ? '0 4px 12px rgba(124, 58, 237, 0.35)' : 'none',
+                  }}
+                >
+                  {active && (
+                    <span style={{ fontSize: 11, lineHeight: 1 }}>👁</span>
+                  )}
+                  {t.label}
+                </button>
+              );
+            })}
           </div>
           <div style={{ padding: '18px 18px 20px' }}>
-            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.75, color: 'var(--navy-600)', whiteSpace: 'pre-wrap' }}>
+            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.75, color: 'var(--navy-700)', whiteSpace: 'pre-wrap' }}>
               {activeText || '해석 정보가 없어요.'}
             </p>
           </div>
@@ -161,20 +194,25 @@ export function DreamResultStep({ result, userName, onRestart, onHome }: Props) 
         </div>
       )}
 
-      {/* 조언 카드 */}
-      {result.advice && (
-        <div
-          className="premium-card gold-accent"
-          style={{ padding: '16px 18px', marginBottom: 18 }}
-        >
-          <p style={{ margin: '0 0 4px', fontSize: 11, fontWeight: 700, color: 'var(--gold-600)', letterSpacing: '0.06em' }}>
-            ✨ 오늘의 조언
-          </p>
-          <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--navy-700)', lineHeight: 1.6 }}>
-            {result.advice}
-          </p>
-        </div>
-      )}
+      {/* 배너 광고 */}
+      <div
+        ref={bannerRef}
+        style={{
+          marginBottom: 18,
+          minHeight: 80,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          border: bannerReady ? 'none' : '1.5px dashed var(--navy-200, #cbd5e1)',
+          borderRadius: 12,
+          background: bannerReady ? 'transparent' : 'rgba(0,0,0,0.02)',
+          color: 'var(--navy-300)',
+          fontSize: 12,
+          fontWeight: 600,
+        }}
+      >
+        {!bannerReady && '🎯 배너 광고 영역'}
+      </div>
 
       {/* 키워드 분석 */}
       {result.keywords.length > 0 && (
@@ -187,7 +225,11 @@ export function DreamResultStep({ result, userName, onRestart, onHome }: Props) 
               <div
                 key={kw.word}
                 className="premium-card"
-                style={{ padding: '14px 16px' }}
+                style={{
+                  padding: '14px 16px',
+                  background: 'linear-gradient(135deg, #faf7ff 0%, #f0e9ff 100%)',
+                  border: '1px solid rgba(167, 139, 250, 0.2)',
+                }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--navy-700)' }}>
@@ -238,12 +280,16 @@ export function DreamResultStep({ result, userName, onRestart, onHome }: Props) 
               style={{
                 padding: '14px 16px',
                 background: idx === 0
-                  ? 'linear-gradient(135deg, rgba(201, 169, 98, 0.10) 0%, #fff 100%)'
-                  : '#fff',
+                  ? 'linear-gradient(135deg, #fff7e0 0%, #fde9b8 60%, #f5d98a 100%)'
+                  : 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
+                border: idx === 0 ? '1px solid rgba(201, 169, 98, 0.4)' : '1px solid rgba(124, 58, 237, 0.3)',
+                boxShadow: idx === 0
+                  ? '0 4px 14px rgba(201, 169, 98, 0.25)'
+                  : '0 4px 14px rgba(30, 27, 75, 0.3)',
               }}
             >
-              <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 700, color: 'var(--gold-600)' }}>
-                세트 {idx + 1}
+              <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 700, color: idx === 0 ? 'var(--gold-600)' : '#fcd34d', letterSpacing: '0.04em' }}>
+                세트 {idx + 1}{idx === 0 ? ' · 키워드 매칭' : ''}
               </p>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between' }}>
                 {set.map((n) => (
