@@ -52,16 +52,32 @@ export function ZodiacResultStep({ result, userName, onRestart, onHome, onSelect
   return (
     <div className="app-page" style={{ paddingBottom: 120 }}>
       {/* 헤더 */}
-      <header className="animate-fade-in" style={{ textAlign: 'center', marginBottom: 24 }}>
-        <p style={{ margin: '0 0 4px', fontSize: 13, color: 'var(--navy-300)', fontWeight: 600 }}>
+      <header className="animate-fade-in" style={{ textAlign: 'center', marginBottom: 22 }}>
+        <p style={{
+          display: 'inline-block',
+          margin: '0 0 10px',
+          padding: '4px 12px',
+          fontSize: 11.5,
+          fontWeight: 700,
+          color: 'var(--gold-700)',
+          background: 'var(--gold-50)',
+          border: '1px solid rgba(201,169,98,0.3)',
+          borderRadius: 999,
+          letterSpacing: '0.04em',
+        }}>
           📅 {dateStr} 띠별 운세
         </p>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 4 }}>
-          <span style={{ fontSize: 36 }}>{result.emoji}</span>
-          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: 'var(--navy-700)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          <span style={{ fontSize: 32 }}>{result.emoji}</span>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--navy-700)', letterSpacing: '-0.03em' }}>
             {userName}님의 {result.animal}띠 운세
           </h1>
         </div>
+        <div style={{
+          margin: '14px auto 0',
+          width: 56, height: 2, borderRadius: 999,
+          background: 'linear-gradient(90deg, transparent 0%, var(--gold-500) 50%, transparent 100%)',
+        }} />
       </header>
 
       {/* 점수 + 띠 정보 + 키워드 */}

@@ -58,26 +58,42 @@ export function CompatResultStep({ result, onRestart, onHome }: Props) {
 
   return (
     <div className="app-page" style={{ paddingBottom: 120 }}>
-      {/* 헤더 — 두 띠 */}
-      <header className="animate-fade-in" style={{ textAlign: 'center', marginBottom: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 8 }}>
+      {/* 헤더 */}
+      <header className="animate-fade-in" style={{ textAlign: 'center', marginBottom: 22 }}>
+        <p style={{
+          display: 'inline-block',
+          margin: '0 0 10px',
+          padding: '4px 12px',
+          fontSize: 11.5,
+          fontWeight: 700,
+          color: 'var(--gold-700)',
+          background: 'var(--gold-50)',
+          border: '1px solid rgba(201,169,98,0.3)',
+          borderRadius: 999,
+          letterSpacing: '0.04em',
+        }}>
+          💞 우리 사이 궁합 결과
+        </p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
           <div style={{ textAlign: 'center' }}>
-            <span style={{ fontSize: 40 }}>{result.person1Emoji}</span>
-            <p style={{ margin: '4px 0 0', fontSize: 13, fontWeight: 600, color: 'var(--navy-500)' }}>
+            <span style={{ fontSize: 36 }}>{result.person1Emoji}</span>
+            <p style={{ margin: '2px 0 0', fontSize: 12, fontWeight: 700, color: 'var(--navy-600)' }}>
               {result.person1Animal}띠
             </p>
           </div>
-          <span style={{ fontSize: 28, color: 'var(--gold-500)' }}>×</span>
+          <span style={{ fontSize: 22, color: '#e11d48', fontWeight: 800, marginTop: -10 }}>♥</span>
           <div style={{ textAlign: 'center' }}>
-            <span style={{ fontSize: 40 }}>{result.person2Emoji}</span>
-            <p style={{ margin: '4px 0 0', fontSize: 13, fontWeight: 600, color: 'var(--navy-500)' }}>
+            <span style={{ fontSize: 36 }}>{result.person2Emoji}</span>
+            <p style={{ margin: '2px 0 0', fontSize: 12, fontWeight: 700, color: 'var(--navy-600)' }}>
               {result.person2Animal}띠
             </p>
           </div>
         </div>
-        <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: 'var(--navy-700)' }}>
-          궁합 결과
-        </h1>
+        <div style={{
+          margin: '14px auto 0',
+          width: 56, height: 2, borderRadius: 999,
+          background: 'linear-gradient(90deg, transparent 0%, var(--gold-500) 50%, transparent 100%)',
+        }} />
       </header>
 
       {/* 점수 + 두 사람 + 서브 점수 */}

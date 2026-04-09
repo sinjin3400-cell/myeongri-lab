@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { haptic } from '../utils/haptic';
 import { trackEvent } from '../utils/analytics';
 import { getZodiacByDate } from '../utils/zodiac';
-import { LogoMark } from '../components/LogoMark';
+import { PageHeader } from '../components/PageHeader';
 import type { ZodiacInput, Gender, ZodiacCriterion } from '../types';
 
 type Props = {
@@ -62,21 +62,7 @@ export function ZodiacInputStep({ value, onChange, onNext, onBack }: Props) {
 
   return (
     <div className="app-page" style={{ paddingBottom: 40 }}>
-      {/* 헤더 */}
-      <header
-        className="animate-fade-in"
-        style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}
-      >
-        <LogoMark size={40} />
-        <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--navy-700)', letterSpacing: '-0.03em' }}>
-            띠별 운세
-          </h1>
-          <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: 'var(--gold-500)' }}>
-            내 띠로 보는 오늘의 운세
-          </p>
-        </div>
-      </header>
+      <PageHeader title="띠별 운세" subtitle="내 띠로 보는 오늘의 운세" emoji="🐲" />
 
       {/* 안내 문구 */}
       <div

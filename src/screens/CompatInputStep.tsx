@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { haptic } from '../utils/haptic';
 import { trackEvent } from '../utils/analytics';
 import { getZodiacAnimal } from '../utils/zodiac';
-import { LogoMark } from '../components/LogoMark';
+import { PageHeader } from '../components/PageHeader';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
 import type { CompatInput, CompatPerson, Gender } from '../types';
 
@@ -115,21 +115,7 @@ export function CompatInputStep({ value, onChange, onNext, onBack }: Props) {
 
   return (
     <div className="app-page" style={{ paddingBottom: 40 }}>
-      {/* 헤더 */}
-      <header
-        className="animate-fade-in"
-        style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}
-      >
-        <LogoMark size={40} />
-        <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--navy-700)', letterSpacing: '-0.03em' }}>
-            궁합 보기
-          </h1>
-          <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: 'var(--gold-500)' }}>
-            두 분의 띠로 보는 궁합 풀이
-          </p>
-        </div>
-      </header>
+      <PageHeader title="궁합 보기" subtitle="두 분의 띠로 보는 궁합 풀이" emoji="💕" />
 
       {/* 안내 문구 */}
       <div
