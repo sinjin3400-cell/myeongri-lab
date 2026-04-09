@@ -435,6 +435,7 @@ ${FRIENDLY_TONE}
 {
   "summaryLine": "오늘의 핵심 한줄 (25자 이내, 이모지 1개, 존댓말)",
   "score": 오늘의 운세 점수 (${(seed % 36) + 55}~${(seed % 36) + 65} 범위),
+  "keywords": ["오늘의 핵심 키워드 3~4개 (각 2~5자, 명사형, 본문에서 도출)"],
   "primaryCategory": "love" | "money" | "health" | "work" | "overall" 중 하나,
   "primaryTitle": "오늘의 핵심 - OO운 (예: '오늘의 핵심 - 금전운')",
   "primaryBody": "선택한 영역의 핵심 풀이 (8~10문장, 이모지 1~2개, 구체적 상황 예시, ${animal.name}띠 특성 반영)",
@@ -462,6 +463,7 @@ ${animal.name}띠의 특성과 오늘 일진의 관계를 바탕으로 오늘의
 
   result.animal = animal.name;
   result.emoji = animal.emoji;
+  result.element = animal.element;
 
   setCache(cacheKey, result);
   return result;

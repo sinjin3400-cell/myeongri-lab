@@ -84,8 +84,11 @@ export type ZodiacPrimaryCategory = 'overall' | 'love' | 'money' | 'health' | 'w
 export interface ZodiacResult {
   animal: string;
   emoji: string;
+  element?: string;
   summaryLine: string;
   score: number;
+  /** 오늘의 핵심 키워드 3~4개 */
+  keywords?: string[];
   /** 오늘 띠에 가장 영향이 큰 단일 핵심 운세 카테고리 */
   primaryCategory: ZodiacPrimaryCategory;
   primaryTitle: string;   // 예: "오늘의 핵심 - 금전운"

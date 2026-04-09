@@ -1,6 +1,8 @@
+import { useEffect, useRef } from 'react';
 import { haptic } from '../utils/haptic';
 import { trackEvent } from '../utils/analytics';
 import { ScoreRing } from '../components/ScoreRing';
+import { useTossBanner, AD_IDS } from '../hooks/useAds';
 import type { ZodiacResult, AppFeature } from '../types';
 
 type Props = {
@@ -11,6 +13,11 @@ type Props = {
   onSelectFeature?: (feature: AppFeature) => void;
 };
 
+function elementLabel(el: string): string {
+  const map: Record<string, string> = { 목: '木', 화: '火', 토: '土', 금: '金', 수: '水' };
+  return map[el] ?? el;
+}
+
 const CATEGORY_META: Record<string, { icon: string; gradient: string }> = {
   overall: { icon: '🌟', gradient: 'linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 100%)' },
   love:    { icon: '💕', gradient: 'linear-gradient(135deg, #9f1239 0%, #e11d48 100%)' },
@@ -20,6 +27,17 @@ const CATEGORY_META: Record<string, { icon: string; gradient: string }> = {
 };
 
 export function ZodiacResultStep({ result, userName, onRestart, onHome, onSelectFeature }: Props) {
+  // 하단 배너 광고
+  const { isInitialized: bannerReady, attachBanner } = useTossBanner();
+  const bannerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!bannerReady || !bannerRef.current) return;
+    const attached = attachBanner(AD_IDS.BANNER, bannerRef.current, {
+      theme: 'light', tone: 'blackAndWhite', variant: 'card',
+    });
+    return () => { attached?.destroy(); };
+  }, [bannerReady, attachBanner]);
+
   const today = new Date();
   const dateStr = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
 
@@ -46,15 +64,72 @@ export function ZodiacResultStep({ result, userName, onRestart, onHome, onSelect
         </div>
       </header>
 
-      {/* 점수 + 요약 */}
+      {/* 점수 + 띠 정보 + 키워드 */}
       <div
         className="premium-card gold-accent animate-slide-up"
-        style={{ textAlign: 'center', padding: '24px 20px', marginBottom: 20 }}
+        style={{ padding: '22px 20px 20px', marginBottom: 20 }}
       >
-        <ScoreRing score={result.score} size={100} />
-        <p style={{ margin: '12px 0 0', fontSize: 17, fontWeight: 700, color: 'var(--navy-700)', lineHeight: 1.5 }}>
+        {/* 좌: 점수링 / 우: 띠 캐릭터 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+          <div style={{ flexShrink: 0 }}>
+            <ScoreRing score={result.score} size={92} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <span style={{ fontSize: 38, lineHeight: 1 }}>{result.emoji}</span>
+              <div>
+                <p style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'var(--navy-700)', letterSpacing: '-0.02em' }}>
+                  {result.animal}띠
+                </p>
+                {result.element && (
+                  <p style={{ margin: 0, fontSize: 11, fontWeight: 600, color: 'var(--gold-600)' }}>
+                    오행 · {result.element}({elementLabel(result.element)})
+                  </p>
+                )}
+              </div>
+            </div>
+            <p style={{ margin: '6px 0 0', fontSize: 12, fontWeight: 500, color: 'var(--navy-400)', lineHeight: 1.5 }}>
+              오늘은 {result.animal}띠에게 의미 있는 하루예요
+            </p>
+          </div>
+        </div>
+
+        {/* 한줄 요약 */}
+        <p style={{
+          margin: '16px 0 0',
+          fontSize: 15.5, fontWeight: 700,
+          color: 'var(--navy-700)', lineHeight: 1.55,
+          textAlign: 'center',
+          padding: '12px 14px',
+          background: 'rgba(255,255,255,0.55)',
+          borderRadius: 12,
+        }}>
           {result.summaryLine}
         </p>
+
+        {/* 오늘의 키워드 */}
+        {result.keywords && result.keywords.length > 0 && (
+          <div style={{
+            display: 'flex', flexWrap: 'wrap', gap: 6,
+            justifyContent: 'center', marginTop: 12,
+          }}>
+            {result.keywords.slice(0, 4).map((kw, i) => (
+              <span
+                key={i}
+                style={{
+                  padding: '5px 11px',
+                  fontSize: 12, fontWeight: 700,
+                  color: 'var(--gold-700, #854d0e)',
+                  background: 'rgba(201,169,98,0.18)',
+                  border: '1px solid rgba(201,169,98,0.35)',
+                  borderRadius: 999,
+                }}
+              >
+                #{kw}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 단일 핵심 운세 카드 */}
@@ -154,6 +229,27 @@ export function ZodiacResultStep({ result, userName, onRestart, onHome, onSelect
             </button>
           ))}
         </div>
+      </div>
+
+      {/* 하단 배너 광고 */}
+      <div
+        ref={bannerRef}
+        style={{
+          marginTop: 22,
+          minHeight: 80,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          // 토스 SDK가 없는 환경(웹 미리보기 등)에서 배너 영역이 보이도록 placeholder
+          border: bannerReady ? 'none' : '1.5px dashed var(--navy-200, #cbd5e1)',
+          borderRadius: 12,
+          background: bannerReady ? 'transparent' : 'rgba(0,0,0,0.02)',
+          color: 'var(--navy-300)',
+          fontSize: 12,
+          fontWeight: 600,
+        }}
+      >
+        {!bannerReady && '🎯 배너 광고 영역 (테스트)'}
       </div>
 
       {/* 하단 CTA */}
