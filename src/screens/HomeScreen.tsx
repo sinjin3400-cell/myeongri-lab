@@ -33,7 +33,7 @@ const FEATURES: {
     accentColor: 'var(--gold-500)',
     ready: true,
     tag: 'BEST',
-    tagSide: 'left',
+    tagSide: 'right',
     tagBg: 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)',
   },
   {
