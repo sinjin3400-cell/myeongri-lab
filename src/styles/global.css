@@ -49,7 +49,7 @@
   --card-shadow-gold: 0 4px 20px rgba(201, 169, 98, 0.15), 0 1px 4px rgba(201, 169, 98, 0.08);
 
   --radius-sm: 12px;
-  --radius-md: 18px;
+  --radius-md: 24px;
   --radius-lg: 24px;
   --radius-xl: 32px;
 }
@@ -110,13 +110,17 @@ html, body {
 /* ── Premium Card ── */
 .premium-card {
   background:
-    radial-gradient(circle at 100% 0%, rgba(201, 169, 98, 0.07) 0%, transparent 45%),
-    radial-gradient(circle at 0% 100%, rgba(30, 58, 95, 0.045) 0%, transparent 50%),
-    linear-gradient(180deg, #ffffff 0%, #fdfbf6 100%);
+    radial-gradient(circle at 88% 0%, rgba(167, 139, 250, 0.10) 0%, transparent 48%),
+    radial-gradient(circle at 0% 100%, rgba(56, 189, 248, 0.07) 0%, transparent 52%),
+    radial-gradient(circle at 100% 100%, rgba(244, 114, 182, 0.06) 0%, transparent 50%),
+    linear-gradient(165deg, #ffffff 0%, #f8fafc 60%, #f5f3ff 100%);
   border-radius: var(--radius-md);
   padding: 22px 22px;
-  box-shadow: 0 1px 2px rgba(26, 39, 68, 0.04), 0 8px 22px rgba(26, 39, 68, 0.07);
-  border: 1px solid rgba(201, 169, 98, 0.16);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 10px 28px rgba(79, 70, 229, 0.08),
+    0 20px 50px rgba(15, 23, 42, 0.05);
+  border: 1px solid rgba(148, 163, 184, 0.18);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
@@ -137,20 +141,23 @@ html, body {
 .premium-card::after {
   content: '';
   position: absolute;
-  top: 14px;
-  bottom: 14px;
+  top: 18px;
+  bottom: 18px;
   left: 0;
   width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: linear-gradient(180deg, var(--gold-500, #c9a962) 0%, rgba(201, 169, 98, 0.1) 100%);
-  opacity: 0.5;
+  border-radius: 0 4px 4px 0;
+  background: linear-gradient(180deg, #a78bfa 0%, #f472b6 50%, #38bdf8 100%);
+  opacity: 0.55;
   pointer-events: none;
 }
 
 .premium-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(26, 39, 68, 0.05), 0 14px 30px rgba(26, 39, 68, 0.09);
-  border-color: rgba(201, 169, 98, 0.3);
+  transform: translateY(-2px);
+  box-shadow:
+    0 2px 4px rgba(15, 23, 42, 0.05),
+    0 16px 36px rgba(79, 70, 229, 0.11),
+    0 24px 60px rgba(15, 23, 42, 0.07);
+  border-color: rgba(167, 139, 250, 0.32);
 }
 
 .premium-card:hover::before,
@@ -159,9 +166,14 @@ html, body {
 }
 
 .premium-card.gold-accent {
-  background: linear-gradient(135deg, rgba(253, 248, 238, 0.95) 0%, rgba(255, 255, 255, 0.95) 100%);
-  border: 1px solid rgba(201, 169, 98, 0.15);
-  box-shadow: var(--card-shadow-gold);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(167, 139, 250, 0.14) 0%, transparent 50%),
+    radial-gradient(circle at 0% 100%, rgba(244, 114, 182, 0.10) 0%, transparent 55%),
+    linear-gradient(160deg, #ffffff 0%, #faf5ff 55%, #eff6ff 100%);
+  border: 1px solid rgba(167, 139, 250, 0.22);
+  box-shadow:
+    0 2px 4px rgba(79, 70, 229, 0.06),
+    0 14px 36px rgba(79, 70, 229, 0.12);
 }
 
 /* ── Accordion ── */
