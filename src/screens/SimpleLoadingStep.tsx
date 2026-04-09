@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useTossBanner, AD_IDS } from '../hooks/useAds';
 
 type Props = {
   title: string;
@@ -10,6 +11,17 @@ export function SimpleLoadingStep({ title, messages, onRun }: Props) {
   const [msgIdx, setMsgIdx] = useState(0);
   const [progress, setProgress] = useState(0);
   const ran = useRef(false);
+
+  // 배너 광고
+  const { isInitialized: bannerReady, attachBanner } = useTossBanner();
+  const bannerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!bannerReady || !bannerRef.current) return;
+    const attached = attachBanner(AD_IDS.BANNER, bannerRef.current, {
+      theme: 'light', tone: 'blackAndWhite', variant: 'card',
+    });
+    return () => { attached?.destroy(); };
+  }, [bannerReady, attachBanner]);
 
   useEffect(() => {
     if (ran.current) return;
@@ -80,6 +92,28 @@ export function SimpleLoadingStep({ title, messages, onRun }: Props) {
       <p style={{ margin: 0, fontSize: 13, color: 'var(--navy-300)' }}>
         잠시만 기다려주세요...
       </p>
+
+      {/* 하단 배너 광고 */}
+      <div
+        ref={bannerRef}
+        style={{
+          marginTop: 28,
+          width: '100%',
+          maxWidth: 320,
+          minHeight: 80,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          border: bannerReady ? 'none' : '1.5px dashed var(--navy-200, #cbd5e1)',
+          borderRadius: 12,
+          background: bannerReady ? 'transparent' : 'rgba(0,0,0,0.02)',
+          color: 'var(--navy-300)',
+          fontSize: 12,
+          fontWeight: 600,
+        }}
+      >
+        {!bannerReady && '🎯 배너 광고 영역 (테스트)'}
+      </div>
     </div>
   );
 }
