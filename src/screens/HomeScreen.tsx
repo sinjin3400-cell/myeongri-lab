@@ -20,6 +20,8 @@ const FEATURES: {
   accentColor: string;
   ready: boolean;
   tag?: string;
+  tagSide?: 'left' | 'right';
+  tagBg?: string;
 }[] = [
   {
     key: 'fortune',
@@ -30,6 +32,9 @@ const FEATURES: {
     gradient: 'linear-gradient(135deg, #1a2744 0%, #2d446c 100%)',
     accentColor: 'var(--gold-500)',
     ready: true,
+    tag: 'BEST',
+    tagSide: 'left',
+    tagBg: 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)',
   },
   {
     key: 'dream',
@@ -40,7 +45,9 @@ const FEATURES: {
     gradient: 'linear-gradient(135deg, #2d1b69 0%, #4a2d8a 100%)',
     accentColor: '#a78bfa',
     ready: true,
-    tag: 'NEW',
+    tag: 'HOT',
+    tagSide: 'right',
+    tagBg: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)',
   },
   {
     key: 'zodiac',
@@ -241,15 +248,18 @@ export function HomeScreen({ onSelect }: Props) {
               <span
                 style={{
                   position: 'absolute',
-                  top: 12,
-                  right: 12,
-                  padding: '3px 8px',
+                  top: 10,
+                  ...(feature.tagSide === 'left' ? { left: 10 } : { right: 10 }),
+                  padding: '4px 9px',
                   borderRadius: 8,
                   fontSize: 10,
-                  fontWeight: 700,
-                  color: 'rgba(255,255,255,0.9)',
-                  background: 'rgba(255,255,255,0.15)',
-                  backdropFilter: 'blur(4px)',
+                  fontWeight: 800,
+                  letterSpacing: '0.08em',
+                  color: '#fff',
+                  background: feature.tagBg || 'rgba(255,255,255,0.18)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.2)',
+                  zIndex: 1,
                 }}
               >
                 {feature.tag}
