@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { haptic } from '../utils/haptic';
 import { trackEvent } from '../utils/analytics';
 import { ScoreRing } from '../components/ScoreRing';
+import { useTossBanner, AD_IDS } from '../hooks/useAds';
 import type { CompatResult } from '../types';
 
 type Props = {
@@ -22,9 +23,38 @@ const CARD_META: { key: CardKey; icon: string; title: string; gradient: string }
 export function CompatResultStep({ result, onRestart, onHome }: Props) {
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
 
+  const { isInitialized: bannerReady, attachBanner } = useTossBanner();
+  const bannerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!bannerReady || !bannerRef.current) return;
+    const attached = attachBanner(AD_IDS.BANNER, bannerRef.current, {
+      theme: 'light', tone: 'blackAndWhite', variant: 'card',
+    });
+    return () => { attached?.destroy(); };
+  }, [bannerReady, attachBanner]);
+
   const scoreLabel = result.score >= 85 ? '최고의 궁합!' :
     result.score >= 70 ? '아주 좋은 궁합이에요' :
     result.score >= 55 ? '서로 노력하면 더 좋아져요' : '서로를 이해하는 게 중요해요';
+
+  // sub-score fallback (없으면 전체 점수 ±5 변동)
+  const loveScore = result.loveScore ?? Math.max(40, Math.min(100, result.score + 3));
+  const moneyScore = result.moneyScore ?? Math.max(40, Math.min(100, result.score - 4));
+  const commScore = result.commScore ?? Math.max(40, Math.min(100, result.score + 1));
+
+  const subScores = [
+    { label: '애정', value: loveScore, color: '#e11d48', icon: '💕' },
+    { label: '재물', value: moneyScore, color: '#ca8a04', icon: '💰' },
+    { label: '소통', value: commScore, color: '#6366f1', icon: '💬' },
+  ];
+
+  const relationBadge = result.elementRelation
+    ? {
+        '상생': { label: '상생 관계', color: '#15803d', bg: 'rgba(34,197,94,0.15)' },
+        '상극': { label: '상극 관계', color: '#b91c1c', bg: 'rgba(225,29,72,0.12)' },
+        '중성': { label: '중성 관계', color: '#7c3aed', bg: 'rgba(124,58,237,0.12)' },
+      }[result.elementRelation]
+    : null;
 
   return (
     <div className="app-page" style={{ paddingBottom: 120 }}>
@@ -50,18 +80,115 @@ export function CompatResultStep({ result, onRestart, onHome }: Props) {
         </h1>
       </header>
 
-      {/* 점수 + 요약 */}
+      {/* 점수 + 두 사람 + 서브 점수 */}
       <div
         className="premium-card gold-accent animate-slide-up"
-        style={{ textAlign: 'center', padding: '24px 20px', marginBottom: 24 }}
+        style={{ padding: '22px 20px 20px', marginBottom: 22 }}
       >
-        <ScoreRing score={result.score} size={110} />
-        <p style={{ margin: '8px 0 4px', fontSize: 14, fontWeight: 600, color: 'var(--gold-600)' }}>
-          {scoreLabel}
-        </p>
-        <p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: 'var(--navy-700)', lineHeight: 1.5 }}>
+        {/* 좌: 점수링 / 우: 두 사람 + 관계 배지 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+          <div style={{ flexShrink: 0 }}>
+            <ScoreRing score={result.score} size={96} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+              <span style={{ fontSize: 30 }}>{result.person1Emoji}</span>
+              <span style={{ fontSize: 16, color: '#e11d48', fontWeight: 800 }}>♥</span>
+              <span style={{ fontSize: 30 }}>{result.person2Emoji}</span>
+            </div>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: 'var(--navy-700)', letterSpacing: '-0.02em' }}>
+              {result.person1Animal}띠 × {result.person2Animal}띠
+            </p>
+            {relationBadge && (
+              <span
+                style={{
+                  display: 'inline-block',
+                  marginTop: 6,
+                  padding: '3px 10px',
+                  fontSize: 11,
+                  fontWeight: 800,
+                  color: relationBadge.color,
+                  background: relationBadge.bg,
+                  borderRadius: 999,
+                }}
+              >
+                {relationBadge.label}
+              </span>
+            )}
+            <p style={{ margin: '6px 0 0', fontSize: 12, fontWeight: 600, color: 'var(--gold-600)' }}>
+              {scoreLabel}
+            </p>
+          </div>
+        </div>
+
+        {/* 한줄 요약 */}
+        <p style={{
+          margin: '14px 0 0',
+          fontSize: 15.5, fontWeight: 700,
+          color: 'var(--navy-700)', lineHeight: 1.55,
+          textAlign: 'center',
+          padding: '12px 14px',
+          background: 'rgba(255,255,255,0.55)',
+          borderRadius: 12,
+        }}>
           {result.summaryLine}
         </p>
+
+        {/* 서브 점수 막대 */}
+        <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {subScores.map((s) => (
+            <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 14, width: 16 }}>{s.icon}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--navy-600)', width: 28 }}>
+                {s.label}
+              </span>
+              <div
+                style={{
+                  flex: 1, height: 8, borderRadius: 999,
+                  background: 'rgba(0,0,0,0.06)',
+                  overflow: 'hidden',
+                }}
+              >
+                <div
+                  style={{
+                    width: `${s.value}%`,
+                    height: '100%',
+                    background: s.color,
+                    borderRadius: 999,
+                    transition: 'width 0.6s ease',
+                  }}
+                />
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 800, color: s.color, width: 26, textAlign: 'right' }}>
+                {s.value}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* 키워드 */}
+        {result.keywords && result.keywords.length > 0 && (
+          <div style={{
+            display: 'flex', flexWrap: 'wrap', gap: 6,
+            justifyContent: 'center', marginTop: 14,
+          }}>
+            {result.keywords.slice(0, 4).map((kw, i) => (
+              <span
+                key={i}
+                style={{
+                  padding: '5px 11px',
+                  fontSize: 12, fontWeight: 700,
+                  color: 'var(--gold-700, #854d0e)',
+                  background: 'rgba(201,169,98,0.18)',
+                  border: '1px solid rgba(201,169,98,0.35)',
+                  borderRadius: 999,
+                }}
+              >
+                #{kw}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 궁합 카드 */}
@@ -144,6 +271,21 @@ export function CompatResultStep({ result, onRestart, onHome }: Props) {
           </p>
         </div>
       )}
+
+      {/* 하단 배너 광고 */}
+      <div
+        ref={bannerRef}
+        style={{
+          marginTop: 22, minHeight: 80,
+          display: 'flex', justifyContent: 'center', alignItems: 'center',
+          border: bannerReady ? 'none' : '1.5px dashed var(--navy-200, #cbd5e1)',
+          borderRadius: 12,
+          background: bannerReady ? 'transparent' : 'rgba(0,0,0,0.02)',
+          color: 'var(--navy-300)', fontSize: 12, fontWeight: 600,
+        }}
+      >
+        {!bannerReady && '🎯 배너 광고 영역 (테스트)'}
+      </div>
 
       {/* 하단 CTA */}
       <div className="app-footer-cta">

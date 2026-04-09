@@ -117,6 +117,12 @@ export interface CompatResult {
   person1Emoji: string;
   person2Animal: string;
   person2Emoji: string;
+  /** 두 띠의 오행 관계: 상생/상극/중성 */
+  elementRelation?: '상생' | '상극' | '중성';
+  loveScore?: number;           // 0~100
+  moneyScore?: number;          // 0~100
+  commScore?: number;           // 0~100
+  keywords?: string[];          // 두 사람 관계 키워드 3~4개
   overall: string;              // 전체 궁합
   overallDetail: string;
   love: string;                 // 애정 궁합

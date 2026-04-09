@@ -1,7 +1,9 @@
+import { useEffect, useRef } from 'react';
 import { haptic } from '../utils/haptic';
 import { trackEvent } from '../utils/analytics';
 import { getZodiacAnimal } from '../utils/zodiac';
 import { LogoMark } from '../components/LogoMark';
+import { useTossBanner, AD_IDS } from '../hooks/useAds';
 import type { CompatInput, CompatPerson, Gender } from '../types';
 
 type Props = {
@@ -90,6 +92,16 @@ function PersonForm({
 }
 
 export function CompatInputStep({ value, onChange, onNext, onBack }: Props) {
+  const { isInitialized: bannerReady, attachBanner } = useTossBanner();
+  const bannerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!bannerReady || !bannerRef.current) return;
+    const attached = attachBanner(AD_IDS.BANNER, bannerRef.current, {
+      theme: 'light', tone: 'blackAndWhite', variant: 'card',
+    });
+    return () => { attached?.destroy(); };
+  }, [bannerReady, attachBanner]);
+
   const isValid = (p: CompatPerson) => {
     const y = parseInt(p.birthYear, 10);
     return p.name.trim().length >= 1 && !isNaN(y) && y >= 1930 && y <= 2010 && p.gender !== '';
@@ -190,6 +202,21 @@ export function CompatInputStep({ value, onChange, onNext, onBack }: Props) {
         <button className="btn-secondary" onClick={() => { haptic(); onBack(); }}>
           ← 홈으로 돌아가기
         </button>
+      </div>
+
+      {/* 하단 배너 광고 */}
+      <div
+        ref={bannerRef}
+        style={{
+          marginTop: 22, minHeight: 80,
+          display: 'flex', justifyContent: 'center', alignItems: 'center',
+          border: bannerReady ? 'none' : '1.5px dashed var(--navy-200, #cbd5e1)',
+          borderRadius: 12,
+          background: bannerReady ? 'transparent' : 'rgba(0,0,0,0.02)',
+          color: 'var(--navy-300)', fontSize: 12, fontWeight: 600,
+        }}
+      >
+        {!bannerReady && '🎯 배너 광고 영역 (테스트)'}
       </div>
     </div>
   );
