@@ -4,6 +4,7 @@ import { PageHeader } from '../components/PageHeader';
 import { useInterstitialAd, useTossBanner, AD_IDS } from '../hooks/useAds';
 import { trackEvent } from '../utils/analytics';
 import { Analytics } from '@apps-in-toss/web-framework';
+import { usePremiumPass } from '../hooks/usePremiumPass';
 import type { DreamResult } from '../types';
 
 type Tab = 'traditional' | 'psychological' | 'sajuLinked';
@@ -29,6 +30,7 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
 
   const { isLoaded: rewardLoaded, showAd } = useInterstitialAd(AD_IDS.REWARDED);
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
+  const { count: passCount, hasPass, usePass } = usePremiumPass();
   const bannerRef = useRef<HTMLDivElement>(null);
 
   // 앱인토스 전환지표: 꿈해몽 결과 화면 도달
@@ -56,8 +58,13 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
   const handleUnlock = async () => {
     haptic();
     trackEvent('dream_lotto_unlock_attempt', { rewardLoaded });
+    // 열람권 있으면 광고 스킵
+    if (usePass()) {
+      trackEvent('dream_lotto_unlocked', {});
+      setUnlocked(true);
+      return;
+    }
     if (!rewardLoaded) {
-      // 광고 미준비 시 그냥 공개 (개발/네트워크 폴백)
       setUnlocked(true);
       return;
     }
@@ -389,7 +396,7 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
               letterSpacing: '-0.01em',
             }}
           >
-            🎬 광고 보고 4세트 더 받기
+            {hasPass ? `🎫 프리미엄 열람권으로 바로 보기 (${passCount}회 남음)` : '🎬 광고 보고 4세트 더 받기'}
           </button>
         )}
       </div>

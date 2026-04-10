@@ -11,6 +11,7 @@ import { useTossBanner, useInterstitialAd, AD_IDS } from '../hooks/useAds';
 import { usePromotion } from '../hooks/usePromotion';
 import { trackFullFortuneClicked, trackFortuneCardExpanded, trackShareButtonClicked, trackRewardGranted } from '../utils/analytics';
 import { Analytics } from '@apps-in-toss/web-framework';
+import { usePremiumPass } from '../hooks/usePremiumPass';
 
 type Props = {
   highlight: FortuneHighlight;
@@ -325,6 +326,9 @@ export function ResultStep({
   const { grantReward } = usePromotion();
   const [rewardInfo, setRewardInfo] = useState<{ amount: number; isGolden: boolean } | null>(null);
 
+  // 프리미엄 열람권
+  const { count: passCount, hasPass, usePass, addPasses } = usePremiumPass();
+
   // 앱인토스 전환지표: 운세 결과 화면 도달
   useEffect(() => {
     try { Analytics.impression({ log_name: 'fortune_result_view' }); } catch (_) { /* noop */ }
@@ -356,8 +360,12 @@ export function ResultStep({
     haptic();
     trackFullFortuneClicked();
     try { Analytics.click({ log_name: 'hidden_fortune_unlock' }); } catch (_) { /* noop */ }
-    // 광고와 운세 로딩을 동시에 시작 → 광고 끝나면 바로 결과 표시
-    await Promise.all([showInterstitial(), onLoadFull()]);
+    // 열람권 있으면 광고 스킵
+    if (usePass()) {
+      await onLoadFull();
+    } else {
+      await Promise.all([showInterstitial(), onLoadFull()]);
+    }
     setLoadingFull(false);
 
     // 숨겨진 운세 카드가 먼저 보이도록 스크롤
@@ -375,15 +383,15 @@ export function ResultStep({
 
   const handleChangePeriodWithAd = useCallback(async (newPeriod: FortunePeriod) => {
     haptic();
-    await showInterstitial();
+    if (!usePass()) await showInterstitial();
     onChangePeriod(newPeriod);
-  }, [onChangePeriod, showInterstitial]);
+  }, [onChangePeriod, showInterstitial, usePass]);
 
   const handleTomorrow = useCallback(async () => {
     haptic();
-    await showInterstitial();
+    if (!usePass()) await showInterstitial();
     onTomorrow();
-  }, [onTomorrow, showInterstitial]);
+  }, [onTomorrow, showInterstitial, usePass]);
 
   // 공유용 결과 조합
   const shareResult: FortuneResult = fullResult ?? {
@@ -579,6 +587,8 @@ export function ResultStep({
           >
             {loadingFull ? (
               <>운세를 펼치는 중... ✨</>
+            ) : hasPass ? (
+              <>🎫 프리미엄 열람권으로 바로 보기 ({passCount}회 남음)</>
             ) : (
               <>숨겨진 2개의 운세가 더 있어요 ☝️👀</>
             )}
@@ -772,6 +782,7 @@ export function ResultStep({
           userName={displayName}
           highlight={highlight}
           onClose={() => setShowShare(false)}
+          onShareReward={() => addPasses(1)}
         />
       )}
     </div>

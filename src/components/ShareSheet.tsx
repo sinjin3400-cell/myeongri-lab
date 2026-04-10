@@ -7,6 +7,7 @@ type Props = {
   userName: string;
   highlight?: FortuneHighlight;
   onClose: () => void;
+  onShareReward?: () => void;
 };
 
 function loadKakaoSDK(): Promise<void> {
@@ -23,7 +24,7 @@ function loadKakaoSDK(): Promise<void> {
   });
 }
 
-export function ShareSheet({ result, userName, highlight, onClose }: Props) {
+export function ShareSheet({ result, userName, highlight, onClose, onShareReward }: Props) {
   const kakaoBaseUrl = 'https://myeongri-lab.vercel.app';
 
   /** 서버에 공유 데이터를 저장하고 짧은 URL을 반환 */
@@ -51,6 +52,11 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
   const buildShareText = (url: string) =>
     `✨ ${userName}님의 오늘 운세\n\n${result.summaryLine}\n🍀 행운색: ${result.lucky.color} | 행운숫자: ${result.lucky.number}\n\n${userName}님의 운세 보기 →\n${url}`;
 
+  const closeWithReward = () => {
+    onShareReward?.();
+    onClose();
+  };
+
   /** 운세 링크만 복사 */
   const handleCopyLink = async () => {
     trackShareMethod('copy_link');
@@ -59,7 +65,7 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
     try {
       await navigator.clipboard.writeText(url);
       alert('운세 링크가 복사되었어요! 친구에게 공유해보세요 ✨');
-      onClose();
+      closeWithReward();
     } catch {
       const textarea = document.createElement('textarea');
       textarea.value = url;
@@ -68,7 +74,7 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
       document.execCommand('copy');
       document.body.removeChild(textarea);
       alert('운세 링크가 복사되었어요!');
-      onClose();
+      closeWithReward();
     }
   };
 
@@ -80,7 +86,7 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
     try {
       await navigator.clipboard.writeText(text);
       alert('운세가 복사되었어요! 친구에게 공유해보세요 ✨');
-      onClose();
+      closeWithReward();
     } catch {
       const textarea = document.createElement('textarea');
       textarea.value = text;
@@ -89,7 +95,7 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
       document.execCommand('copy');
       document.body.removeChild(textarea);
       alert('운세가 복사되었어요!');
-      onClose();
+      closeWithReward();
     }
   };
 
@@ -103,7 +109,7 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
           title: `${userName}님의 운세 - 명리연구소`,
           text: buildShareText(url),
         });
-        onClose();
+        closeWithReward();
         return;
       } catch {
         // 사용자가 취소한 경우
@@ -151,13 +157,13 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
           },
         ],
       });
-      onClose();
+      closeWithReward();
     } catch {
       if (navigator.share) {
         try {
           const fallbackUrl = await getShortShareUrl();
           await navigator.share({ title: `${userName}님의 운세`, text: buildShareText(fallbackUrl) });
-          onClose();
+          closeWithReward();
         } catch { /* 취소 */ }
       } else {
         alert('카카오톡 공유에 실패했어요. 텍스트 복사로 공유해주세요.');
@@ -172,7 +178,7 @@ export function ShareSheet({ result, userName, highlight, onClose }: Props) {
     const body = encodeURIComponent(buildShareText(url));
     const isIOS = /iPhone|iPad/i.test(navigator.userAgent);
     window.location.href = isIOS ? `sms:&body=${body}` : `sms:?body=${body}`;
-    onClose();
+    closeWithReward();
   };
 
   return (
