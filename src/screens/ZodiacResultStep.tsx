@@ -326,8 +326,8 @@ export function ZodiacResultStep({ result, userName, onRestart, onHome, onSelect
           border: 'none',
           borderRadius: 16,
           cursor: 'pointer',
-          background: 'linear-gradient(135deg, #e88a3a 0%, #d45fa0 50%, #9b59d0 100%)',
-          boxShadow: '0 4px 16px rgba(212, 95, 160, 0.35), 0 2px 6px rgba(155, 89, 208, 0.2)',
+          background: 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
+          boxShadow: '0 4px 14px rgba(99, 102, 241, 0.3)',
           letterSpacing: '-0.01em',
         }}
         onClick={() => { haptic(); setShowShare(true); }}

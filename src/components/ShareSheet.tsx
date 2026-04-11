@@ -269,116 +269,113 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
         </h3>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {/* 토스 친구 초대 (공유 리워드) */}
+          {/* 토스 친구 초대 (프리미엄 카드 스타일) */}
           <button
             onClick={handleTossInvite}
             disabled={viralLoading}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: 8, width: '100%', padding: '14px 20px',
-              fontSize: 16, fontWeight: 700, color: '#fff',
-              border: 'none', borderRadius: 14, cursor: 'pointer',
-              background: 'linear-gradient(135deg, #d4af37 0%, #f5d470 40%, #d4af37 100%)',
-              boxShadow: '0 4px 14px rgba(212, 175, 55, 0.4)',
+              gap: 10, width: '100%', padding: '16px 20px',
+              fontSize: 16, fontWeight: 800, color: '#78520a',
+              border: '1.5px solid rgba(201, 169, 98, 0.5)',
+              borderRadius: 16, cursor: 'pointer',
+              background: 'linear-gradient(135deg, #fff9e6 0%, #fef3cd 40%, #fde68a 100%)',
+              boxShadow: '0 4px 16px rgba(201, 169, 98, 0.3), inset 0 1px 0 rgba(255,255,255,0.6)',
               opacity: viralLoading ? 0.7 : 1,
+              letterSpacing: '-0.01em',
             }}
           >
-            <span style={{ fontSize: 18 }}>🎫</span>
-            친구 초대하고 황금 열람권 받기
+            <span style={{ fontSize: 20 }}>🎫</span>
+            <span>
+              <span style={{ display: 'block' }}>친구 초대하고 황금 열람권 받기</span>
+              <span style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#a07a2e', marginTop: 2 }}>
+                공유 완료 시 황금 열람권 5개 지급!
+              </span>
+            </span>
           </button>
-          <p style={{
-            margin: '-4px 0 2px', textAlign: 'center',
-            fontSize: 11, fontWeight: 600, color: 'var(--gold-600)',
-            opacity: 0.8,
-          }}>
-            공유 완료 시 황금 열람권 5개 지급!
-          </p>
 
+          {/* 공유 방법 그리드 (카카오톡 / 문자 / 링크복사) */}
+          <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+            <button
+              onClick={handleKakaoShare}
+              style={{
+                flex: 1, display: 'flex', flexDirection: 'column',
+                alignItems: 'center', gap: 8,
+                padding: '16px 8px',
+                background: '#FEE500', color: '#191919',
+                border: 'none', borderRadius: 14, cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
+                <path d="M10 3C5.58 3 2 5.87 2 9.35c0 2.21 1.47 4.15 3.68 5.25l-.94 3.44c-.08.29.25.52.5.35l4.12-2.73c.21.02.42.03.64.03 4.42 0 8-2.87 8-6.35S14.42 3 10 3z" fill="#191919"/>
+              </svg>
+              <span style={{ fontSize: 12, fontWeight: 700 }}>카카오톡</span>
+            </button>
+
+            <button
+              onClick={handleSmsShare}
+              style={{
+                flex: 1, display: 'flex', flexDirection: 'column',
+                alignItems: 'center', gap: 8,
+                padding: '16px 8px',
+                background: '#f1f5f9', color: 'var(--navy-600)',
+                border: '1px solid rgba(15,23,42,0.08)', borderRadius: 14,
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              <svg width="22" height="22" viewBox="0 0 18 18" fill="none">
+                <rect x="3" y="1" width="12" height="16" rx="2" stroke="var(--navy-500)" strokeWidth="1.5"/>
+                <line x1="7" y1="14" x2="11" y2="14" stroke="var(--navy-500)" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M6 6h6M6 9h4" stroke="var(--navy-500)" strokeWidth="1.2" strokeLinecap="round"/>
+              </svg>
+              <span style={{ fontSize: 12, fontWeight: 700 }}>문자</span>
+            </button>
+
+            <button
+              onClick={handleCopyLink}
+              style={{
+                flex: 1, display: 'flex', flexDirection: 'column',
+                alignItems: 'center', gap: 8,
+                padding: '16px 8px',
+                background: '#f1f5f9', color: 'var(--navy-600)',
+                border: '1px solid rgba(15,23,42,0.08)', borderRadius: 14,
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              <svg width="22" height="22" viewBox="0 0 18 18" fill="none">
+                <path d="M7.5 10.5l3-3M6.75 8.25l-1.28 1.28a2.5 2.5 0 003.53 3.53l1.28-1.28M11.25 9.75l1.28-1.28a2.5 2.5 0 00-3.53-3.53L7.72 6.22" stroke="var(--navy-500)" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              <span style={{ fontSize: 12, fontWeight: 700 }}>링크 복사</span>
+            </button>
+          </div>
+
+          {/* 텍스트 복사 (보조) */}
           <button
-            onClick={handleCopyLink}
+            onClick={handleCopy}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: 8, width: '100%', padding: '14px 20px',
-              fontSize: 16, fontWeight: 700, color: '#fff',
-              border: 'none', borderRadius: 14, cursor: 'pointer',
-              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)',
-              boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)',
+              gap: 6, width: '100%', padding: '12px 16px',
+              fontSize: 13, fontWeight: 600, color: 'var(--navy-400)',
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontFamily: 'inherit',
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M7.5 10.5l3-3M6.75 8.25l-1.28 1.28a2.5 2.5 0 003.53 3.53l1.28-1.28M11.25 9.75l1.28-1.28a2.5 2.5 0 00-3.53-3.53L7.72 6.22" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
+            <svg width="14" height="14" viewBox="0 0 18 18" fill="none">
+              <rect x="6" y="6" width="10" height="10" rx="2" stroke="var(--navy-400)" strokeWidth="1.5"/>
+              <path d="M12 6V4a2 2 0 00-2-2H4a2 2 0 00-2 2v6a2 2 0 002 2h2" stroke="var(--navy-400)" strokeWidth="1.5"/>
             </svg>
-            운세 링크 복사하기
+            전체 텍스트 복사
           </button>
 
           <button
-            className="btn-secondary"
-            onClick={handleKakaoShare}
-            style={{ gap: 8, background: '#FEE500', color: '#191919', border: 'none' }}
-          >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M10 3C5.58 3 2 5.87 2 9.35c0 2.21 1.47 4.15 3.68 5.25l-.94 3.44c-.08.29.25.52.5.35l4.12-2.73c.21.02.42.03.64.03 4.42 0 8-2.87 8-6.35S14.42 3 10 3z" fill="#191919"/>
-            </svg>
-            카카오톡으로 공유하기
-          </button>
-
-          <button
-            className="btn-secondary"
-            onClick={handleSmsShare}
-            style={{ gap: 8 }}
-          >
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <rect x="3" y="1" width="12" height="16" rx="2" stroke="var(--navy-400)" strokeWidth="1.5"/>
-              <line x1="7" y1="14" x2="11" y2="14" stroke="var(--navy-400)" strokeWidth="1.5" strokeLinecap="round"/>
-              <path d="M6 6h6M6 9h4" stroke="var(--navy-400)" strokeWidth="1.2" strokeLinecap="round"/>
-            </svg>
-            문자로 공유하기
-          </button>
-
-          <button
-            className="btn-secondary"
-            onClick={handleNativeShare}
-            style={{ gap: 8 }}
-          >
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path
-                d="M13.5 6a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5zM4.5 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5zM13.5 16.5a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5zM6.44 10.24l5.13 2.77M11.56 5l-5.12 2.75"
-                stroke="var(--navy-400)"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </svg>
-            다른 앱으로 공유하기
-          </button>
-
-          <button
-            className="btn-secondary"
-            onClick={handleCopy}
-            style={{ gap: 8 }}
-          >
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <rect
-                x="6"
-                y="6"
-                width="10"
-                height="10"
-                rx="2"
-                stroke="var(--navy-400)"
-                strokeWidth="1.5"
-              />
-              <path
-                d="M12 6V4a2 2 0 00-2-2H4a2 2 0 00-2 2v6a2 2 0 002 2h2"
-                stroke="var(--navy-400)"
-                strokeWidth="1.5"
-              />
-            </svg>
-            텍스트 복사하기
-          </button>
-
-          <button
-            className="btn-secondary"
             onClick={onClose}
-            style={{ marginTop: 4 }}
+            style={{
+              width: '100%', padding: '12px 16px',
+              fontSize: 14, fontWeight: 600, color: 'var(--navy-400)',
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
           >
             닫기
           </button>
