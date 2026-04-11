@@ -30,8 +30,7 @@ export function CompatResultStep({ result, onRestart, onHome, onSelectFeature }:
     { key: 'zodiac', icon: '🐲', title: '띠별 운세', desc: '내 띠로 보는 오늘의 운세',
       iconBg: 'linear-gradient(135deg, #854d0e 0%, #ca8a04 100%)' },
     { key: 'dream', icon: '💭', title: '꿈해몽', desc: '간밤의 꿈 풀이',
-      iconBg: 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
-      tag: '준비 중', tagColor: '#6366f1' },
+      iconBg: 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)' },
   ];
 
   const [expandedCard, setExpandedCard] = useState<string | null>(null);

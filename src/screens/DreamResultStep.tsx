@@ -101,8 +101,8 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
         style={{
           padding: '22px 20px',
           marginBottom: 18,
-          background: 'linear-gradient(135deg, #fefcf3 0%, #faf3e0 60%, #f5e6c8 100%)',
-          border: '1px solid rgba(201, 169, 98, 0.25)',
+          background: 'linear-gradient(135deg, #f3eeff 0%, #ece5ff 60%, #e4daff 100%)',
+          border: '1px solid rgba(167, 139, 250, 0.2)',
           textAlign: 'center',
         }}
       >
@@ -136,7 +136,7 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
             animationDelay: '0.05s',
             overflow: 'hidden',
             background: '#fff',
-            border: '1px solid rgba(201, 169, 98, 0.18)',
+            border: '1px solid rgba(167, 139, 250, 0.15)',
           }}
         >
           <div
@@ -144,7 +144,7 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
               display: 'flex',
               gap: 6,
               padding: '8px 8px 0',
-              background: 'rgba(245, 242, 235, 0.6)',
+              background: 'rgba(243, 238, 255, 0.5)',
             }}
           >
             {visibleTabs.map((t) => {
@@ -177,7 +177,7 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
                     justifyContent: 'center',
                     gap: 4,
                     boxShadow: active ? '0 -2px 8px rgba(0,0,0,0.04)' : 'none',
-                    borderBottom: active ? '2px solid var(--gold-500)' : '2px solid transparent',
+                    borderBottom: active ? `2px solid ${isSaju ? 'var(--gold-500)' : '#a78bfa'}` : '2px solid transparent',
                   }}
                 >
                   {isSaju && <span style={{ fontSize: 12, lineHeight: 1 }}>✨</span>}
@@ -283,8 +283,8 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
                 className="premium-card"
                 style={{
                   padding: '14px 16px',
-                  background: 'linear-gradient(135deg, #fffdf5 0%, #faf3e0 100%)',
-                  border: '1px solid rgba(201, 169, 98, 0.2)',
+                  background: 'linear-gradient(135deg, #faf8ff 0%, #f3eeff 100%)',
+                  border: '1px solid rgba(167, 139, 250, 0.15)',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
@@ -337,14 +337,14 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
                 padding: '14px 16px',
                 background: idx === 0
                   ? 'linear-gradient(135deg, #fff7e0 0%, #fde9b8 60%, #f5d98a 100%)'
-                  : 'linear-gradient(135deg, #fefcf3 0%, #faf3e0 60%, #f0e4c8 100%)',
-                border: idx === 0 ? '1px solid rgba(201, 169, 98, 0.4)' : '1px solid rgba(201, 169, 98, 0.25)',
+                  : 'linear-gradient(135deg, #f8f5ff 0%, #f0ebff 60%, #e8e0ff 100%)',
+                border: idx === 0 ? '1px solid rgba(201, 169, 98, 0.4)' : '1px solid rgba(167, 139, 250, 0.2)',
                 boxShadow: idx === 0
                   ? '0 4px 14px rgba(201, 169, 98, 0.25)'
-                  : '0 2px 8px rgba(201, 169, 98, 0.12)',
+                  : '0 2px 8px rgba(167, 139, 250, 0.1)',
               }}
             >
-              <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 700, color: 'var(--gold-600)', letterSpacing: '0.04em' }}>
+              <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 700, color: idx === 0 ? 'var(--gold-600)' : '#7c6bc4', letterSpacing: '0.04em' }}>
                 세트 {idx + 1}{idx === 0 ? ' · 키워드 매칭' : ''}
               </p>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between' }}>
@@ -355,15 +355,15 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      width: 36,
-                      height: 36,
+                      width: 38,
+                      height: 38,
                       borderRadius: '50%',
-                      background: '#fff',
-                      color: 'var(--navy-700)',
+                      background: 'linear-gradient(145deg, #fef3cd 0%, #f5d98a 40%, #c9a962 100%)',
+                      color: '#5a3e0a',
                       fontSize: 14,
                       fontWeight: 800,
-                      border: '2px solid var(--gold-500)',
-                      boxShadow: '0 1px 4px rgba(201, 169, 98, 0.25)',
+                      border: '1.5px solid rgba(201, 169, 98, 0.5)',
+                      boxShadow: '0 3px 8px rgba(201, 169, 98, 0.3), inset 0 1px 2px rgba(255,255,255,0.6)',
                     }}
                   >
                     {n}
@@ -384,13 +384,13 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
               padding: '14px 16px',
               borderRadius: 14,
               border: 'none',
-              background: 'linear-gradient(135deg, var(--gold-500) 0%, var(--gold-600) 100%)',
+              background: 'linear-gradient(135deg, #b794f6 0%, #8b5cf6 100%)',
               color: '#fff',
               fontSize: 14,
               fontWeight: 800,
               cursor: 'pointer',
               fontFamily: 'inherit',
-              boxShadow: '0 4px 14px rgba(201, 169, 98, 0.35)',
+              boxShadow: '0 4px 14px rgba(139, 92, 246, 0.3)',
               letterSpacing: '-0.01em',
             }}
           >
@@ -416,8 +416,8 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
           border: 'none',
           borderRadius: 16,
           cursor: 'pointer',
-          background: 'linear-gradient(135deg, var(--gold-500) 0%, var(--gold-600) 100%)',
-          boxShadow: '0 4px 14px rgba(201, 169, 98, 0.3)',
+          background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+          boxShadow: '0 4px 14px rgba(124, 58, 237, 0.25)',
           letterSpacing: '-0.01em',
         }}
         onClick={() => { haptic(); setShowShare(true); }}

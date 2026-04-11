@@ -58,8 +58,7 @@ export function ZodiacResultStep({ result, userName, onRestart, onHome, onSelect
     { key: 'compatibility', icon: '💞', title: '궁합 보기', desc: '소중한 사람과 나의 궁합',
       iconBg: 'linear-gradient(135deg, #9f1239 0%, #e11d48 100%)' },
     { key: 'dream', icon: '💭', title: '꿈해몽', desc: '간밤의 꿈 풀이',
-      iconBg: 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
-      tag: '준비 중', tagColor: '#6366f1' },
+      iconBg: 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)' },
   ];
 
   return (
