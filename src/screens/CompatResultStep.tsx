@@ -3,6 +3,7 @@ import { haptic } from '../utils/haptic';
 import { trackEvent } from '../utils/analytics';
 import { Analytics } from '@apps-in-toss/web-framework';
 import { ScoreRing } from '../components/ScoreRing';
+import { ShareSheet } from '../components/ShareSheet';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
 import type { CompatResult, AppFeature } from '../types';
 
@@ -34,6 +35,7 @@ export function CompatResultStep({ result, onRestart, onHome, onSelectFeature }:
   ];
 
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const [showShare, setShowShare] = useState(false);
 
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
   const bannerRef = useRef<HTMLDivElement>(null);
@@ -391,6 +393,41 @@ export function CompatResultStep({ result, onRestart, onHome, onSelectFeature }:
         {!bannerReady && '🎯 배너 광고 영역 (테스트)'}
       </div>
 
+      {/* 공유 버튼 */}
+      <button
+        type="button"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          width: '100%',
+          marginTop: 20,
+          marginBottom: 14,
+          padding: '15px 20px',
+          fontSize: 16,
+          fontWeight: 700,
+          color: '#fff',
+          border: 'none',
+          borderRadius: 16,
+          cursor: 'pointer',
+          background: 'linear-gradient(135deg, #e88a3a 0%, #d45fa0 50%, #9b59d0 100%)',
+          boxShadow: '0 4px 16px rgba(212, 95, 160, 0.35), 0 2px 6px rgba(155, 89, 208, 0.2)',
+          letterSpacing: '-0.01em',
+        }}
+        onClick={() => { haptic(); setShowShare(true); }}
+      >
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path
+            d="M13.5 6a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5zM4.5 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5zM13.5 16.5a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5zM6.44 10.24l5.13 2.77M11.56 5l-5.12 2.75"
+            stroke="#fff"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+        ✨ 친구에게 결과 공유하기
+      </button>
+
       {/* 하단 CTA */}
       <div className="app-footer-cta">
         <button className="btn-primary" onClick={() => { haptic(); onRestart(); }}>
@@ -400,6 +437,19 @@ export function CompatResultStep({ result, onRestart, onHome, onSelectFeature }:
           홈으로 돌아가기
         </button>
       </div>
+
+      {/* 공유 시트 */}
+      {showShare && (
+        <ShareSheet
+          shareInfo={{
+            title: `${result.person1Animal}띠 × ${result.person2Animal}띠 궁합`,
+            summaryLine: result.summaryLine,
+            score: result.score,
+            extraLine: `💕 ${result.person1Emoji} × ${result.person2Emoji} · ${result.elementRelation ?? ''} 관계`,
+          }}
+          onClose={() => setShowShare(false)}
+        />
+      )}
     </div>
   );
 }

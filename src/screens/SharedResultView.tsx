@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ResultSparkleDecor } from '../components/ResultSparkleDecor';
 import { ScoreRing } from '../components/ScoreRing';
 import type { FortuneHighlight, FortuneCategory } from '../types';
 import type { FortuneTexts } from '../utils/shareUrl';
+
+/** 토스 미니앱 URL */
+const TOSS_MINIAPP_URL = 'https://toss.im/miniapps/myeongri-lab';
 
 type Props = {
   userName: string;
@@ -20,6 +23,22 @@ const CATEGORY_LABEL: Record<FortuneCategory, { title: string; icon: string }> =
 
 export function SharedResultView({ userName, highlight, texts, onTryOwn }: Props) {
   const [showMore, setShowMore] = useState(false);
+  const [showTossBanner, setShowTossBanner] = useState(false);
+
+  // 웹에서 열렸을 때 토스 미니앱으로 리다이렉트 시도
+  useEffect(() => {
+    // 이미 토스 앱 내부라면 리다이렉트 불필요
+    const isInToss = navigator.userAgent.includes('TossApp') || navigator.userAgent.includes('AppsInToss');
+    if (isInToss) return;
+
+    // 토스 미니앱으로 이동 배너 표시 (강제 리다이렉트 대신 안내)
+    setShowTossBanner(true);
+  }, []);
+
+  const handleOpenInToss = () => {
+    window.location.href = TOSS_MINIAPP_URL;
+  };
+
   const lucky = highlight.lucky;
   const bestLabel = CATEGORY_LABEL[highlight.bestCategory];
   const cautionLabel = CATEGORY_LABEL[highlight.cautionCategory];
@@ -61,6 +80,41 @@ export function SharedResultView({ userName, highlight, texts, onTryOwn }: Props
       >
         🔮 {userName}님이 공유한 운세
       </div>
+
+      {/* 토스 앱으로 열기 배너 */}
+      {showTossBanner && (
+        <button
+          type="button"
+          onClick={handleOpenInToss}
+          className="animate-slide-up"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            width: '100%',
+            padding: '12px 16px',
+            marginBottom: 16,
+            background: 'linear-gradient(135deg, #0064FF 0%, #3B82F6 100%)',
+            border: 'none',
+            borderRadius: 14,
+            color: '#fff',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            textAlign: 'left',
+          }}
+        >
+          <span style={{ fontSize: 22 }}>📱</span>
+          <span style={{ flex: 1 }}>
+            <span style={{ display: 'block', fontSize: 14, fontWeight: 700 }}>
+              토스 앱에서 더 편하게 보기
+            </span>
+            <span style={{ display: 'block', fontSize: 11, opacity: 0.85, marginTop: 2 }}>
+              토스 미니앱에서 더 많은 기능을 이용하세요
+            </span>
+          </span>
+          <span style={{ fontSize: 16, opacity: 0.8 }}>→</span>
+        </button>
+      )}
 
       {/* 헤더 */}
       <header className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
@@ -209,7 +263,14 @@ export function SharedResultView({ userName, highlight, texts, onTryOwn }: Props
           </p>
           <button
             className="btn-primary"
-            onClick={onTryOwn}
+            onClick={() => {
+              // 토스 앱 외부라면 미니앱 URL로 이동
+              if (showTossBanner) {
+                window.location.href = TOSS_MINIAPP_URL;
+              } else {
+                onTryOwn();
+              }
+            }}
             style={{
               width: '100%',
               gap: 8,

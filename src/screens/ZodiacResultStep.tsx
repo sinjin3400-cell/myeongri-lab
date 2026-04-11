@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { haptic } from '../utils/haptic';
 import { trackEvent } from '../utils/analytics';
 import { Analytics } from '@apps-in-toss/web-framework';
 import { ScoreRing } from '../components/ScoreRing';
+import { ShareSheet } from '../components/ShareSheet';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
 import type { ZodiacResult, AppFeature } from '../types';
 
@@ -28,6 +29,8 @@ const CATEGORY_META: Record<string, { icon: string; gradient: string }> = {
 };
 
 export function ZodiacResultStep({ result, userName, onRestart, onHome, onSelectFeature }: Props) {
+  const [showShare, setShowShare] = useState(false);
+
   // 앱인토스 전환지표: 띠운세 결과 화면 도달
   useEffect(() => {
     try { Analytics.impression({ log_name: 'fortune_result_view', feature: 'zodiac' }); } catch (_) { /* noop */ }
@@ -305,6 +308,41 @@ export function ZodiacResultStep({ result, userName, onRestart, onHome, onSelect
         {!bannerReady && '🎯 배너 광고 영역 (테스트)'}
       </div>
 
+      {/* 공유 버튼 */}
+      <button
+        type="button"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          width: '100%',
+          marginTop: 20,
+          marginBottom: 14,
+          padding: '15px 20px',
+          fontSize: 16,
+          fontWeight: 700,
+          color: '#fff',
+          border: 'none',
+          borderRadius: 16,
+          cursor: 'pointer',
+          background: 'linear-gradient(135deg, #e88a3a 0%, #d45fa0 50%, #9b59d0 100%)',
+          boxShadow: '0 4px 16px rgba(212, 95, 160, 0.35), 0 2px 6px rgba(155, 89, 208, 0.2)',
+          letterSpacing: '-0.01em',
+        }}
+        onClick={() => { haptic(); setShowShare(true); }}
+      >
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path
+            d="M13.5 6a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5zM4.5 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5zM13.5 16.5a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5zM6.44 10.24l5.13 2.77M11.56 5l-5.12 2.75"
+            stroke="#fff"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+        ✨ 친구에게 결과 공유하기
+      </button>
+
       {/* 하단 CTA */}
       <div className="app-footer-cta">
         <button className="btn-primary" onClick={() => { haptic(); onRestart(); }}>
@@ -314,6 +352,19 @@ export function ZodiacResultStep({ result, userName, onRestart, onHome, onSelect
           홈으로 돌아가기
         </button>
       </div>
+
+      {/* 공유 시트 */}
+      {showShare && (
+        <ShareSheet
+          shareInfo={{
+            title: `${userName}님의 ${result.animal}띠 운세`,
+            summaryLine: result.summaryLine,
+            score: result.score,
+            extraLine: result.keywords?.length ? `#${result.keywords.slice(0, 3).join(' #')}` : undefined,
+          }}
+          onClose={() => setShowShare(false)}
+        />
+      )}
     </div>
   );
 }

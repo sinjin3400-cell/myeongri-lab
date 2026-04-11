@@ -326,7 +326,7 @@ export function ResultStep({
   const { grantReward } = usePromotion();
   const [rewardInfo, setRewardInfo] = useState<{ amount: number; isGolden: boolean } | null>(null);
 
-  // 프리미엄 열람권
+  // 황금 열람권
   const { count: passCount, hasPass, usePass, addPasses } = usePremiumPass();
 
   // 앱인토스 전환지표: 운세 결과 화면 도달
@@ -588,7 +588,7 @@ export function ResultStep({
             {loadingFull ? (
               <>운세를 펼치는 중... ✨</>
             ) : hasPass ? (
-              <>🎫 프리미엄 열람권으로 바로 보기 ({passCount}회 남음)</>
+              <>🎫 황금 열람권으로 바로 보기 ({passCount}회 남음)</>
             ) : (
               <>숨겨진 2개의 운세가 더 있어요 ☝️👀</>
             )}
@@ -778,11 +778,23 @@ export function ResultStep({
       {/* 공유 시트 */}
       {showShare && (
         <ShareSheet
-          result={shareResult}
-          userName={displayName}
-          highlight={highlight}
+          shareInfo={{
+            title: `${displayName}님의 오늘 운세`,
+            summaryLine: shareResult.summaryLine,
+            score: shareResult.score,
+            extraLine: `🍀 행운색: ${shareResult.lucky.color} | 행운숫자: ${shareResult.lucky.number}`,
+            serverData: {
+              n: displayName, sl: shareResult.summaryLine, sc: shareResult.score,
+              bc: highlight.bestCategory, bs: highlight.bestSummary,
+              cc: highlight.cautionCategory, cs: highlight.cautionSummary,
+              lc: shareResult.lucky.color, ln: shareResult.lucky.number,
+              ld: shareResult.lucky.direction, li: shareResult.lucky.item,
+              ov: shareResult.overall, lo: shareResult.love,
+              mo: shareResult.money, he: shareResult.health,
+            },
+          }}
           onClose={() => setShowShare(false)}
-          onShareReward={() => addPasses(1)}
+          onShareReward={() => addPasses(5)}
         />
       )}
     </div>

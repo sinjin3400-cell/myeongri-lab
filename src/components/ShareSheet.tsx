@@ -1,11 +1,26 @@
-import type { FortuneResult, FortuneHighlight } from '../types';
+import { useState } from 'react';
 import { trackShareMethod } from '../utils/analytics';
-import { Analytics } from '@apps-in-toss/web-framework';
+import { Analytics, contactsViral, setClipboardText } from '@apps-in-toss/web-framework';
+
+/**
+ * 모든 결과 타입에서 사용 가능한 범용 공유 데이터.
+ * 각 결과 페이지에서 자신의 데이터 → ShareInfo로 변환하여 전달.
+ */
+export type ShareInfo = {
+  /** 공유 제목 (e.g., "경민님의 오늘 운세") */
+  title: string;
+  /** 한줄 요약 */
+  summaryLine: string;
+  /** 점수 (없으면 숨김) */
+  score?: number;
+  /** 공유 텍스트에 추가할 행운/추가 정보 (e.g., "행운색: 파란색 | 행운숫자: 7") */
+  extraLine?: string;
+  /** 서버에 저장할 공유 데이터 (FortuneResult용). 없으면 기본 URL만 공유 */
+  serverData?: Record<string, unknown>;
+};
 
 type Props = {
-  result: FortuneResult;
-  userName: string;
-  highlight?: FortuneHighlight;
+  shareInfo: ShareInfo;
   onClose: () => void;
   onShareReward?: () => void;
 };
@@ -24,37 +39,98 @@ function loadKakaoSDK(): Promise<void> {
   });
 }
 
-export function ShareSheet({ result, userName, highlight, onClose, onShareReward }: Props) {
-  const kakaoBaseUrl = 'https://myeongri-lab.vercel.app';
+const SHARE_REWARD_MODULE_ID = 'faa9cc68-4c06-4174-8303-1fa5b7250c1d';
 
-  /** 서버에 공유 데이터를 저장하고 짧은 URL을 반환 */
+/** 토스 미니앱 딥링크 URL */
+const TOSS_MINIAPP_URL = 'https://toss.im/miniapps/myeongri-lab';
+/** 웹 fallback URL */
+const WEB_BASE_URL = 'https://myeongri-lab.vercel.app';
+
+/** 클립보드에 텍스트 복사 (토스 API 우선 → navigator.clipboard → textarea fallback) */
+async function copyToClipboard(text: string): Promise<void> {
+  // 1) 토스 SDK setClipboardText
+  try {
+    await setClipboardText(text);
+    return;
+  } catch { /* 토스 외부 환경 → fallback */ }
+
+  // 2) navigator.clipboard
+  try {
+    await navigator.clipboard.writeText(text);
+    return;
+  } catch { /* 보안 제한 → fallback */ }
+
+  // 3) textarea fallback (legacy)
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.cssText = 'position:fixed;left:-9999px;top:-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textarea);
+}
+
+export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
+  const [viralLoading, setViralLoading] = useState(false);
+
+  const { title, summaryLine, score, extraLine, serverData } = shareInfo;
+
+  /** 서버에 공유 데이터를 저장하고 짧은 URL을 반환 (fortune 전용) */
   const getShortShareUrl = async (): Promise<string> => {
+    if (!serverData) return TOSS_MINIAPP_URL;
     try {
       const apiBase = import.meta.env.VITE_API_BASE || '';
       const shareRes = await fetch(`${apiBase}/api/share`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          n: userName, sl: result.summaryLine, sc: result.score,
-          bc: highlight?.bestCategory || 'overall', bs: highlight?.bestSummary || '',
-          cc: highlight?.cautionCategory || 'health', cs: highlight?.cautionSummary || '',
-          lc: result.lucky.color, ln: result.lucky.number,
-          ld: result.lucky.direction, li: result.lucky.item,
-          ov: result.overall, lo: result.love, mo: result.money, he: result.health,
-        }),
+        body: JSON.stringify(serverData),
       });
       const { id } = await shareRes.json();
-      if (id) return `${kakaoBaseUrl}/s/${id}`;
+      if (id) return `${WEB_BASE_URL}/s/${id}`;
     } catch { /* 실패 시 기본 URL */ }
-    return kakaoBaseUrl;
+    return TOSS_MINIAPP_URL;
   };
 
-  const buildShareText = (url: string) =>
-    `✨ ${userName}님의 오늘 운세\n\n${result.summaryLine}\n🍀 행운색: ${result.lucky.color} | 행운숫자: ${result.lucky.number}\n\n${userName}님의 운세 보기 →\n${url}`;
+  const buildShareText = (url: string) => {
+    let text = `✨ ${title}\n\n${summaryLine}`;
+    if (extraLine) text += `\n${extraLine}`;
+    text += `\n\n명리연구소에서 확인하기 →\n${url}`;
+    return text;
+  };
 
   const closeWithReward = () => {
     onShareReward?.();
     onClose();
+  };
+
+  /** 토스 친구 초대 (공유 리워드) */
+  const handleTossInvite = () => {
+    trackShareMethod('toss_invite');
+    try { Analytics.click({ log_name: 'fortune_share', method: 'toss_invite' }); } catch (_) { /* noop */ }
+    setViralLoading(true);
+    try {
+      const cleanup = contactsViral({
+        options: { moduleId: SHARE_REWARD_MODULE_ID },
+        onEvent: (event) => {
+          if (event.type === 'sendViral') {
+            onShareReward?.();
+          } else if (event.type === 'close') {
+            setViralLoading(false);
+            cleanup();
+            if (event.data.sentRewardsCount > 0) {
+              onClose();
+            }
+          }
+        },
+        onError: () => {
+          setViralLoading(false);
+          handleCopyLink();
+        },
+      });
+    } catch {
+      setViralLoading(false);
+      handleCopyLink();
+    }
   };
 
   /** 운세 링크만 복사 */
@@ -62,20 +138,9 @@ export function ShareSheet({ result, userName, highlight, onClose, onShareReward
     trackShareMethod('copy_link');
     try { Analytics.click({ log_name: 'fortune_share', method: 'copy_link' }); } catch (_) { /* noop */ }
     const url = await getShortShareUrl();
-    try {
-      await navigator.clipboard.writeText(url);
-      alert('운세 링크가 복사되었어요! 친구에게 공유해보세요 ✨');
-      closeWithReward();
-    } catch {
-      const textarea = document.createElement('textarea');
-      textarea.value = url;
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
-      alert('운세 링크가 복사되었어요!');
-      closeWithReward();
-    }
+    await copyToClipboard(url);
+    alert('운세 링크가 복사되었어요! 친구에게 공유해보세요 ✨');
+    closeWithReward();
   };
 
   const handleCopy = async () => {
@@ -83,20 +148,9 @@ export function ShareSheet({ result, userName, highlight, onClose, onShareReward
     try { Analytics.click({ log_name: 'fortune_share', method: 'copy_text' }); } catch (_) { /* noop */ }
     const url = await getShortShareUrl();
     const text = buildShareText(url);
-    try {
-      await navigator.clipboard.writeText(text);
-      alert('운세가 복사되었어요! 친구에게 공유해보세요 ✨');
-      closeWithReward();
-    } catch {
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
-      alert('운세가 복사되었어요!');
-      closeWithReward();
-    }
+    await copyToClipboard(text);
+    alert('운세가 복사되었어요! 친구에게 공유해보세요 ✨');
+    closeWithReward();
   };
 
   const handleNativeShare = async () => {
@@ -106,7 +160,7 @@ export function ShareSheet({ result, userName, highlight, onClose, onShareReward
       try {
         const url = await getShortShareUrl();
         await navigator.share({
-          title: `${userName}님의 운세 - 명리연구소`,
+          title: `${title} - 명리연구소`,
           text: buildShareText(url),
         });
         closeWithReward();
@@ -129,19 +183,24 @@ export function ShareSheet({ result, userName, highlight, onClose, onShareReward
       if (!Kakao.isInitialized()) {
         const key = (import.meta.env.VITE_KAKAO_JS_KEY as string | undefined)?.trim();
         if (!key) {
-          alert('카카오 앱 키가 설정되지 않았어요. .env에 VITE_KAKAO_JS_KEY를 추가해주세요.');
+          // 키 없음 → 네이티브 공유로 대체
+          await handleNativeShare();
           return;
         }
         Kakao.init(key);
       }
+
       const kakaoShareUrl = await getShortShareUrl();
-      const desc = `🎯 오늘의 운세 점수: ${result.score}점\n"${result.summaryLine}"\n🍀 행운색: ${result.lucky.color} | 🔢 ${result.lucky.number}`;
+      const desc = score != null
+        ? `🎯 점수: ${score}점\n"${summaryLine}"`
+        : summaryLine;
+
       Kakao.Share.sendDefault({
         objectType: 'feed',
         content: {
-          title: `✨ ${userName}님의 오늘 운세`,
+          title: `✨ ${title}`,
           description: desc,
-          imageUrl: `${kakaoBaseUrl}/og-image.png?v=3`,
+          imageUrl: `${WEB_BASE_URL}/og-image.png?v=3`,
           link: {
             mobileWebUrl: kakaoShareUrl,
             webUrl: kakaoShareUrl,
@@ -158,15 +217,18 @@ export function ShareSheet({ result, userName, highlight, onClose, onShareReward
         ],
       });
       closeWithReward();
-    } catch {
+    } catch (err) {
+      // 카카오 SDK 에러 (4019 등) → 네이티브 공유로 대체
+      console.warn('카카오 공유 실패:', err);
       if (navigator.share) {
         try {
           const fallbackUrl = await getShortShareUrl();
-          await navigator.share({ title: `${userName}님의 운세`, text: buildShareText(fallbackUrl) });
+          await navigator.share({ title, text: buildShareText(fallbackUrl) });
           closeWithReward();
         } catch { /* 취소 */ }
       } else {
-        alert('카카오톡 공유에 실패했어요. 텍스트 복사로 공유해주세요.');
+        // 최종 fallback: 텍스트 복사
+        await handleCopy();
       }
     }
   };
@@ -207,6 +269,31 @@ export function ShareSheet({ result, userName, highlight, onClose, onShareReward
         </h3>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {/* 토스 친구 초대 (공유 리워드) */}
+          <button
+            onClick={handleTossInvite}
+            disabled={viralLoading}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              gap: 8, width: '100%', padding: '14px 20px',
+              fontSize: 16, fontWeight: 700, color: '#fff',
+              border: 'none', borderRadius: 14, cursor: 'pointer',
+              background: 'linear-gradient(135deg, #d4af37 0%, #f5d470 40%, #d4af37 100%)',
+              boxShadow: '0 4px 14px rgba(212, 175, 55, 0.4)',
+              opacity: viralLoading ? 0.7 : 1,
+            }}
+          >
+            <span style={{ fontSize: 18 }}>🎫</span>
+            친구 초대하고 황금 열람권 받기
+          </button>
+          <p style={{
+            margin: '-4px 0 2px', textAlign: 'center',
+            fontSize: 11, fontWeight: 600, color: 'var(--gold-600)',
+            opacity: 0.8,
+          }}>
+            공유 완료 시 황금 열람권 5개 지급!
+          </p>
+
           <button
             onClick={handleCopyLink}
             style={{

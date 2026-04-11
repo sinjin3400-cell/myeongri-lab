@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { haptic } from '../utils/haptic';
 import { PageHeader } from '../components/PageHeader';
+import { ShareSheet } from '../components/ShareSheet';
 import { useInterstitialAd, useTossBanner, AD_IDS } from '../hooks/useAds';
 import { trackEvent } from '../utils/analytics';
 import { Analytics } from '@apps-in-toss/web-framework';
@@ -27,6 +28,7 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
   const hasSaju = !!result.interpretation.sajuLinked;
   const [tab, setTab] = useState<Tab>(hasSaju ? 'sajuLinked' : 'traditional');
   const [unlocked, setUnlocked] = useState(false);
+  const [showShare, setShowShare] = useState(false);
 
   const { isLoaded: rewardLoaded, showAd } = useInterstitialAd(AD_IDS.REWARDED);
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
@@ -396,10 +398,44 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
               letterSpacing: '-0.01em',
             }}
           >
-            {hasPass ? `🎫 프리미엄 열람권으로 바로 보기 (${passCount}회 남음)` : '🎬 광고 보고 4세트 더 받기'}
+            {hasPass ? `🎫 황금 열람권으로 바로 보기 (${passCount}회 남음)` : '🎬 광고 보고 4세트 더 받기'}
           </button>
         )}
       </div>
+
+      {/* 공유 버튼 */}
+      <button
+        type="button"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          width: '100%',
+          marginBottom: 14,
+          padding: '15px 20px',
+          fontSize: 16,
+          fontWeight: 700,
+          color: '#fff',
+          border: 'none',
+          borderRadius: 16,
+          cursor: 'pointer',
+          background: 'linear-gradient(135deg, #e88a3a 0%, #d45fa0 50%, #9b59d0 100%)',
+          boxShadow: '0 4px 16px rgba(212, 95, 160, 0.35), 0 2px 6px rgba(155, 89, 208, 0.2)',
+          letterSpacing: '-0.01em',
+        }}
+        onClick={() => { haptic(); setShowShare(true); }}
+      >
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path
+            d="M13.5 6a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5zM4.5 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5zM13.5 16.5a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5zM6.44 10.24l5.13 2.77M11.56 5l-5.12 2.75"
+            stroke="#fff"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+        ✨ 친구에게 결과 공유하기
+      </button>
 
       {/* CTA */}
       <div className="app-footer-cta">
@@ -410,6 +446,18 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
           홈으로
         </button>
       </div>
+
+      {/* 공유 시트 */}
+      {showShare && (
+        <ShareSheet
+          shareInfo={{
+            title: `${userName ?? '회원'}님의 꿈해몽 결과`,
+            summaryLine: result.summary,
+            extraLine: `${typeStyle.emoji} ${result.type} · ${result.advice}`,
+          }}
+          onClose={() => setShowShare(false)}
+        />
+      )}
     </div>
   );
 }
