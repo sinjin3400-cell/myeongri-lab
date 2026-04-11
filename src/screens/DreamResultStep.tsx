@@ -416,8 +416,8 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
           border: 'none',
           borderRadius: 16,
           cursor: 'pointer',
-          background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-          boxShadow: '0 4px 14px rgba(124, 58, 237, 0.25)',
+          background: 'linear-gradient(135deg, var(--gold-500) 0%, var(--gold-600) 100%)',
+          boxShadow: '0 4px 14px rgba(201, 169, 98, 0.3)',
           letterSpacing: '-0.01em',
         }}
         onClick={() => { haptic(); setShowShare(true); }}
