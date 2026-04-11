@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { trackShareMethod } from '../utils/analytics';
-import { Analytics, contactsViral, setClipboardText, getTossShareLink } from '@apps-in-toss/web-framework';
+import { Analytics, contactsViral, setClipboardText } from '@apps-in-toss/web-framework';
 
 /**
  * 모든 결과 타입에서 사용 가능한 범용 공유 데이터.
@@ -43,9 +43,6 @@ const SHARE_REWARD_MODULE_ID = 'faa9cc68-4c06-4174-8303-1fa5b7250c1d';
 
 /** 웹 fallback URL (서버 공유 데이터 저장용) */
 const WEB_BASE_URL = 'https://myeongri-lab.vercel.app';
-/** 토스 미니앱 딥링크 */
-const TOSS_DEEPLINK = 'intoss://myeongri-lab';
-
 /** 클립보드에 텍스트 복사 (토스 API 우선 → navigator.clipboard → textarea fallback) */
 async function copyToClipboard(text: string): Promise<void> {
   // 1) 토스 SDK setClipboardText
@@ -75,15 +72,9 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
 
   const { title, summaryLine, score, extraLine, serverData } = shareInfo;
 
-  /** 토스 딥링크 기반 공유 URL 생성 (토스 앱으로 직접 연결) */
-  const getTossShareUrl = async (): Promise<string> => {
-    try {
-      // getTossShareLink: intoss:// 딥링크 → 토스 앱 실행 가능한 공유 URL 반환
-      const tossLink = await getTossShareLink(TOSS_DEEPLINK);
-      if (tossLink) return tossLink;
-    } catch { /* 토스 외부 환경 → fallback */ }
-
-    // fallback: 서버에 공유 데이터 저장 후 웹 URL 반환
+  /** 공유 URL 생성 — 항상 서버에 데이터 저장 후 웹 URL 반환 */
+  const getShareUrl = async (): Promise<string> => {
+    // 서버에 공유 데이터 저장 → 웹 URL 반환 (카카오/문자/링크복사 등 외부 공유에 사용)
     if (serverData) {
       try {
         const apiBase = import.meta.env.VITE_API_BASE || '';
@@ -145,7 +136,7 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
   const handleCopyLink = async () => {
     trackShareMethod('copy_link');
     try { Analytics.click({ log_name: 'fortune_share', method: 'copy_link' }); } catch (_) { /* noop */ }
-    const url = await getTossShareUrl();
+    const url = await getShareUrl();
     await copyToClipboard(url);
     alert('운세 링크가 복사되었어요! 친구에게 공유해보세요 ✨');
     closeWithReward();
@@ -154,7 +145,7 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
   const handleCopy = async () => {
     trackShareMethod('copy_text');
     try { Analytics.click({ log_name: 'fortune_share', method: 'copy_text' }); } catch (_) { /* noop */ }
-    const url = await getTossShareUrl();
+    const url = await getShareUrl();
     const text = buildShareText(url);
     await copyToClipboard(text);
     alert('운세가 복사되었어요! 친구에게 공유해보세요 ✨');
@@ -166,7 +157,7 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
     try { Analytics.click({ log_name: 'fortune_share', method: 'native_share' }); } catch (_) { /* noop */ }
     if (navigator.share) {
       try {
-        const url = await getTossShareUrl();
+        const url = await getShareUrl();
         await navigator.share({
           title: `${title} - 명리연구소`,
           text: buildShareText(url),
@@ -198,7 +189,7 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
         Kakao.init(key);
       }
 
-      const kakaoShareUrl = await getTossShareUrl();
+      const kakaoShareUrl = await getShareUrl();
       const desc = score != null
         ? `🎯 점수: ${score}점\n"${summaryLine}"`
         : summaryLine;
@@ -230,7 +221,7 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
       console.warn('카카오 공유 실패:', err);
       if (navigator.share) {
         try {
-          const fallbackUrl = await getTossShareUrl();
+          const fallbackUrl = await getShareUrl();
           await navigator.share({ title, text: buildShareText(fallbackUrl) });
           closeWithReward();
         } catch { /* 취소 */ }
@@ -244,7 +235,7 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
   const handleSmsShare = async () => {
     trackShareMethod('sms');
     try { Analytics.click({ log_name: 'fortune_share', method: 'sms' }); } catch (_) { /* noop */ }
-    const url = await getTossShareUrl();
+    const url = await getShareUrl();
     const body = encodeURIComponent(buildShareText(url));
     const isIOS = /iPhone|iPad/i.test(navigator.userAgent);
     window.location.href = isIOS ? `sms:&body=${body}` : `sms:?body=${body}`;
