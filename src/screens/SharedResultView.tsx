@@ -1,12 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ResultSparkleDecor } from '../components/ResultSparkleDecor';
 import { ScoreRing } from '../components/ScoreRing';
 import type { FortuneHighlight, FortuneCategory } from '../types';
 import type { FortuneTexts } from '../utils/shareUrl';
-import { getTossShareLink } from '@apps-in-toss/web-framework';
 
-/** 토스 미니앱 딥링크 */
-const TOSS_DEEPLINK = 'intoss://myeongri-lab';
+/** 토스 앱 딥링크 (외부 웹에서 토스 앱 실행) */
+const TOSS_APP_SCHEME = 'supertoss://miniapp?appkey=myeongri-lab';
+/** 토스 앱 스토어 링크 */
+const TOSS_IOS_STORE = 'https://apps.apple.com/kr/app/id839333328';
+const TOSS_ANDROID_STORE = 'https://play.google.com/store/apps/details?id=viva.republica.toss';
+
+/** 토스 앱 열기 시도 → 실패 시 스토어로 이동 */
+function openTossApp() {
+  const isIOS = /iPhone|iPad/i.test(navigator.userAgent);
+  const storeUrl = isIOS ? TOSS_IOS_STORE : TOSS_ANDROID_STORE;
+
+  // 딥링크로 토스 앱 열기 시도
+  window.location.href = TOSS_APP_SCHEME;
+
+  // 2초 내에 앱이 안 열리면 스토어로 이동
+  setTimeout(() => {
+    // 앱이 열렸으면 페이지가 blur 상태 → 스토어 이동 안 함
+    if (document.hidden) return;
+    window.location.href = storeUrl;
+  }, 2000);
+}
 
 type Props = {
   userName: string;
@@ -24,16 +42,10 @@ const CATEGORY_LABEL: Record<FortuneCategory, { title: string; icon: string }> =
 
 export function SharedResultView({ userName, highlight, texts, onTryOwn }: Props) {
   const [showMore, setShowMore] = useState(false);
-  const [tossLink, setTossLink] = useState<string | null>(null);
 
-  // 토스 앱 외부에서 열렸을 때 토스 공유 링크 미리 생성
-  useEffect(() => {
-    const isInToss = navigator.userAgent.includes('TossApp') || navigator.userAgent.includes('AppsInToss');
-    if (isInToss) return; // 토스 앱 내부 → onTryOwn 사용
-    getTossShareLink(TOSS_DEEPLINK)
-      .then((link) => setTossLink(link))
-      .catch(() => { /* 토스 링크 생성 실패 → onTryOwn fallback */ });
-  }, []);
+  // 토스 앱 내부인지 확인
+  const isInToss = typeof navigator !== 'undefined' &&
+    (navigator.userAgent.includes('TossApp') || navigator.userAgent.includes('AppsInToss'));
 
   const lucky = highlight.lucky;
   const bestLabel = CATEGORY_LABEL[highlight.bestCategory];
@@ -225,12 +237,12 @@ export function SharedResultView({ userName, highlight, texts, onTryOwn }: Props
           <button
             className="btn-primary"
             onClick={() => {
-              if (tossLink) {
-                // 토스 앱 외부 → 토스 앱 열기 (없으면 앱스토어/플레이스토어)
-                window.location.href = tossLink;
-              } else {
+              if (isInToss) {
                 // 토스 앱 내부 → 앱 내 이동
                 onTryOwn();
+              } else {
+                // 외부 웹 브라우저 → 토스 앱 열기 (없으면 스토어)
+                openTossApp();
               }
             }}
             style={{
@@ -241,7 +253,7 @@ export function SharedResultView({ userName, highlight, texts, onTryOwn }: Props
               boxShadow: '0 4px 14px rgba(201, 169, 98, 0.3)',
             }}
           >
-            나만의 운세 보러가기 ✨
+            {isInToss ? '나만의 운세 보러가기 ✨' : '토스 앱에서 운세 보기 ✨'}
           </button>
         </div>
         <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--navy-300)', textAlign: 'center' }}>
