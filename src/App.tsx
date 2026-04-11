@@ -72,7 +72,12 @@ const initialInfo: UserInfo = {
 
 export default function App() {
   const [sharedView, setSharedView] = useState(() => getSharedDataSync());
-  const [sharedLoading, setSharedLoading] = useState(false);
+  // share slug가 있으면 초기부터 로딩 상태 (홈 화면 깜빡임 방지)
+  const [sharedLoading, setSharedLoading] = useState(() => {
+    const slug = getShareSlug();
+    return !!slug && slug.length <= 8 && !getSharedDataSync();
+  });
+  const [sharedExpired, setSharedExpired] = useState(false);
 
   // 짧은 공유 ID(서버 저장)인 경우 비동기로 조회
   useEffect(() => {
@@ -81,8 +86,13 @@ export default function App() {
     setSharedLoading(true);
     fetchSharedData(slug)
       .then((result) => {
-        if (result) setSharedView(result);
+        if (result) {
+          setSharedView(result);
+        } else {
+          setSharedExpired(true);
+        }
       })
+      .catch(() => setSharedExpired(true))
       .finally(() => setSharedLoading(false));
   }, []);
   const [step, setStep] = useState<Step>('home');
@@ -304,6 +314,25 @@ export default function App() {
         <div style={{ width: 40, height: 40, border: '3px solid #e5e0d5', borderTopColor: '#c9a962', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         <p style={{ fontSize: 15, color: '#8c8577' }}>운세 결과를 불러오는 중...</p>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  // 공유 데이터 만료/없음
+  if (sharedExpired) {
+    return (
+      <div className="app-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80dvh', textAlign: 'center', gap: 16 }}>
+        <span style={{ fontSize: 48 }}>⏳</span>
+        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--navy-700)' }}>
+          공유된 운세가 만료되었어요
+        </h2>
+        <p style={{ margin: 0, fontSize: 15, color: 'var(--navy-400)', lineHeight: 1.6 }}>
+          공유 운세는 24시간 동안만 볼 수 있어요.
+          <br />나만의 운세를 확인해보세요!
+        </p>
+        <button className="btn-primary" onClick={() => { setSharedExpired(false); window.history.replaceState({}, '', '/'); }} style={{ marginTop: 8 }}>
+          나만의 운세 보러가기 ✨
+        </button>
       </div>
     );
   }
