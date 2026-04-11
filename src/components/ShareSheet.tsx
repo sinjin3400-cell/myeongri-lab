@@ -41,10 +41,8 @@ function loadKakaoSDK(): Promise<void> {
 
 const SHARE_REWARD_MODULE_ID = 'faa9cc68-4c06-4174-8303-1fa5b7250c1d';
 
-/** 토스 미니앱 딥링크 URL */
-const TOSS_MINIAPP_URL = 'https://toss.im/miniapps/myeongri-lab';
-/** 웹 fallback URL */
-const WEB_BASE_URL = 'https://myeongri-lab.vercel.app';
+/** 기본 공유 URL (vercel 웹 → 토스 앱 안내 배너 포함) */
+const BASE_URL = 'https://myeongri-lab.vercel.app';
 
 /** 클립보드에 텍스트 복사 (토스 API 우선 → navigator.clipboard → textarea fallback) */
 async function copyToClipboard(text: string): Promise<void> {
@@ -77,7 +75,7 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
 
   /** 서버에 공유 데이터를 저장하고 짧은 URL을 반환 (fortune 전용) */
   const getShortShareUrl = async (): Promise<string> => {
-    if (!serverData) return TOSS_MINIAPP_URL;
+    if (!serverData) return BASE_URL;
     try {
       const apiBase = import.meta.env.VITE_API_BASE || '';
       const shareRes = await fetch(`${apiBase}/api/share`, {
@@ -86,9 +84,9 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
         body: JSON.stringify(serverData),
       });
       const { id } = await shareRes.json();
-      if (id) return `${WEB_BASE_URL}/s/${id}`;
+      if (id) return `${BASE_URL}/s/${id}`;
     } catch { /* 실패 시 기본 URL */ }
-    return TOSS_MINIAPP_URL;
+    return BASE_URL;
   };
 
   const buildShareText = (url: string) => {
@@ -200,7 +198,7 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
         content: {
           title: `✨ ${title}`,
           description: desc,
-          imageUrl: `${WEB_BASE_URL}/og-image.png?v=3`,
+          imageUrl: `${BASE_URL}/og-image.png?v=3`,
           link: {
             mobileWebUrl: kakaoShareUrl,
             webUrl: kakaoShareUrl,
