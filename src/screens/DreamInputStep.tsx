@@ -16,7 +16,7 @@ type Props = {
 const MIN_LEN = 5;
 const MAX_LEN = 500;
 
-const PLACEHOLDER_EXAMPLE = `예시) 높은 절벽 위에서 아래를 내려다보고 있었는데, 갑자기 발밑이 무너지면서 떨어지기 시작했어요. 떨어지는 중간에 큰 독수리가 나타나서 저를 등에 태우고 하늘 위로 올라갔어요. 구름 위에 황금빛 문이 하나 있었는데, 문을 열자마자 잠에서 깼어요.`;
+const PLACEHOLDER_EXAMPLE = `예) 하늘을 날다가 황금빛 문을 열었는데, 문 뒤에 넓은 꽃밭이 펼쳐져 있었어요. 누군가 손을 흔들고 있었는데 잠에서 깼어요.`;
 
 export function DreamInputStep({ value, onChange, onNext, onBack, hasSajuInfo, userInfo }: Props) {
   const [touched, setTouched] = useState(false);
@@ -94,8 +94,8 @@ export function DreamInputStep({ value, onChange, onNext, onBack, hasSajuInfo, u
       >
         <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>💡</span>
         <p style={{ margin: 0, fontSize: 13, color: 'var(--navy-400)', lineHeight: 1.6 }}>
-          장소, 등장인물, 느낌, 행동 등을 <span style={{ color: 'var(--navy-600)', fontWeight: 600 }}>자세히 쓸수록 해몽이 정확</span>해져요.
-          짧은 한 줄도 괜찮지만, 기억나는 만큼 적어주시면 더 깊은 풀이를 받을 수 있어요!
+          장소, 인물, 느낌 등 <span style={{ color: 'var(--navy-600)', fontWeight: 600 }}>기억나는 만큼 자유롭게</span> 적어주세요.
+          한 줄이어도 괜찮아요 — 자세할수록 더 깊은 풀이를 받을 수 있어요 ✨
         </p>
       </div>
 
