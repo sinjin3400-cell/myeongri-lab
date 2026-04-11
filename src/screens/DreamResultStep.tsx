@@ -454,6 +454,16 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
             title: `${userName ?? '회원'}님의 꿈해몽 결과`,
             summaryLine: result.summary,
             extraLine: `${typeStyle.emoji} ${result.type} · ${result.advice}`,
+            serverData: {
+              n: userName ?? '회원',
+              sl: result.summary,
+              sc: 0,
+              bc: 'overall' as const,
+              bs: `${result.type} — ${result.advice}`,
+              cc: 'overall' as const,
+              cs: result.interpretation.traditional?.slice(0, 50) ?? '',
+              lc: '', ln: 0, ld: '', li: '',
+            },
           }}
           onClose={() => setShowShare(false)}
         />

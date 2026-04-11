@@ -446,6 +446,16 @@ export function CompatResultStep({ result, onRestart, onHome, onSelectFeature }:
             summaryLine: result.summaryLine,
             score: result.score,
             extraLine: `💕 ${result.person1Emoji} × ${result.person2Emoji} · ${result.elementRelation ?? ''} 관계`,
+            serverData: {
+              n: `${result.person1Animal}띠 × ${result.person2Animal}띠`,
+              sl: result.summaryLine,
+              sc: result.score,
+              bc: 'love' as const,
+              bs: result.summaryLine,
+              cc: 'overall' as const,
+              cs: `${result.elementRelation ?? ''} 관계`,
+              lc: '', ln: 0, ld: '', li: '',
+            },
           }}
           onClose={() => setShowShare(false)}
         />

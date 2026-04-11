@@ -361,6 +361,16 @@ export function ZodiacResultStep({ result, userName, onRestart, onHome, onSelect
             summaryLine: result.summaryLine,
             score: result.score,
             extraLine: result.keywords?.length ? `#${result.keywords.slice(0, 3).join(' #')}` : undefined,
+            serverData: {
+              n: userName,
+              sl: result.summaryLine,
+              sc: result.score,
+              bc: 'overall' as const,
+              bs: result.summaryLine,
+              cc: 'health' as const,
+              cs: result.keywords?.slice(0, 3).join(', ') ?? '',
+              lc: '', ln: 0, ld: '', li: '',
+            },
           }}
           onClose={() => setShowShare(false)}
         />
