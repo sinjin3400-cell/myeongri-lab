@@ -16,11 +16,7 @@ type Props = {
 const MIN_LEN = 5;
 const MAX_LEN = 500;
 
-const EXAMPLE_DREAMS = [
-  '큰 고래가 헤엄치다가 내가 탄 배를 부수는 꿈',
-  '돌아가신 할머니가 환하게 웃으며 손짓하는 꿈',
-  '누군가에게 쫓기다가 갑자기 하늘을 나는 꿈',
-];
+const PLACEHOLDER_EXAMPLE = `예시) 높은 절벽 위에서 아래를 내려다보고 있었는데, 갑자기 발밑이 무너지면서 떨어지기 시작했어요. 떨어지는 중간에 큰 독수리가 나타나서 저를 등에 태우고 하늘 위로 올라갔어요. 구름 위에 황금빛 문이 하나 있었는데, 문을 열자마자 잠에서 깼어요.`;
 
 export function DreamInputStep({ value, onChange, onNext, onBack, hasSajuInfo, userInfo }: Props) {
   const [touched, setTouched] = useState(false);
@@ -62,8 +58,8 @@ export function DreamInputStep({ value, onChange, onNext, onBack, hasSajuInfo, u
         <textarea
           value={text}
           onChange={(e) => onChange({ ...value, text: e.target.value.slice(0, MAX_LEN) })}
-          placeholder="예) 큰 고래가 헤엄치다가 내가 탄 배를 부수는 꿈을 꿨어요"
-          rows={6}
+          placeholder={PLACEHOLDER_EXAMPLE}
+          rows={7}
           style={{
             width: '100%',
             border: 'none',
@@ -83,36 +79,24 @@ export function DreamInputStep({ value, onChange, onNext, onBack, hasSajuInfo, u
         </div>
       </div>
 
-      {/* 예시 칩 */}
-      <div style={{ marginBottom: 18 }}>
-        <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 600, color: 'var(--navy-400)' }}>
-          ✨ 이런 꿈은 어때요?
+      {/* 안내 문구 */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 8,
+          marginBottom: 18,
+          padding: '12px 14px',
+          background: 'rgba(167, 139, 250, 0.06)',
+          borderRadius: 12,
+          border: '1px solid rgba(167, 139, 250, 0.12)',
+        }}
+      >
+        <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>💡</span>
+        <p style={{ margin: 0, fontSize: 13, color: 'var(--navy-400)', lineHeight: 1.6 }}>
+          장소, 등장인물, 느낌, 행동 등을 <span style={{ color: 'var(--navy-600)', fontWeight: 600 }}>자세히 쓸수록 해몽이 정확</span>해져요.
+          짧은 한 줄도 괜찮지만, 기억나는 만큼 적어주시면 더 깊은 풀이를 받을 수 있어요!
         </p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          {EXAMPLE_DREAMS.map((ex) => (
-            <button
-              key={ex}
-              type="button"
-              onClick={() => {
-                haptic();
-                onChange({ ...value, text: ex });
-              }}
-              style={{
-                padding: '7px 11px',
-                fontSize: 12,
-                fontWeight: 500,
-                color: 'var(--navy-500)',
-                background: 'rgba(167, 139, 250, 0.08)',
-                border: '1px solid rgba(167, 139, 250, 0.2)',
-                borderRadius: 14,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              {ex}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* 사주 결합 토글 */}
