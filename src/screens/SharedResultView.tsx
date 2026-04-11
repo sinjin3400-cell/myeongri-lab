@@ -1,8 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ResultSparkleDecor } from '../components/ResultSparkleDecor';
 import { ScoreRing } from '../components/ScoreRing';
 import type { FortuneHighlight, FortuneCategory } from '../types';
 import type { FortuneTexts } from '../utils/shareUrl';
+import { getTossShareLink } from '@apps-in-toss/web-framework';
+
+/** 토스 미니앱 딥링크 */
+const TOSS_DEEPLINK = 'intoss://myeongri-lab';
 
 type Props = {
   userName: string;
@@ -20,6 +24,17 @@ const CATEGORY_LABEL: Record<FortuneCategory, { title: string; icon: string }> =
 
 export function SharedResultView({ userName, highlight, texts, onTryOwn }: Props) {
   const [showMore, setShowMore] = useState(false);
+  const [tossLink, setTossLink] = useState<string | null>(null);
+
+  // 토스 앱 외부에서 열렸을 때 토스 공유 링크 미리 생성
+  useEffect(() => {
+    const isInToss = navigator.userAgent.includes('TossApp') || navigator.userAgent.includes('AppsInToss');
+    if (isInToss) return; // 토스 앱 내부 → onTryOwn 사용
+    getTossShareLink(TOSS_DEEPLINK)
+      .then((link) => setTossLink(link))
+      .catch(() => { /* 토스 링크 생성 실패 → onTryOwn fallback */ });
+  }, []);
+
   const lucky = highlight.lucky;
   const bestLabel = CATEGORY_LABEL[highlight.bestCategory];
   const cautionLabel = CATEGORY_LABEL[highlight.cautionCategory];
@@ -209,7 +224,15 @@ export function SharedResultView({ userName, highlight, texts, onTryOwn }: Props
           </p>
           <button
             className="btn-primary"
-            onClick={onTryOwn}
+            onClick={() => {
+              if (tossLink) {
+                // 토스 앱 외부 → 토스 앱 열기 (없으면 앱스토어/플레이스토어)
+                window.location.href = tossLink;
+              } else {
+                // 토스 앱 내부 → 앱 내 이동
+                onTryOwn();
+              }
+            }}
             style={{
               width: '100%',
               gap: 8,
