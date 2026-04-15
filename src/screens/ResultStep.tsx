@@ -12,6 +12,7 @@ import { usePromotion } from '../hooks/usePromotion';
 import { trackFullFortuneClicked, trackFortuneCardExpanded, trackShareButtonClicked, trackRewardGranted } from '../utils/analytics';
 import { Analytics } from '@apps-in-toss/web-framework';
 import { usePremiumPass } from '../hooks/usePremiumPass';
+import { Toast } from '../components/Toast';
 import { CATEGORY_LABEL } from '../utils/categoryLabel';
 
 type Props = {
@@ -326,6 +327,8 @@ export function ResultStep({
 
   // 황금 열람권
   const { count: passCount, hasPass, usePass, addPasses } = usePremiumPass();
+  const [capToastMsg, setCapToastMsg] = useState('');
+  const [capToastVisible, setCapToastVisible] = useState(false);
 
   // 앱인토스 전환지표: 운세 결과 화면 도달 + 오늘 점수 저장 (어제 vs 오늘 비교용)
   useEffect(() => {
@@ -419,6 +422,7 @@ export function ResultStep({
 
   return (
     <div className="app-page">
+      <Toast message={capToastMsg} visible={capToastVisible} onDone={() => setCapToastVisible(false)} duration={3000} />
       <ResultSparkleDecor />
 
       {/* 헤더 */}
@@ -906,7 +910,13 @@ export function ResultStep({
             },
           }}
           onClose={() => setShowShare(false)}
-          onShareReward={() => addPasses(5)}
+          onShareReward={() => {
+            const { capped } = addPasses(5);
+            if (capped) {
+              setCapToastMsg('🎫 열람권 한도(20개)가 가득 찼어요!');
+              setCapToastVisible(true);
+            }
+          }}
         />
       )}
     </div>

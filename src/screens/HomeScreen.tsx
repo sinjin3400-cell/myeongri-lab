@@ -6,6 +6,7 @@ import { FortuneIcon, DreamIcon, ZodiacIcon, CompatibilityIcon } from '../compon
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
 import { recordVisit, getDailyZodiacFortunes, getDailyReward, getYesterdayScore } from '../utils/streak';
 import { usePremiumPass } from '../hooks/usePremiumPass';
+import { Toast } from '../components/Toast';
 import type { AppFeature } from '../types';
 
 type Props = {
@@ -79,17 +80,27 @@ export function HomeScreen({ onSelect }: Props) {
   const bannerRef = useRef<HTMLDivElement>(null);
 
   // 스트릭 시스템 (일일 보상)
-  const [streakInfo, setStreakInfo] = useState<{ count: number; dailyReward: number }>({ count: 0, dailyReward: 0 });
+  const [streakInfo, setStreakInfo] = useState<{ count: number; dailyReward: number; actualAdded: number }>({ count: 0, dailyReward: 0, actualAdded: 0 });
   const [showDailyReward, setShowDailyReward] = useState(false);
   const [yesterdayScore, setYesterdayScore] = useState<number | null>(null);
+  const [toastMsg, setToastMsg] = useState('');
+  const [toastVisible, setToastVisible] = useState(false);
   const { addPasses } = usePremiumPass();
 
   useEffect(() => {
     const result = recordVisit();
-    setStreakInfo({ count: result.count, dailyReward: result.dailyReward });
     if (result.isNew && result.dailyReward > 0) {
-      setShowDailyReward(true);
-      addPasses(result.dailyReward);
+      const { added, capped } = addPasses(result.dailyReward);
+      setStreakInfo({ count: result.count, dailyReward: result.dailyReward, actualAdded: added });
+      if (added > 0) setShowDailyReward(true);
+      if (capped) {
+        setTimeout(() => {
+          setToastMsg('🎫 열람권 한도(20개)가 가득 찼어요! 사용 후 다시 받을 수 있어요');
+          setToastVisible(true);
+        }, 2500);
+      }
+    } else {
+      setStreakInfo({ count: result.count, dailyReward: 0, actualAdded: 0 });
     }
     setYesterdayScore(getYesterdayScore());
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -112,6 +123,8 @@ export function HomeScreen({ onSelect }: Props) {
 
   return (
     <div className="app-page" style={{ paddingBottom: 40 }}>
+      <Toast message={toastMsg} visible={toastVisible} onDone={() => setToastVisible(false)} duration={3000} />
+
       {/* 일일 보상 알림 */}
       {showDailyReward && streakInfo.dailyReward > 0 && (
         <div
@@ -135,7 +148,7 @@ export function HomeScreen({ onSelect }: Props) {
             {streakInfo.count}일{streakInfo.count >= 2 ? ' 연속' : ''} 방문 보상!
           </p>
           <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>
-            황금 열람권 {streakInfo.dailyReward}개가 지급되었어요 🎫
+            황금 열람권 {streakInfo.actualAdded}개가 지급되었어요 🎫
           </p>
           {streakInfo.count < 7 && (
             <p style={{ margin: '6px 0 0', fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>
