@@ -119,6 +119,27 @@ async function callFortuneApi(systemPrompt: string, userPrompt: string, payload:
   return res.json();
 }
 
+/** API 응답에서 FortuneHighlight 필수 필드 검증 */
+function validateHighlight(data: unknown): FortuneHighlight {
+  const d = data as Record<string, unknown>;
+  if (!d || typeof d !== 'object') throw new Error('운세 데이터가 올바르지 않습니다');
+  if (typeof d.summaryLine !== 'string') throw new Error('운세 요약이 누락되었습니다');
+  if (typeof d.score !== 'number') throw new Error('운세 점수가 누락되었습니다');
+  if (!d.lucky || typeof d.lucky !== 'object') throw new Error('행운 정보가 누락되었습니다');
+  return d as unknown as FortuneHighlight;
+}
+
+/** API 응답에서 FortuneResult 필수 필드 검증 */
+function validateFortuneResult(data: unknown): FortuneResult {
+  const d = data as Record<string, unknown>;
+  if (!d || typeof d !== 'object') throw new Error('운세 데이터가 올바르지 않습니다');
+  if (typeof d.summaryLine !== 'string' && typeof d.overall !== 'string') {
+    throw new Error('운세 내용이 누락되었습니다');
+  }
+  if (!d.lucky || typeof d.lucky !== 'object') throw new Error('행운 정보가 누락되었습니다');
+  return d as unknown as FortuneResult;
+}
+
 // --- 1단계: 하이라이트 (가장 좋은 운 + 조심할 운) ---
 
 export async function requestFortuneHighlight(
@@ -135,12 +156,13 @@ export async function requestFortuneHighlight(
   const systemPrompt = buildHighlightSystemPrompt(ctx.mbtiProfile, ctx.periodLabel, seed);
   const userPrompt = buildUserPrompt({ info, mbti, ...ctx, period });
 
-  const result = await callFortuneApi(systemPrompt, userPrompt, {
+  const raw = await callFortuneApi(systemPrompt, userPrompt, {
     info, mbti, period,
     saju: ctx.saju.summary,
     ohaengBalance: ctx.saju.ohaengBalance,
     todayPillar: `${ctx.todayPillar.cheonganHanja}${ctx.todayPillar.jijiHanja}`,
-  }) as FortuneHighlight;
+  });
+  const result = validateHighlight(raw);
 
   // 행운숫자는 AI 대신 코드에서 시드 기반 1~45 랜덤 배정
   result.lucky.number = (seed % 45) + 1;
@@ -168,12 +190,13 @@ export async function requestFortuneFull(
   const systemPrompt = buildFullSystemPrompt(ctx.mbtiProfile, ctx.periodLabel, remaining);
   const userPrompt = buildUserPrompt({ info, mbti, ...ctx, period });
 
-  const result = await callFortuneApi(systemPrompt, userPrompt, {
+  const raw = await callFortuneApi(systemPrompt, userPrompt, {
     info, mbti, period,
     saju: ctx.saju.summary,
     ohaengBalance: ctx.saju.ohaengBalance,
     todayPillar: `${ctx.todayPillar.cheonganHanja}${ctx.todayPillar.jijiHanja}`,
-  }) as FortuneResult;
+  });
+  const result = validateFortuneResult(raw);
 
   setCache(cacheKey, result);
   return result;

@@ -1,7 +1,8 @@
 import { ResultSparkleDecor } from '../components/ResultSparkleDecor';
 import { ScoreRing } from '../components/ScoreRing';
-import type { FortuneHighlight, FortuneCategory } from '../types';
+import type { FortuneHighlight } from '../types';
 import type { FortuneTexts } from '../utils/shareUrl';
+import { CATEGORY_LABEL } from '../utils/categoryLabel';
 
 /** 토스 앱 딥링크 (외부 웹에서 토스 앱 실행) */
 const TOSS_APP_SCHEME = 'supertoss://miniapp?appkey=myeongri-lab';
@@ -30,13 +31,6 @@ type Props = {
   highlight: FortuneHighlight;
   texts: FortuneTexts;
   onTryOwn: () => void;
-};
-
-const CATEGORY_LABEL: Record<FortuneCategory, { title: string; icon: string }> = {
-  overall: { title: '총운', icon: '☀️' },
-  love: { title: '애정운', icon: '💕' },
-  money: { title: '금전운', icon: '✨' },
-  health: { title: '건강운', icon: '🌿' },
 };
 
 export function SharedResultView({ userName, highlight, texts, onTryOwn }: Props) {

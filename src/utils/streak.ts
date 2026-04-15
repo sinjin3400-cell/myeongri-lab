@@ -1,5 +1,4 @@
 const STREAK_KEY = 'myeongri_streak';
-const VISIT_KEY = 'myeongri_last_visit';
 
 type StreakData = {
   count: number;

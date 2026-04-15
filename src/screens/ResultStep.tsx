@@ -12,6 +12,7 @@ import { usePromotion } from '../hooks/usePromotion';
 import { trackFullFortuneClicked, trackFortuneCardExpanded, trackShareButtonClicked, trackRewardGranted } from '../utils/analytics';
 import { Analytics } from '@apps-in-toss/web-framework';
 import { usePremiumPass } from '../hooks/usePremiumPass';
+import { CATEGORY_LABEL } from '../utils/categoryLabel';
 
 type Props = {
   highlight: FortuneHighlight;
@@ -64,13 +65,6 @@ const SECTIONS: FortuneSection[] = [
     gradient: 'linear-gradient(135deg, rgba(56, 176, 126, 0.06) 0%, rgba(255, 255, 255, 0.9) 100%)',
   },
 ];
-
-const CATEGORY_LABEL: Record<FortuneCategory, { title: string; icon: string }> = {
-  overall: { title: '총운', icon: '☀️' },
-  love: { title: '애정운', icon: '💕' },
-  money: { title: '금전운', icon: '✨' },
-  health: { title: '건강운', icon: '🌿' },
-};
 
 function AccordionCard({
   section,
@@ -387,13 +381,13 @@ export function ResultStep({
     // 리뷰 유도 (세션당 1회, 2회 이상 방문 시)
     const reviewCount = parseInt(localStorage.getItem('reviewPromptCount') || '0');
     const lastReview = localStorage.getItem('lastReviewPrompt');
-    const today = new Date().toDateString();
-    if (reviewCount >= 1 && lastReview !== today) {
+    const todayKey = new Date().toDateString();
+    if (reviewCount >= 1 && lastReview !== todayKey) {
       setTimeout(() => setShowReviewPrompt(true), 3000);
-      localStorage.setItem('lastReviewPrompt', today);
+      localStorage.setItem('lastReviewPrompt', todayKey);
     }
     localStorage.setItem('reviewPromptCount', String(reviewCount + 1));
-  }, [onLoadFull, showInterstitialAd, grantReward]);
+  }, [onLoadFull, showInterstitialAd, grantReward, usePass]);
 
   const handleChangePeriodWithAd = useCallback(async (newPeriod: FortunePeriod) => {
     haptic();

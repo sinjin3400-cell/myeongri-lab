@@ -92,6 +92,7 @@ export function HomeScreen({ onSelect }: Props) {
       const reward = result.milestone === 3 ? 1 : 3;
       addPasses(reward);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
