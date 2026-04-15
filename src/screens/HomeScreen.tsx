@@ -127,7 +127,7 @@ export function HomeScreen({ onSelect }: Props) {
         >
           <button
             onClick={() => setShowMilestone(false)}
-            style={{ position: 'absolute', top: 8, right: 12, background: 'none', border: 'none', fontSize: 16, color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}
+            style={{ position: 'absolute', top: 6, right: 6, background: 'none', border: 'none', fontSize: 16, color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: 10, lineHeight: 1 }}
           >✕</button>
           <p style={{ margin: '0 0 4px', fontSize: 24 }}>🔥</p>
           <p style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 800, color: '#fff' }}>
@@ -415,7 +415,8 @@ export function HomeScreen({ onSelect }: Props) {
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
               fontSize: 12, fontWeight: 600, color: 'var(--gold-600)',
-              padding: '4px 0',
+              padding: '10px 4px',
+              margin: '-6px 0',
             }}
           >
             전체보기 →
@@ -425,7 +426,7 @@ export function HomeScreen({ onSelect }: Props) {
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 8,
+            gap: 10,
           }}
         >
           {zodiacFortunes.slice(0, 6).map((z) => (
@@ -438,7 +439,7 @@ export function HomeScreen({ onSelect }: Props) {
                 flexDirection: 'column',
                 alignItems: 'center',
                 gap: 4,
-                padding: '12px 8px',
+                padding: '14px 10px',
                 background: '#fff',
                 border: '1px solid rgba(15,23,42,0.06)',
                 borderRadius: 14,
