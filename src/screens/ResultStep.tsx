@@ -318,9 +318,13 @@ export function ResultStep({
 
   // 광고
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
-  const { showAd: showInterstitial } = useInterstitialAd(AD_IDS.REWARDED);
+  const { showAd: showInterstitialAd } = useInterstitialAd(AD_IDS.INTERSTITIAL);
+  const { showAd: showRewardedAd } = useInterstitialAd(AD_IDS.REWARDED);
   const bannerRef = useRef<HTMLDivElement>(null);
   const fullCardsRef = useRef<HTMLDivElement>(null);
+
+  // 리뷰 유도
+  const [showReviewPrompt, setShowReviewPrompt] = useState(false);
 
   // 프로모션 포인트 지급
   const { grantReward } = usePromotion();
@@ -360,11 +364,11 @@ export function ResultStep({
     haptic();
     trackFullFortuneClicked();
     try { Analytics.click({ log_name: 'hidden_fortune_unlock' }); } catch (_) { /* noop */ }
-    // 열람권 있으면 광고 스킵
+    // 열람권 있으면 광고 스킵, 아니면 전면 광고 (빠른 UX)
     if (usePass()) {
       await onLoadFull();
     } else {
-      await Promise.all([showInterstitial(), onLoadFull()]);
+      await Promise.all([showInterstitialAd(), onLoadFull()]);
     }
     setLoadingFull(false);
 
@@ -379,19 +383,29 @@ export function ResultStep({
       trackRewardGranted(reward.amount, reward.isGolden);
       setRewardInfo({ amount: reward.amount, isGolden: reward.isGolden });
     }
-  }, [onLoadFull, showInterstitial, grantReward]);
+
+    // 리뷰 유도 (세션당 1회, 2회 이상 방문 시)
+    const reviewCount = parseInt(localStorage.getItem('reviewPromptCount') || '0');
+    const lastReview = localStorage.getItem('lastReviewPrompt');
+    const today = new Date().toDateString();
+    if (reviewCount >= 1 && lastReview !== today) {
+      setTimeout(() => setShowReviewPrompt(true), 3000);
+      localStorage.setItem('lastReviewPrompt', today);
+    }
+    localStorage.setItem('reviewPromptCount', String(reviewCount + 1));
+  }, [onLoadFull, showInterstitialAd, grantReward]);
 
   const handleChangePeriodWithAd = useCallback(async (newPeriod: FortunePeriod) => {
     haptic();
-    if (!usePass()) await showInterstitial();
+    if (!usePass()) await showRewardedAd();
     onChangePeriod(newPeriod);
-  }, [onChangePeriod, showInterstitial, usePass]);
+  }, [onChangePeriod, showRewardedAd, usePass]);
 
   const handleTomorrow = useCallback(async () => {
     haptic();
-    if (!usePass()) await showInterstitial();
+    if (!usePass()) await showRewardedAd();
     onTomorrow();
-  }, [onTomorrow, showInterstitial, usePass]);
+  }, [onTomorrow, showRewardedAd, usePass]);
 
   // 공유용 결과 조합
   const shareResult: FortuneResult = fullResult ?? {
@@ -757,6 +771,86 @@ export function ResultStep({
           ref={bannerRef}
           style={{ width: '100%', height: 96, marginBottom: 16 }}
         />
+      )}
+
+      {/* 리뷰 유도 팝업 */}
+      {showReviewPrompt && (
+        <div
+          className="animate-slide-up"
+          style={{
+            marginBottom: 16,
+            padding: '20px',
+            borderRadius: 16,
+            background: 'linear-gradient(135deg, #FFF9E6 0%, #FFF3CC 100%)',
+            border: '1px solid rgba(201, 169, 98, 0.2)',
+            textAlign: 'center',
+            position: 'relative',
+          }}
+        >
+          <button
+            onClick={() => setShowReviewPrompt(false)}
+            style={{
+              position: 'absolute',
+              top: 8,
+              right: 12,
+              background: 'none',
+              border: 'none',
+              fontSize: 18,
+              color: 'var(--navy-300)',
+              cursor: 'pointer',
+              padding: 4,
+            }}
+          >
+            ✕
+          </button>
+          <p style={{ margin: '0 0 4px', fontSize: 24 }}>⭐</p>
+          <p
+            style={{
+              margin: '0 0 8px',
+              fontSize: 16,
+              fontWeight: 700,
+              color: 'var(--navy-700)',
+            }}
+          >
+            명리연구소가 도움이 됐나요?
+          </p>
+          <p
+            style={{
+              margin: '0 0 14px',
+              fontSize: 13,
+              color: 'var(--navy-400)',
+              lineHeight: 1.5,
+            }}
+          >
+            별점 한 줄이면 충분해요!<br />
+            여러분의 리뷰가 큰 힘이 됩니다 🙏
+          </p>
+          <button
+            onClick={() => {
+              haptic();
+              setShowReviewPrompt(false);
+              try {
+                // 토스 앱 내 명리연구소 리뷰 페이지로 이동
+                window.location.href = 'supertoss://miniapp?appkey=myeongri-lab&path=/review';
+              } catch {
+                // fallback: 그냥 닫기
+              }
+            }}
+            style={{
+              padding: '10px 28px',
+              fontSize: 14,
+              fontWeight: 700,
+              color: '#fff',
+              background: 'linear-gradient(135deg, var(--gold-500) 0%, var(--gold-600) 100%)',
+              border: 'none',
+              borderRadius: 12,
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(201, 169, 98, 0.3)',
+            }}
+          >
+            ⭐ 별점 남기러 가기
+          </button>
+        </div>
       )}
 
       {/* CTA */}

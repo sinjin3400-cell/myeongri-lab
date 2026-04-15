@@ -8,6 +8,7 @@ import type { TossAdsAttachBannerOptions } from '@apps-in-toss/web-framework';
 
 export const AD_IDS = {
   REWARDED: 'ait.v2.live.6092731822e14b96',
+  INTERSTITIAL: 'ait.v2.live.c3b604dbb2954ad5',
   BANNER: 'ait.v2.live.15a1f64067844a40',
 } as const;
 

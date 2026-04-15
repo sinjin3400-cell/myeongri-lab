@@ -4,7 +4,7 @@ import { trackEvent } from '../utils/analytics';
 import { Analytics } from '@apps-in-toss/web-framework';
 import { ScoreRing } from '../components/ScoreRing';
 import { ShareSheet } from '../components/ShareSheet';
-import { useTossBanner, AD_IDS } from '../hooks/useAds';
+import { useTossBanner, useInterstitialAd, AD_IDS } from '../hooks/useAds';
 import type { CompatResult, AppFeature } from '../types';
 
 type Props = {
@@ -38,6 +38,12 @@ export function CompatResultStep({ result, onRestart, onHome, onSelectFeature }:
 
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
   const bannerRef = useRef<HTMLDivElement>(null);
+
+  // 전면 광고 (결과 진입 시 1회)
+  const { showAd: showInterstitialAd } = useInterstitialAd(AD_IDS.INTERSTITIAL);
+  useEffect(() => {
+    showInterstitialAd();
+  }, []);
 
   // 앱인토스 전환지표: 궁합 결과 화면 도달
   useEffect(() => {

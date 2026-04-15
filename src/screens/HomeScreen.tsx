@@ -1,9 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { haptic } from '../utils/haptic';
 import { LogoMark } from '../components/LogoMark';
 import { trackEvent } from '../utils/analytics';
 import { FortuneIcon, DreamIcon, ZodiacIcon, CompatibilityIcon } from '../components/FeatureIcons';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
+import { recordVisit, getDailyZodiacFortunes } from '../utils/streak';
+import { usePremiumPass } from '../hooks/usePremiumPass';
 import type { AppFeature } from '../types';
 
 type Props = {
@@ -76,6 +78,22 @@ export function HomeScreen({ onSelect }: Props) {
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
   const bannerRef = useRef<HTMLDivElement>(null);
 
+  // 스트릭 시스템
+  const [streakInfo, setStreakInfo] = useState<{ count: number; milestone: number | null }>({ count: 0, milestone: null });
+  const [showMilestone, setShowMilestone] = useState(false);
+  const { addPasses } = usePremiumPass();
+
+  useEffect(() => {
+    const result = recordVisit();
+    setStreakInfo({ count: result.count, milestone: result.milestone });
+    if (result.milestone) {
+      setShowMilestone(true);
+      // 마일스톤 보상: 3일 → 황금열람권 1개, 7일 → 3개
+      const reward = result.milestone === 3 ? 1 : 3;
+      addPasses(reward);
+    }
+  }, []);
+
   useEffect(() => {
     if (!bannerReady || !bannerRef.current) return;
     const attached = attachBanner(AD_IDS.BANNER, bannerRef.current, {
@@ -89,9 +107,65 @@ export function HomeScreen({ onSelect }: Props) {
   const today = new Date();
   const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
   const dateStr = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')} (${dayNames[today.getDay()]})`;
+  const zodiacFortunes = getDailyZodiacFortunes(today);
 
   return (
     <div className="app-page" style={{ paddingBottom: 40 }}>
+      {/* 스트릭 마일스톤 알림 */}
+      {showMilestone && streakInfo.milestone && (
+        <div
+          className="animate-slide-up"
+          style={{
+            marginBottom: 16,
+            padding: '16px 20px',
+            borderRadius: 16,
+            background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+            textAlign: 'center',
+            position: 'relative',
+            boxShadow: '0 4px 16px rgba(255, 165, 0, 0.35)',
+          }}
+        >
+          <button
+            onClick={() => setShowMilestone(false)}
+            style={{ position: 'absolute', top: 8, right: 12, background: 'none', border: 'none', fontSize: 16, color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}
+          >✕</button>
+          <p style={{ margin: '0 0 4px', fontSize: 24 }}>🔥</p>
+          <p style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 800, color: '#fff' }}>
+            {streakInfo.milestone}일 연속 방문 달성!
+          </p>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>
+            황금 열람권 {streakInfo.milestone === 3 ? 1 : 3}개가 지급되었어요 🎫
+          </p>
+        </div>
+      )}
+
+      {/* 스트릭 뱃지 (2일 이상일 때) */}
+      {streakInfo.count >= 2 && !showMilestone && (
+        <div
+          className="animate-fade-in"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            marginBottom: 12,
+            padding: '8px 14px',
+            borderRadius: 12,
+            background: 'linear-gradient(135deg, rgba(255,165,0,0.1) 0%, rgba(255,215,0,0.08) 100%)',
+            border: '1px solid rgba(255,165,0,0.2)',
+          }}
+        >
+          <span style={{ fontSize: 16 }}>🔥</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--gold-700)' }}>
+            {streakInfo.count}일 연속 방문 중!
+          </span>
+          <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--navy-400)', marginLeft: 'auto' }}>
+            {streakInfo.count < 3 ? `${3 - streakInfo.count}일 더 오면 열람권 🎫` :
+             streakInfo.count < 7 ? `${7 - streakInfo.count}일 더 오면 열람권 3개 🎫` :
+             '꾸준함이 빛나요!'}
+          </span>
+        </div>
+      )}
+
       {/* 헤더 */}
       <header
         className="animate-fade-in"
@@ -325,6 +399,62 @@ export function HomeScreen({ onSelect }: Props) {
             </p>
           </button>
         ))}
+      </div>
+
+      {/* 오늘의 띠별 운세 미리보기 */}
+      <div
+        className="animate-slide-up"
+        style={{ marginTop: 24, animationDelay: '0.3s' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--navy-700)' }}>
+            🐲 오늘의 띠별 운세
+          </p>
+          <button
+            onClick={() => { haptic(); onSelect('zodiac'); }}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 12, fontWeight: 600, color: 'var(--gold-600)',
+              padding: '4px 0',
+            }}
+          >
+            전체보기 →
+          </button>
+        </div>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: 8,
+          }}
+        >
+          {zodiacFortunes.slice(0, 6).map((z) => (
+            <button
+              key={z.animal}
+              type="button"
+              onClick={() => { haptic(); onSelect('zodiac'); }}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 4,
+                padding: '12px 8px',
+                background: '#fff',
+                border: '1px solid rgba(15,23,42,0.06)',
+                borderRadius: 14,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+              }}
+            >
+              <span style={{ fontSize: 22 }}>{z.emoji}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--navy-600)' }}>{z.animal}띠</span>
+              <span style={{ fontSize: 10, fontWeight: 500, color: 'var(--navy-400)', lineHeight: 1.3, textAlign: 'center' }}>
+                {z.fortune.length > 12 ? z.fortune.slice(0, 12) + '…' : z.fortune}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* 하단 안내 */}
