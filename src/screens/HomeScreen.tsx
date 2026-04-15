@@ -457,11 +457,47 @@ export function HomeScreen({ onSelect }: Props) {
         </div>
       </div>
 
+      {/* 궁합 바이럴 CTA */}
+      <div
+        className="animate-slide-up"
+        style={{ marginTop: 24, animationDelay: '0.35s' }}
+      >
+        <button
+          type="button"
+          onClick={() => { haptic(); onSelect('compatibility'); }}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 14,
+            padding: '18px 20px',
+            background: 'linear-gradient(135deg, rgba(244, 63, 94, 0.06) 0%, rgba(255, 245, 247, 1) 100%)',
+            border: '1.5px solid rgba(244, 63, 94, 0.15)',
+            borderRadius: 16,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            textAlign: 'left',
+            boxShadow: '0 2px 12px rgba(244, 63, 94, 0.08)',
+          }}
+        >
+          <span style={{ fontSize: 28 }}>💕</span>
+          <div style={{ flex: 1 }}>
+            <p style={{ margin: '0 0 2px', fontSize: 15, fontWeight: 800, color: 'var(--navy-700)' }}>
+              친구에게 궁합 결과 보내기
+            </p>
+            <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: 'var(--navy-400)' }}>
+              연인·친구·가족과의 궁합을 확인하고 공유해보세요
+            </p>
+          </div>
+          <span style={{ fontSize: 16, color: 'var(--navy-300)' }}>→</span>
+        </button>
+      </div>
+
       {/* 하단 안내 */}
       <p
         className="animate-fade-in"
         style={{
-          marginTop: 24,
+          marginTop: 20,
           textAlign: 'center',
           fontSize: 12,
           fontWeight: 500,

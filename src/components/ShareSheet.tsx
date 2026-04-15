@@ -91,9 +91,9 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
   };
 
   const buildShareText = (url: string) => {
-    let text = `✨ ${title}\n\n${summaryLine}`;
-    if (extraLine) text += `\n${extraLine}`;
-    text += `\n\n명리연구소에서 확인하기 →\n${url}`;
+    let text = `✨ ${title}\n\n"${summaryLine}"`;
+    if (score != null) text += `\n🎯 오늘의 운세 점수: ${score}점`;
+    text += `\n\n나도 AI 사주 운세 보러가기 →\n${url}`;
     return text;
   };
 
@@ -191,8 +191,8 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
 
       const kakaoShareUrl = await getShareUrl();
       const desc = score != null
-        ? `🎯 점수: ${score}점\n"${summaryLine}"`
-        : summaryLine;
+        ? `🎯 ${score}점 · "${summaryLine}"\n\n나의 운세도 확인해보세요!`
+        : `"${summaryLine}"\n\n나의 운세도 확인해보세요!`;
 
       Kakao.Share.sendDefault({
         objectType: 'feed',
@@ -207,7 +207,7 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
         },
         buttons: [
           {
-            title: '나도 운세 보기 🔮',
+            title: '나도 무료로 운세 보기 🔮',
             link: {
               mobileWebUrl: kakaoShareUrl,
               webUrl: kakaoShareUrl,
