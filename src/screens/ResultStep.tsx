@@ -692,17 +692,17 @@ export function ResultStep({
         </div>
       )}
 
-      {/* 공유 버튼 — 숨겨진 운세 버튼과 동일한 그라데이션 */}
+      {/* 핵심 CTA: 공유 */}
       <button
         className="animate-fade-in"
         style={{
           width: '100%',
-          marginBottom: 12,
+          marginBottom: 16,
           gap: 8,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '15px 20px',
+          padding: '16px 20px',
           fontSize: 16,
           fontWeight: 700,
           color: '#fff',
@@ -730,41 +730,6 @@ export function ResultStep({
         ✨ 친구에게 운세 공유하기
       </button>
 
-      {/* 꿈해몽 크로스 진입 카드 (사주 정보 유지된 채로 이동) */}
-      {onGoDream && (
-        <button
-          type="button"
-          onClick={() => { haptic(); onGoDream(); }}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 14,
-            padding: '16px 18px',
-            marginBottom: 14,
-            background: 'linear-gradient(135deg, #2d1b69 0%, #4a2d8a 100%)',
-            border: 'none',
-            borderRadius: 16,
-            color: '#fff',
-            cursor: 'pointer',
-            textAlign: 'left',
-            fontFamily: 'inherit',
-            boxShadow: '0 4px 14px rgba(124, 58, 237, 0.25)',
-          }}
-        >
-          <span style={{ fontSize: 28 }}>🌙</span>
-          <span style={{ flex: 1 }}>
-            <span style={{ display: 'block', fontSize: 14, fontWeight: 800, marginBottom: 2 }}>
-              꿈해몽도 보러가실래요?
-            </span>
-            <span style={{ display: 'block', fontSize: 11, color: 'rgba(255,255,255,0.75)', lineHeight: 1.5 }}>
-              지금 본 사주 정보가 자동으로 결합돼서<br />더 정확한 꿈 풀이를 받을 수 있어요 ✨
-            </span>
-          </span>
-          <span style={{ fontSize: 18, color: 'rgba(255,255,255,0.8)' }}>→</span>
-        </button>
-      )}
-
       {/* 배너 광고 (fullResult 없을 때 하단 표시) */}
       {!fullResult && (
         <div
@@ -773,101 +738,156 @@ export function ResultStep({
         />
       )}
 
-      {/* 리뷰 유도 팝업 */}
-      {showReviewPrompt && (
-        <div
-          className="animate-slide-up"
-          style={{
-            marginBottom: 16,
-            padding: '20px',
-            borderRadius: 16,
-            background: 'linear-gradient(135deg, #FFF9E6 0%, #FFF3CC 100%)',
-            border: '1px solid rgba(201, 169, 98, 0.2)',
-            textAlign: 'center',
-            position: 'relative',
-          }}
-        >
+      {/* 보조 CTA: 내일 운세 + 꿈해몽 + 처음부터 (텍스트 링크 스타일) */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 0,
+          marginBottom: 8,
+          padding: '8px 0',
+        }}
+      >
+        {period !== 'tomorrow' ? (
           <button
-            onClick={() => setShowReviewPrompt(false)}
+            onClick={handleTomorrow}
             style={{
-              position: 'absolute',
-              top: 8,
-              right: 12,
               background: 'none',
               border: 'none',
-              fontSize: 18,
-              color: 'var(--navy-300)',
               cursor: 'pointer',
-              padding: 4,
+              fontFamily: 'inherit',
+              fontSize: 14,
+              fontWeight: 600,
+              color: 'var(--navy-500)',
+              padding: '12px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
             }}
           >
-            ✕
+            🔮 내일 운세도 궁금해요
           </button>
-          <p style={{ margin: '0 0 4px', fontSize: 24 }}>⭐</p>
-          <p
+        ) : (
+          <button
+            onClick={onRestart}
             style={{
-              margin: '0 0 8px',
-              fontSize: 16,
-              fontWeight: 700,
-              color: 'var(--navy-700)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              fontSize: 14,
+              fontWeight: 600,
+              color: 'var(--navy-500)',
+              padding: '12px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
             }}
           >
-            명리연구소가 도움이 됐나요?
-          </p>
-          <p
+            ☀️ 오늘 운세 다시 보기
+          </button>
+        )}
+
+        {onGoDream && (
+          <button
+            onClick={() => { haptic(); onGoDream(); }}
             style={{
-              margin: '0 0 14px',
-              fontSize: 13,
-              color: 'var(--navy-400)',
-              lineHeight: 1.5,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              fontSize: 14,
+              fontWeight: 600,
+              color: 'var(--navy-500)',
+              padding: '12px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
             }}
           >
-            별점 한 줄이면 충분해요!<br />
-            여러분의 리뷰가 큰 힘이 됩니다 🙏
-          </p>
+            🌙 꿈해몽 보러가기
+          </button>
+        )}
+
+        <button
+          onClick={onRestart}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            fontSize: 13,
+            fontWeight: 500,
+            color: 'var(--navy-300)',
+            padding: '10px 16px',
+          }}
+        >
+          처음부터 다시 보기
+        </button>
+      </div>
+
+      {/* 리뷰 유도 (맨 아래, 조용한 배치) */}
+      {showReviewPrompt && (
+        <div
+          className="animate-fade-in"
+          style={{
+            marginBottom: 16,
+            padding: '16px 20px',
+            borderRadius: 14,
+            background: 'rgba(201, 169, 98, 0.06)',
+            border: '1px solid rgba(201, 169, 98, 0.12)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 14,
+          }}
+        >
+          <span style={{ fontSize: 20 }}>⭐</span>
+          <div style={{ flex: 1 }}>
+            <p style={{ margin: '0 0 2px', fontSize: 14, fontWeight: 700, color: 'var(--navy-600)' }}>
+              명리연구소가 도움이 됐나요?
+            </p>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--navy-400)' }}>
+              별점 한 줄이면 큰 힘이 돼요
+            </p>
+          </div>
           <button
             onClick={() => {
               haptic();
               setShowReviewPrompt(false);
               try {
-                // 토스 앱 내 명리연구소 리뷰 페이지로 이동
                 window.location.href = 'supertoss://miniapp?appkey=myeongri-lab&path=/review';
-              } catch {
-                // fallback: 그냥 닫기
-              }
+              } catch { /* noop */ }
             }}
             style={{
-              padding: '10px 28px',
-              fontSize: 14,
+              padding: '8px 16px',
+              fontSize: 13,
               fontWeight: 700,
-              color: '#fff',
-              background: 'linear-gradient(135deg, var(--gold-500) 0%, var(--gold-600) 100%)',
+              color: 'var(--gold-600)',
+              background: 'rgba(201, 169, 98, 0.12)',
               border: 'none',
-              borderRadius: 12,
+              borderRadius: 10,
               cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(201, 169, 98, 0.3)',
+              whiteSpace: 'nowrap',
             }}
           >
-            ⭐ 별점 남기러 가기
+            리뷰 쓰기
+          </button>
+          <button
+            onClick={() => setShowReviewPrompt(false)}
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: 14,
+              color: 'var(--navy-300)',
+              cursor: 'pointer',
+              padding: '4px 2px',
+            }}
+          >
+            ✕
           </button>
         </div>
       )}
-
-      {/* CTA */}
-      <div className="app-footer-cta">
-        {period !== 'tomorrow' ? (
-          <button className="btn-secondary" onClick={handleTomorrow}>
-            내일 운세도 궁금해요 🔮
-          </button>
-        ) : (
-          <button className="btn-secondary" onClick={onRestart}>
-            오늘 운세 다시 보기 ☀️
-          </button>
-        )}
-        <button className="btn-primary" onClick={onRestart}>
-          처음부터 다시 보기
-        </button>
-      </div>
 
       {/* 공유 시트 */}
       {showShare && (
