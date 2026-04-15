@@ -4,7 +4,7 @@ import { LogoMark } from '../components/LogoMark';
 import { trackEvent } from '../utils/analytics';
 import { FortuneIcon, DreamIcon, ZodiacIcon, CompatibilityIcon } from '../components/FeatureIcons';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
-import { recordVisit, getDailyZodiacFortunes } from '../utils/streak';
+import { recordVisit, getDailyZodiacFortunes, getDailyReward, getYesterdayScore } from '../utils/streak';
 import { usePremiumPass } from '../hooks/usePremiumPass';
 import type { AppFeature } from '../types';
 
@@ -78,20 +78,20 @@ export function HomeScreen({ onSelect }: Props) {
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
   const bannerRef = useRef<HTMLDivElement>(null);
 
-  // 스트릭 시스템
-  const [streakInfo, setStreakInfo] = useState<{ count: number; milestone: number | null }>({ count: 0, milestone: null });
-  const [showMilestone, setShowMilestone] = useState(false);
+  // 스트릭 시스템 (일일 보상)
+  const [streakInfo, setStreakInfo] = useState<{ count: number; dailyReward: number }>({ count: 0, dailyReward: 0 });
+  const [showDailyReward, setShowDailyReward] = useState(false);
+  const [yesterdayScore, setYesterdayScore] = useState<number | null>(null);
   const { addPasses } = usePremiumPass();
 
   useEffect(() => {
     const result = recordVisit();
-    setStreakInfo({ count: result.count, milestone: result.milestone });
-    if (result.milestone) {
-      setShowMilestone(true);
-      // 마일스톤 보상: 3일 → 황금열람권 1개, 7일 → 3개
-      const reward = result.milestone === 3 ? 1 : 3;
-      addPasses(reward);
+    setStreakInfo({ count: result.count, dailyReward: result.dailyReward });
+    if (result.isNew && result.dailyReward > 0) {
+      setShowDailyReward(true);
+      addPasses(result.dailyReward);
     }
+    setYesterdayScore(getYesterdayScore());
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -112,8 +112,8 @@ export function HomeScreen({ onSelect }: Props) {
 
   return (
     <div className="app-page" style={{ paddingBottom: 40 }}>
-      {/* 스트릭 마일스톤 알림 */}
-      {showMilestone && streakInfo.milestone && (
+      {/* 일일 보상 알림 */}
+      {showDailyReward && streakInfo.dailyReward > 0 && (
         <div
           className="animate-slide-up"
           style={{
@@ -127,21 +127,26 @@ export function HomeScreen({ onSelect }: Props) {
           }}
         >
           <button
-            onClick={() => setShowMilestone(false)}
+            onClick={() => setShowDailyReward(false)}
             style={{ position: 'absolute', top: 6, right: 6, background: 'none', border: 'none', fontSize: 16, color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: 10, lineHeight: 1 }}
           >✕</button>
-          <p style={{ margin: '0 0 4px', fontSize: 24 }}>🔥</p>
+          <p style={{ margin: '0 0 4px', fontSize: 24 }}>{streakInfo.count >= 7 ? '🏆' : streakInfo.count >= 3 ? '🔥' : '🎁'}</p>
           <p style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 800, color: '#fff' }}>
-            {streakInfo.milestone}일 연속 방문 달성!
+            {streakInfo.count}일{streakInfo.count >= 2 ? ' 연속' : ''} 방문 보상!
           </p>
           <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>
-            황금 열람권 {streakInfo.milestone === 3 ? 1 : 3}개가 지급되었어요 🎫
+            황금 열람권 {streakInfo.dailyReward}개가 지급되었어요 🎫
           </p>
+          {streakInfo.count < 7 && (
+            <p style={{ margin: '6px 0 0', fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>
+              내일도 오면 열람권 {getDailyReward(streakInfo.count + 1)}개!
+            </p>
+          )}
         </div>
       )}
 
       {/* 스트릭 뱃지 (2일 이상일 때) */}
-      {streakInfo.count >= 2 && !showMilestone && (
+      {streakInfo.count >= 2 && !showDailyReward && (
         <div
           className="animate-fade-in"
           style={{
@@ -160,9 +165,7 @@ export function HomeScreen({ onSelect }: Props) {
             {streakInfo.count}일 연속 방문 중!
           </span>
           <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--navy-400)', marginLeft: 'auto' }}>
-            {streakInfo.count < 3 ? `${3 - streakInfo.count}일 더 오면 열람권 🎫` :
-             streakInfo.count < 7 ? `${7 - streakInfo.count}일 더 오면 열람권 3개 🎫` :
-             '꾸준함이 빛나요!'}
+            내일 보상: 열람권 {getDailyReward(streakInfo.count + 1)}개 🎫
           </span>
         </div>
       )}
@@ -216,10 +219,10 @@ export function HomeScreen({ onSelect }: Props) {
           }}
         >
           <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--navy-700)', display: 'block', lineHeight: 1.4, opacity: 0.75 }}>
-            오늘의 사주 보면
+            지금 확인하면
           </span>
           <span style={{ fontSize: 13, fontWeight: 900, color: 'var(--gold-600)', display: 'block', lineHeight: 1.3 }}>
-            최대 1,000원 🎁
+            포인트 GET 💰
           </span>
         </div>
       </header>
@@ -237,6 +240,47 @@ export function HomeScreen({ onSelect }: Props) {
       >
         📅 {dateStr}
       </p>
+
+      {/* 어제 vs 오늘 비교 (어제 점수가 있을 때만) */}
+      {yesterdayScore !== null && (
+        <button
+          type="button"
+          onClick={() => { haptic(); onSelect('fortune'); }}
+          className="premium-card animate-slide-up"
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 14,
+            marginBottom: 16,
+            padding: '16px 20px',
+            animationDelay: '0.08s',
+            background: 'linear-gradient(135deg, rgba(91, 141, 239, 0.06) 0%, rgba(255, 255, 255, 0.95) 100%)',
+            border: '1px solid rgba(91, 141, 239, 0.12)',
+            cursor: 'pointer',
+            textAlign: 'left',
+            fontFamily: 'inherit',
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--navy-300)' }}>어제</span>
+            <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--navy-400)' }}>{yesterdayScore}점</span>
+          </div>
+          <span style={{ fontSize: 18, color: 'var(--navy-300)' }}>→</span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--gold-600)' }}>오늘</span>
+            <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--gold-600)' }}>?</span>
+          </div>
+          <div style={{ flex: 1, marginLeft: 4 }}>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--navy-700)' }}>
+              오늘은 어제보다 좋을까?
+            </p>
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--navy-400)' }}>
+              탭해서 오늘의 운세를 확인해보세요
+            </p>
+          </div>
+        </button>
+      )}
 
       {/* 오늘의 한마디 */}
       <div
@@ -516,20 +560,10 @@ export function HomeScreen({ onSelect }: Props) {
         ref={bannerRef}
         style={{
           marginTop: 20,
-          minHeight: 80,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          border: bannerReady ? 'none' : '1.5px dashed var(--navy-200, #cbd5e1)',
+          minHeight: bannerReady ? 80 : 0,
           borderRadius: 12,
-          background: bannerReady ? 'transparent' : 'rgba(0,0,0,0.02)',
-          color: 'var(--navy-300)',
-          fontSize: 12,
-          fontWeight: 600,
         }}
-      >
-        {!bannerReady && '🎯 배너 광고 영역 (테스트)'}
-      </div>
+      />
     </div>
   );
 }

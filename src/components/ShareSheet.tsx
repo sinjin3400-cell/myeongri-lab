@@ -100,8 +100,8 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
 
   const buildShareText = (url: string) => {
     let text = `✨ ${title}\n\n"${summaryLine}"`;
-    if (score != null) text += `\n🎯 오늘의 운세 점수: ${score}점`;
-    text += `\n\n나도 AI 사주 운세 보러가기 →\n${url}`;
+    if (score != null) text += `\n\n🎯 나는 ${score}점! 너는 몇 점?\n오늘의 운세 점수를 비교해보자!`;
+    text += `\n\nAI 사주 운세 보러가기 →\n${url}`;
     return text;
   };
 

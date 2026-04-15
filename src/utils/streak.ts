@@ -28,18 +28,30 @@ function saveStreak(data: StreakData): void {
   localStorage.setItem(STREAK_KEY, JSON.stringify(data));
 }
 
+/** 일일 보상 테이블 (연속 방문일 → 열람권 개수) */
+const DAILY_REWARDS: Record<number, number> = {
+  1: 1, 2: 1, 3: 2, 4: 1, 5: 3, 6: 1, 7: 5,
+};
+
+/** 연속 방문일에 해당하는 일일 보상 열람권 수 */
+export function getDailyReward(count: number): number {
+  // 7일 주기로 반복
+  const day = ((count - 1) % 7) + 1;
+  return DAILY_REWARDS[day] ?? 1;
+}
+
 /**
  * 오늘 방문을 기록하고 현재 스트릭 정보를 반환
- * @returns { count: 연속 방문일, isNew: 오늘 첫 방문인지, milestone: 달성한 마일스톤 (3 또는 7) }
+ * @returns { count: 연속 방문일, isNew: 오늘 첫 방문인지, dailyReward: 오늘 지급할 열람권 수 }
  */
-export function recordVisit(): { count: number; isNew: boolean; milestone: number | null } {
+export function recordVisit(): { count: number; isNew: boolean; dailyReward: number } {
   const today = todayStr();
   const yesterday = yesterdayStr();
   const data = loadStreak();
 
   // 이미 오늘 방문한 경우
   if (data.lastVisit === today) {
-    return { count: data.count, isNew: false, milestone: null };
+    return { count: data.count, isNew: false, dailyReward: 0 };
   }
 
   let newCount: number;
@@ -53,10 +65,8 @@ export function recordVisit(): { count: number; isNew: boolean; milestone: numbe
 
   saveStreak({ count: newCount, lastVisit: today });
 
-  // 마일스톤 체크 (3일, 7일)
-  const milestone = newCount === 3 ? 3 : newCount === 7 ? 7 : null;
-
-  return { count: newCount, isNew: true, milestone };
+  const dailyReward = getDailyReward(newCount);
+  return { count: newCount, isNew: true, dailyReward };
 }
 
 /**
@@ -71,6 +81,38 @@ export function getStreakCount(): number {
     return data.count;
   }
   return 0;
+}
+
+/** 어제/오늘 점수 비교용 localStorage 키 */
+const SCORE_KEY = 'myeongri_daily_score';
+
+type DailyScore = { date: string; score: number };
+
+/** 운세 결과 확인 시 오늘 점수 저장 */
+export function saveTodayScore(score: number): void {
+  const entry: DailyScore = { date: todayStr(), score };
+  // 기존 데이터를 어제 슬롯으로 밀기
+  try {
+    const raw = localStorage.getItem(SCORE_KEY);
+    if (raw) {
+      const prev: DailyScore = JSON.parse(raw);
+      if (prev.date !== todayStr()) {
+        localStorage.setItem(SCORE_KEY + '_prev', JSON.stringify(prev));
+      }
+    }
+  } catch { /* noop */ }
+  localStorage.setItem(SCORE_KEY, JSON.stringify(entry));
+}
+
+/** 어제 점수 불러오기 (없으면 null) */
+export function getYesterdayScore(): number | null {
+  try {
+    const raw = localStorage.getItem(SCORE_KEY + '_prev');
+    if (!raw) return null;
+    const prev: DailyScore = JSON.parse(raw);
+    if (prev.date === yesterdayStr()) return prev.score;
+  } catch { /* noop */ }
+  return null;
 }
 
 /** 12지 띠별 오늘의 한줄 운세 (날짜 시드 기반) */

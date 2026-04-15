@@ -327,9 +327,13 @@ export function ResultStep({
   // 황금 열람권
   const { count: passCount, hasPass, usePass, addPasses } = usePremiumPass();
 
-  // 앱인토스 전환지표: 운세 결과 화면 도달
+  // 앱인토스 전환지표: 운세 결과 화면 도달 + 오늘 점수 저장 (어제 vs 오늘 비교용)
   useEffect(() => {
     try { Analytics.impression({ log_name: 'fortune_result_view' }); } catch (_) { /* noop */ }
+    if (period === 'today') {
+      import('../utils/streak').then(m => m.saveTodayScore(highlight.score));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 배너 광고 부착 (fullResult 변경 시 ref가 새 DOM으로 이동하므로 재부착 필요)
