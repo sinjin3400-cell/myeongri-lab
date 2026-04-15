@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { trackShareMethod } from '../utils/analytics';
 import { Analytics, contactsViral, setClipboardText } from '@apps-in-toss/web-framework';
+import { Toast } from './Toast';
 
 /**
  * 모든 결과 타입에서 사용 가능한 범용 공유 데이터.
@@ -69,6 +70,13 @@ async function copyToClipboard(text: string): Promise<void> {
 
 export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
   const [viralLoading, setViralLoading] = useState(false);
+  const [toastMsg, setToastMsg] = useState('');
+  const [toastVisible, setToastVisible] = useState(false);
+
+  const showToast = useCallback((msg: string) => {
+    setToastMsg(msg);
+    setToastVisible(true);
+  }, []);
 
   const { title, summaryLine, score, extraLine, serverData } = shareInfo;
 
@@ -138,8 +146,8 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
     try { Analytics.click({ log_name: 'fortune_share', method: 'copy_link' }); } catch (_) { /* noop */ }
     const url = await getShareUrl();
     await copyToClipboard(url);
-    alert('운세 링크가 복사되었어요! 친구에게 공유해보세요 ✨');
-    closeWithReward();
+    showToast('✨ 운세 링크가 복사되었어요!');
+    setTimeout(closeWithReward, 1500);
   };
 
   const handleCopy = async () => {
@@ -148,8 +156,8 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
     const url = await getShareUrl();
     const text = buildShareText(url);
     await copyToClipboard(text);
-    alert('운세가 복사되었어요! 친구에게 공유해보세요 ✨');
-    closeWithReward();
+    showToast('✨ 운세가 복사되었어요!');
+    setTimeout(closeWithReward, 1500);
   };
 
   const handleNativeShare = async () => {
@@ -244,6 +252,7 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
 
   return (
     <div className="share-sheet-overlay" onClick={onClose}>
+      <Toast message={toastMsg} visible={toastVisible} onDone={() => setToastVisible(false)} />
       <div className="share-sheet" onClick={(e) => e.stopPropagation()}>
         <div
           style={{
