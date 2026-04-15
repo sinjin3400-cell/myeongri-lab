@@ -7,6 +7,7 @@ import { useTossBanner, AD_IDS } from '../hooks/useAds';
 import { recordVisit, getDailyZodiacFortunes, getDailyReward, getYesterdayScore } from '../utils/streak';
 import { usePremiumPass } from '../hooks/usePremiumPass';
 import { Toast } from '../components/Toast';
+import { Analytics } from '@apps-in-toss/web-framework';
 import type { AppFeature } from '../types';
 
 type Props = {
@@ -103,6 +104,7 @@ export function HomeScreen({ onSelect }: Props) {
       setStreakInfo({ count: result.count, dailyReward: 0, actualAdded: 0 });
     }
     setYesterdayScore(getYesterdayScore());
+    try { Analytics.impression({ log_name: 'home_view' }); } catch (_) { /* noop */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -345,6 +347,7 @@ export function HomeScreen({ onSelect }: Props) {
             onClick={() => {
               haptic();
               trackEvent('home_feature_clicked', { feature: feature.key, ready: feature.ready });
+              try { Analytics.click({ log_name: 'home_feature_select', feature: feature.key }); } catch (_) { /* noop */ }
               if (feature.ready) {
                 onSelect(feature.key);
               }

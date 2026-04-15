@@ -379,10 +379,12 @@ export function ResultStep({
     });
 
     // 전체 운세 확인 완료 → 프로모션 포인트 지급
+    try { Analytics.click({ log_name: 'full_fortune_view' }); } catch (_) { /* noop */ }
     const reward = await grantReward();
     if (reward.success) {
       trackRewardGranted(reward.amount, reward.isGolden);
       setRewardInfo({ amount: reward.amount, isGolden: reward.isGolden });
+      try { Analytics.click({ log_name: 'promotion_reward_granted', amount: reward.amount }); } catch (_) { /* noop */ }
     }
 
     // 리뷰 유도 (세션당 1회, 2회 이상 방문 시)

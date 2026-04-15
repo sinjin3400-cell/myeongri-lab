@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { haptic } from '../utils/haptic';
 import { PageHeader } from '../components/PageHeader';
+import { Analytics } from '@apps-in-toss/web-framework';
 import type { DreamInput, UserInfo } from '../types';
 
 type Props = {
@@ -29,6 +30,7 @@ export function DreamInputStep({ value, onChange, onNext, onBack, hasSajuInfo, u
     setTouched(true);
     if (!isValid) return;
     haptic();
+    try { Analytics.click({ log_name: 'dream_submit' }); } catch (_) { /* noop */ }
     onNext();
   };
 

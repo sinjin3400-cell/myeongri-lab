@@ -3,6 +3,7 @@ import { haptic } from '../utils/haptic';
 import { HeroIllustration } from '../components/HeroIllustration';
 import { LogoMark } from '../components/LogoMark';
 import { SijinSelect } from '../components/SijinSelect';
+import { Analytics } from '@apps-in-toss/web-framework';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
 import type { UserInfo, Gender } from '../types';
 import { SIJIN_OPTIONS, type SijinId } from '../sijin';
@@ -58,6 +59,10 @@ function formatSijinLine(v: UserInfo): string {
 
 export function InfoStep({ value, onChange, onNext, onHome }: Props) {
   const genderFirstRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    try { Analytics.impression({ log_name: 'info_input_view' }); } catch (_) { /* noop */ }
+  }, []);
 
   // 배너 광고
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
@@ -300,7 +305,10 @@ export function InfoStep({ value, onChange, onNext, onHome }: Props) {
       >
         <button
           className="btn-primary"
-          onClick={onNext}
+          onClick={() => {
+            try { Analytics.click({ log_name: 'info_submit' }); } catch (_) { /* noop */ }
+            onNext();
+          }}
           disabled={!canSubmit}
         >
           내 운세 보러 가기 →

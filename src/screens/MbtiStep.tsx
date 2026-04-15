@@ -2,6 +2,7 @@ import { useRef, useEffect } from 'react';
 import { haptic } from '../utils/haptic';
 import { MbtiHeroIllustration } from '../components/MbtiHeroIllustration';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
+import { Analytics } from '@apps-in-toss/web-framework';
 import type { MbtiType } from '../api';
 import { MBTI_PROFILES } from '../data/mbtiProfiles';
 
@@ -139,6 +140,7 @@ export function MbtiStep({
                   className={`btn-chip ${selected === m ? 'selected' : ''}`}
                   onClick={() => {
                     haptic();
+                    try { Analytics.click({ log_name: 'mbti_select', mbti: m }); } catch (_) { /* noop */ }
                     onSelect(m);
                   }}
                 >

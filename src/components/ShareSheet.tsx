@@ -106,6 +106,7 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
   };
 
   const closeWithReward = () => {
+    try { Analytics.click({ log_name: 'share_complete' }); } catch (_) { /* noop */ }
     onShareReward?.();
     onClose();
   };

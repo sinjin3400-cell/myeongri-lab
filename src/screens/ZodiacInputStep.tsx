@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { haptic } from '../utils/haptic';
 import { trackEvent } from '../utils/analytics';
+import { Analytics } from '@apps-in-toss/web-framework';
 import { getZodiacByDate } from '../utils/zodiac';
 import { PageHeader } from '../components/PageHeader';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
@@ -256,6 +257,7 @@ export function ZodiacInputStep({ value, onChange, onNext, onBack }: Props) {
           onClick={() => {
             haptic();
             trackEvent('zodiac_submit', { animal: zodiacInfo?.animal.name ?? '' });
+            try { Analytics.click({ log_name: 'zodiac_submit' }); } catch (_) { /* noop */ }
             onNext();
           }}
         >
