@@ -388,7 +388,7 @@ function buildUserPrompt(args: PromptArgs): string {
   return `## 분석 대상
 - 이름: ${info.name}
 - 성별: ${gender}
-- 생년월일: ${info.birthDate}
+- 생년월일: ${info.birthDate}${info.calendarType === 'lunar' ? ' (음력 평달)' : info.calendarType === 'lunar_leap' ? ' (음력 윤달)' : ' (양력)'}
 - 생시: ${info.birthSijin ?? '모름'}
 - MBTI: ${mbti ?? '미입력'}
 
@@ -421,7 +421,7 @@ export async function requestZodiacFortune(input: ZodiacInput): Promise<ZodiacRe
   const year = parseInt(input.birthYear, 10);
   const monthN = input.birthMonth ? parseInt(input.birthMonth, 10) : undefined;
   const dayN = input.birthDay ? parseInt(input.birthDay, 10) : undefined;
-  const zodiacInfo = getZodiacByDate(year, monthN, dayN, input.criterion ?? 'solar');
+  const zodiacInfo = getZodiacByDate(year, monthN, dayN, input.criterion ?? 'solar', input.calendarType ?? 'solar');
   const animal = zodiacInfo.animal;
   const cacheKey = `zodiac:${animal.name}:${today}`;
   const cached = getCache<ZodiacResult>(cacheKey);

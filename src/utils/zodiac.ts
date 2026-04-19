@@ -1,4 +1,4 @@
-import type { ZodiacAnimal } from '../types';
+import type { ZodiacAnimal, CalendarType } from '../types';
 
 const ZODIAC_ANIMALS: ZodiacAnimal[] = [
   { name: '쥐', emoji: '🐭', hanja: '子', element: '수' },
@@ -42,7 +42,11 @@ const LUNAR_NEW_YEAR: Record<number, [number, number]> = {
   1995: [1,31], 1996: [2,19], 1997: [2,7], 1998: [1,28], 1999: [2,16],
   2000: [2,5], 2001: [1,24], 2002: [2,12], 2003: [2,1], 2004: [1,22],
   2005: [2,9], 2006: [1,29], 2007: [2,18], 2008: [2,7], 2009: [1,26],
-  2010: [2,14], 2011: [2,3],
+  2010: [2,14], 2011: [2,3], 2012: [1,23], 2013: [2,10], 2014: [1,31],
+  2015: [2,19], 2016: [2,8], 2017: [1,28], 2018: [2,16], 2019: [2,5],
+  2020: [1,25], 2021: [2,12], 2022: [2,1], 2023: [1,22], 2024: [2,10],
+  2025: [1,29], 2026: [2,17], 2027: [2,6], 2028: [1,26], 2029: [2,13],
+  2030: [2,3],
 };
 
 /**
@@ -50,21 +54,26 @@ const LUNAR_NEW_YEAR: Record<number, [number, number]> = {
  * - criterion='solar' (양력 기준): 양력 1월 1일 기준. 출생연도로 단순 계산.
  * - criterion='lunar' (음력 설 기준): 1~2월생이면 음력 설 이전 여부에 따라 보정.
  *   월/일이 없으면 보정 불가 → 연도 기준으로 계산.
+ * - calendarType이 'lunar'/'lunar_leap'이면 입력 자체가 음력 → 보정 불필요.
  */
 export function getZodiacByDate(
   year: number,
   month?: number,
   day?: number,
   criterion: 'solar' | 'lunar' = 'solar',
+  calendarType: CalendarType = 'solar',
 ): {
   animal: ZodiacAnimal;
   effectiveYear: number;
   adjusted: boolean;
 } {
+  if (calendarType === 'lunar' || calendarType === 'lunar_leap') {
+    return { animal: getZodiacAnimal(year), effectiveYear: year, adjusted: false };
+  }
   if (criterion === 'solar') {
     return { animal: getZodiacAnimal(year), effectiveYear: year, adjusted: false };
   }
-  // lunar
+  // 양력 날짜 + 음력 설 기준
   if (!month || !day || month > 2) {
     return { animal: getZodiacAnimal(year), effectiveYear: year, adjusted: false };
   }

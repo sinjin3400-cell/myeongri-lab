@@ -5,7 +5,7 @@ import { LogoMark } from '../components/LogoMark';
 import { SijinSelect } from '../components/SijinSelect';
 import { Analytics } from '@apps-in-toss/web-framework';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
-import type { UserInfo, Gender } from '../types';
+import type { UserInfo, Gender, CalendarType } from '../types';
 import { SIJIN_OPTIONS, type SijinId } from '../sijin';
 
 type Props = {
@@ -209,6 +209,41 @@ export function InfoStep({ value, onChange, onNext, onHome }: Props) {
             <span style={{ fontSize: 18 }}>🎂</span>
             언제 태어나셨어요?
           </label>
+          {/* 양력/음력 선택 */}
+          <div style={{ display: 'flex', gap: 6 }}>
+            {([
+              ['solar', '양력'],
+              ['lunar', '음력 평달'],
+              ['lunar_leap', '음력 윤달'],
+            ] as [CalendarType, string][]).map(([key, label]) => {
+              const selected = (value.calendarType ?? 'solar') === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => {
+                    haptic();
+                    onChange({ ...value, calendarType: key });
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '8px 6px',
+                    borderRadius: 10,
+                    border: selected ? '2px solid var(--gold-500)' : '1.5px solid var(--navy-100)',
+                    background: selected ? 'var(--gold-50, #fff8e7)' : '#fff',
+                    color: selected ? 'var(--navy-700)' : 'var(--navy-400)',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    fontSize: 13,
+                    fontWeight: selected ? 700 : 500,
+                    transition: 'all 0.18s ease',
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
           <input
             className="toss-like-input"
             type="text"
@@ -221,7 +256,9 @@ export function InfoStep({ value, onChange, onNext, onHome }: Props) {
             onChange={handleBirthDateChange}
           />
           <p style={{ margin: 0, fontSize: 13, color: 'var(--navy-200)', lineHeight: 1.5 }}>
-            숫자 8자리를 입력하면 자동으로 예쁘게 바뀌어요
+            {(value.calendarType ?? 'solar') === 'solar'
+              ? '양력 생년월일 숫자 8자리를 입력해주세요'
+              : '음력 생년월일 숫자 8자리를 입력해주세요'}
           </p>
         </div>
 

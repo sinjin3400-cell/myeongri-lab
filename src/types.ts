@@ -20,6 +20,8 @@ export interface UserInfo {
   /** 선택한 시진. birthTimeUnknown이면 null */
   birthSijin: SijinId | null;
   birthTimeUnknown: boolean;
+  /** 생년월일 달력 유형 (양력/음력 평달/음력 윤달) */
+  calendarType?: CalendarType;
 }
 
 export interface LuckyInfo {
@@ -71,12 +73,15 @@ export interface ZodiacAnimal {
 
 export type ZodiacCriterion = 'solar' | 'lunar';
 
+export type CalendarType = 'solar' | 'lunar' | 'lunar_leap';
+
 export interface ZodiacInput {
   name: string;
   birthYear: string;  // YYYY
-  birthMonth?: string; // MM (선택, 음력 설 보정용)
+  birthMonth?: string; // MM (선택, 양력일 때 음력 설 보정용)
   birthDay?: string;   // DD (선택)
   criterion?: ZodiacCriterion; // 띠 기준 (양력/음력)
+  calendarType?: CalendarType; // 생년월일 달력 유형
   gender: Gender | '';
 }
 
