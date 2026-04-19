@@ -2,71 +2,56 @@ import { useEffect, useRef, useState } from 'react';
 import { LoadingNightAnimation } from '../components/LoadingNightAnimation';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
 
-const MESSAGES = [
-  '사주팔자를 펼치고 있어요 🔮',
-  '천간과 지지의 흐름을 읽는 중 ✨',
-  '오행의 균형을 살펴보고 있어요 🌿',
-  '일주와 일진의 관계를 분석 중 🔥',
-  'MBTI 성향과 연결하고 있어요 🧠',
-  '오늘의 일진과 대조하는 중 🌙',
-  '운세 에너지를 모으고 있어요 ⚡',
-  '맞춤 운세를 완성하고 있어요 💫',
+const STEPS = [
+  { label: '사주 팔자 구성', duration: 2200 },
+  { label: '오행 균형 분석', duration: 2400 },
+  { label: 'MBTI 기운 매칭', duration: 2000 },
+  { label: '운세 문장 정리', duration: 3000 },
 ] as const;
-
-const GOLDEN_MESSAGE = '오늘의 황금운세를 가지신 분께 1,000P를 드려요! 🎁';
 
 type Props = {
   onRun: () => Promise<void>;
 };
 
 export function LoadingStep({ onRun }: Props) {
-  const [idx, setIdx] = useState(0);
+  const [activeStep, setActiveStep] = useState(0);
   const [progress, setProgress] = useState(0);
-  const [showGolden, setShowGolden] = useState(false);
   const ran = useRef(false);
 
-  // 배너 광고
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
   const bannerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!bannerReady || !bannerRef.current) return;
     const attached = attachBanner(AD_IDS.BANNER, bannerRef.current, {
-      theme: 'light',
+      theme: 'dark',
       tone: 'blackAndWhite',
       variant: 'card',
     });
     return () => { attached?.destroy(); };
   }, [bannerReady, attachBanner]);
 
-  // 일반 메시지 순환 + 중간에 황금운세 문구 3초간 표시
   useEffect(() => {
-    let goldenShown = false;
-    const t = window.setInterval(() => {
-      setIdx((prev) => {
-        const next = (prev + 1) % MESSAGES.length;
-        // 4번째 메시지 후 황금운세 문구 표시 (한 번만)
-        if (next === 4 && !goldenShown) {
-          goldenShown = true;
-          setShowGolden(true);
-          setTimeout(() => setShowGolden(false), 3000);
-        }
-        return next;
-      });
-    }, 1200);
-    return () => clearInterval(t);
+    let step = 0;
+    const advance = () => {
+      if (step < STEPS.length - 1) {
+        step += 1;
+        setActiveStep(step);
+        setTimeout(advance, STEPS[step].duration);
+      }
+    };
+    setTimeout(advance, STEPS[0].duration);
   }, []);
 
-  // 프로그레스 바 - 초반 빠르게, 후반 느리게
   useEffect(() => {
     const t = window.setInterval(() => {
       setProgress((p) => {
         if (p >= 95) return p;
-        if (p < 40) return p + Math.random() * 12 + 4;
-        if (p < 70) return p + Math.random() * 6 + 2;
+        if (p < 30) return p + Math.random() * 10 + 5;
+        if (p < 60) return p + Math.random() * 6 + 2;
         return p + Math.random() * 2 + 0.5;
       });
-    }, 300);
+    }, 400);
     return () => clearInterval(t);
   }, []);
 
@@ -78,68 +63,139 @@ export function LoadingStep({ onRun }: Props) {
 
   return (
     <div
-      className="app-page"
       style={{
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: '100dvh',
-        paddingTop: 40,
-        paddingBottom: 40,
+        padding: '40px 24px',
+        background: 'linear-gradient(180deg, #131e30 0%, #1a2744 40%, #1f2f52 100%)',
       }}
     >
-      {/* 애니메이션 */}
-      <div className="animate-fade-in">
+      {/* 천체 애니메이션 */}
+      <div className="animate-fade-in" style={{ marginBottom: 32 }}>
         <LoadingNightAnimation />
       </div>
 
-      {/* 메시지 */}
-      {showGolden ? (
-        <p
-          key="golden"
-          className="app-fade-line"
-          style={{
-            marginTop: 28,
-            textAlign: 'center',
-            lineHeight: 1.55,
-            fontSize: 17,
-            fontWeight: 800,
-            background: 'linear-gradient(135deg, #B8860B, #8B6914, #A0522D)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            letterSpacing: '-0.01em',
-            textShadow: '0 0 20px rgba(184, 134, 11, 0.15)',
-          }}
-        >
-          {GOLDEN_MESSAGE}
-        </p>
-      ) : (
-        <p
-          key={idx}
-          className="app-fade-line"
-          style={{
-            marginTop: 28,
-            textAlign: 'center',
-            lineHeight: 1.45,
-            fontSize: 18,
-            fontWeight: 700,
-            color: 'var(--navy-700)',
-            letterSpacing: '-0.02em',
-          }}
-        >
-          {MESSAGES[idx]}
-        </p>
-      )}
+      {/* 타이틀 */}
+      <h2
+        className="animate-fade-in"
+        style={{
+          fontSize: 20,
+          fontWeight: 800,
+          color: '#f0e6d3',
+          textAlign: 'center',
+          letterSpacing: '-0.02em',
+          marginBottom: 8,
+          animationDelay: '0.2s',
+        }}
+      >
+        사주를 분석하고 있어요
+      </h2>
+      <p
+        className="animate-fade-in"
+        style={{
+          fontSize: 14,
+          fontWeight: 500,
+          color: 'rgba(194, 202, 216, 0.6)',
+          textAlign: 'center',
+          marginBottom: 32,
+          animationDelay: '0.3s',
+        }}
+      >
+        동양 철학과 현대 심리학이 만나는 순간
+      </p>
+
+      {/* 단계별 진행 표시 */}
+      <div
+        className="animate-slide-up"
+        style={{
+          width: '100%',
+          maxWidth: 280,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+          animationDelay: '0.4s',
+        }}
+      >
+        {STEPS.map((s, i) => {
+          const done = i < activeStep;
+          const current = i === activeStep;
+          return (
+            <div
+              key={i}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                opacity: done || current ? 1 : 0.35,
+                transition: 'opacity 0.5s ease',
+              }}
+            >
+              <div
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 12,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  flexShrink: 0,
+                  background: done
+                    ? 'var(--gold-500)'
+                    : current
+                    ? 'rgba(212, 168, 75, 0.2)'
+                    : 'rgba(255,255,255,0.06)',
+                  color: done ? '#1a2744' : current ? 'var(--gold-400)' : 'rgba(255,255,255,0.3)',
+                  border: current ? '1.5px solid var(--gold-500)' : 'none',
+                  transition: 'all 0.5s ease',
+                }}
+              >
+                {done ? '✓' : i + 1}
+              </div>
+              <span
+                style={{
+                  fontSize: 15,
+                  fontWeight: done || current ? 600 : 500,
+                  color: done
+                    ? 'var(--gold-400)'
+                    : current
+                    ? '#f0e6d3'
+                    : 'rgba(194, 202, 216, 0.4)',
+                  transition: 'color 0.5s ease',
+                }}
+              >
+                {s.label}
+              </span>
+              {current && (
+                <span
+                  style={{
+                    marginLeft: 'auto',
+                    width: 6,
+                    height: 6,
+                    borderRadius: 3,
+                    background: 'var(--gold-500)',
+                    animation: 'app-twinkle 1.2s ease-in-out infinite',
+                  }}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
 
       {/* 프로그레스 바 */}
       <div
         style={{
-          width: 200,
-          height: 4,
+          width: '100%',
+          maxWidth: 280,
+          height: 3,
           borderRadius: 2,
-          background: 'rgba(26, 39, 68, 0.06)',
-          marginTop: 20,
+          background: 'rgba(255, 255, 255, 0.06)',
+          marginTop: 28,
           overflow: 'hidden',
         }}
       >
@@ -149,27 +205,10 @@ export function LoadingStep({ onRun }: Props) {
             borderRadius: 2,
             background: 'linear-gradient(90deg, var(--gold-500), var(--gold-300))',
             width: `${Math.min(progress, 95)}%`,
-            transition: 'width 0.5s ease-out',
+            transition: 'width 0.6s ease-out',
           }}
         />
       </div>
-
-      {/* 서브 텍스트 */}
-      <p
-        style={{
-          marginTop: 16,
-          textAlign: 'center',
-          maxWidth: 280,
-          lineHeight: 1.55,
-          fontSize: 14,
-          fontWeight: 500,
-          color: 'var(--navy-200)',
-        }}
-      >
-        동양 철학과 현대 심리학이 만나는 순간,
-        <br />
-        조금만 기다려주세요
-      </p>
 
       {/* 배너 광고 */}
       <div
@@ -177,8 +216,9 @@ export function LoadingStep({ onRun }: Props) {
         style={{
           width: '100%',
           maxWidth: 320,
-          height: 96,
-          marginTop: 32,
+          minHeight: bannerReady ? 96 : 0,
+          marginTop: 36,
+          borderRadius: 12,
         }}
       />
     </div>

@@ -6,7 +6,8 @@ export type Step =
   | 'home' | 'info' | 'mbti' | 'loading' | 'error' | 'result'
   | 'zodiac-input' | 'zodiac-loading' | 'zodiac-result'
   | 'compat-input' | 'compat-loading' | 'compat-result'
-  | 'dream-input' | 'dream-loading' | 'dream-result';
+  | 'dream-input' | 'dream-loading' | 'dream-result'
+  | 'iap';
 
 export type AppFeature = 'fortune' | 'dream' | 'zodiac' | 'compatibility';
 
@@ -108,6 +109,8 @@ export interface ZodiacResult {
 export interface CompatPerson {
   name: string;
   birthYear: string;
+  birthMonth?: string;
+  birthDay?: string;
   gender: Gender | '';
 }
 

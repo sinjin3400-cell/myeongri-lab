@@ -4,89 +4,97 @@ import { LogoMark } from '../components/LogoMark';
 import { trackEvent } from '../utils/analytics';
 import { FortuneIcon, DreamIcon, ZodiacIcon, CompatibilityIcon } from '../components/FeatureIcons';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
-import { recordVisit, getDailyZodiacFortunes, getDailyReward, getYesterdayScore } from '../utils/streak';
+import { recordVisit, getDailyZodiacFortunes, getDailyReward } from '../utils/streak';
 import { usePremiumPass } from '../hooks/usePremiumPass';
 import { Toast } from '../components/Toast';
+import { DAILY_QUOTES } from '../data/daily-quotes';
 import { Analytics } from '@apps-in-toss/web-framework';
 import type { AppFeature } from '../types';
 
 type Props = {
   onSelect: (feature: AppFeature) => void;
+  onIAP?: () => void;
 };
 
 const FEATURES: {
   key: AppFeature;
   icon: React.ReactNode;
-  bgIcon: React.ReactNode;
   title: string;
   description: string;
-  gradient: string;
   accentColor: string;
-  ready: boolean;
   tag?: string;
-  tagSide?: 'left' | 'right';
-  tagBg?: string;
+  tagColor?: string;
 }[] = [
   {
     key: 'fortune',
-    icon: <FortuneIcon size={36} />,
-    bgIcon: <FortuneIcon size={90} />,
-    title: '오늘의 사주풀이',
-    description: 'AI가 사주와 MBTI를 결합해\n나만의 운세를 풀어드려요',
-    gradient: 'linear-gradient(135deg, #1a2744 0%, #2d446c 100%)',
-    accentColor: 'var(--gold-500)',
-    ready: true,
+    icon: <FortuneIcon size={36} color="var(--navy-700)" />,
+    title: '사주풀이',
+    description: '오늘 나의 기운',
+    accentColor: 'var(--navy-700)',
     tag: 'BEST',
-    tagSide: 'right',
-    tagBg: 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)',
+    tagColor: 'var(--gold-600)',
   },
   {
     key: 'dream',
-    icon: <DreamIcon size={36} />,
-    bgIcon: <DreamIcon size={90} />,
+    icon: <DreamIcon size={36} color="#6b4c9a" />,
     title: '꿈해몽',
-    description: '간밤의 꿈이 알려주는 메시지\n행운의 로또번호까지!',
-    gradient: 'linear-gradient(135deg, #2d1b69 0%, #4a2d8a 100%)',
-    accentColor: '#a78bfa',
-    ready: true,
+    description: '간밤의 메시지',
+    accentColor: '#6b4c9a',
     tag: 'HOT',
-    tagSide: 'right',
-    tagBg: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)',
+    tagColor: '#e11d48',
   },
   {
     key: 'zodiac',
-    icon: <ZodiacIcon size={36} />,
-    bgIcon: <ZodiacIcon size={90} />,
-    title: '띠별 운세',
-    description: '내 띠로 보는 오늘의 운세\n12간지의 지혜를 만나보세요',
-    gradient: 'linear-gradient(135deg, #7c2d12 0%, #b45309 100%)',
-    accentColor: '#fbbf24',
-    ready: true,
+    icon: <ZodiacIcon size={36} color="#b45309" />,
+    title: '띠별운세',
+    description: '12간지의 지혜',
+    accentColor: '#b45309',
   },
   {
     key: 'compatibility',
-    icon: <CompatibilityIcon size={36} />,
-    bgIcon: <CompatibilityIcon size={90} />,
-    title: '궁합 보기',
-    description: '우리 사이 얼마나 잘 맞을까?\n부부·가족·연인 궁합 풀이',
-    gradient: 'linear-gradient(135deg, #9f1239 0%, #e11d48 100%)',
-    accentColor: '#fda4af',
-    ready: true,
+    icon: <CompatibilityIcon size={36} color="#e8627c" />,
+    title: '궁합보기',
+    description: '우리 사이는',
+    accentColor: '#e8627c',
   },
 ];
 
-export function HomeScreen({ onSelect }: Props) {
-  // 하단 배너 광고
+function getLastUserName(): string | null {
+  try {
+    return localStorage.getItem('myeongri_last_name');
+  } catch { return null; }
+}
+
+export function saveLastUserName(name: string) {
+  try {
+    if (name.trim()) localStorage.setItem('myeongri_last_name', name.trim());
+  } catch { /* noop */ }
+}
+
+function getDailyQuote(date: Date) {
+  const dayOfYear = Math.floor(
+    (date.getTime() - new Date(date.getFullYear(), 0, 0).getTime()) / 86400000
+  );
+  return DAILY_QUOTES[dayOfYear % DAILY_QUOTES.length];
+}
+
+function getWeekOfMonth(date: Date): string {
+  const weekNames = ['첫째', '둘째', '셋째', '넷째', '다섯째'];
+  const week = Math.ceil(date.getDate() / 7) - 1;
+  return weekNames[Math.min(week, 4)];
+}
+
+export function HomeScreen({ onSelect, onIAP }: Props) {
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
   const bannerRef = useRef<HTMLDivElement>(null);
 
-  // 스트릭 시스템 (일일 보상)
   const [streakInfo, setStreakInfo] = useState<{ count: number; dailyReward: number; actualAdded: number }>({ count: 0, dailyReward: 0, actualAdded: 0 });
   const [showDailyReward, setShowDailyReward] = useState(false);
-  const [yesterdayScore, setYesterdayScore] = useState<number | null>(null);
   const [toastMsg, setToastMsg] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
   const { addPasses } = usePremiumPass();
+
+  const userName = getLastUserName();
 
   useEffect(() => {
     const result = recordVisit();
@@ -103,7 +111,6 @@ export function HomeScreen({ onSelect }: Props) {
     } else {
       setStreakInfo({ count: result.count, dailyReward: 0, actualAdded: 0 });
     }
-    setYesterdayScore(getYesterdayScore());
     try { Analytics.impression({ log_name: 'home_view' }); } catch (_) { /* noop */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -120,70 +127,14 @@ export function HomeScreen({ onSelect }: Props) {
 
   const today = new Date();
   const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-  const dateStr = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')} (${dayNames[today.getDay()]})`;
+  const monthDay = `${today.getMonth() + 1}월 ${today.getDate()}일 (${dayNames[today.getDay()]})`;
+  const weekLabel = `${today.getMonth() + 1}월의 ${getWeekOfMonth(today)} 주`;
+  const dailyQuote = getDailyQuote(today);
   const zodiacFortunes = getDailyZodiacFortunes(today);
 
   return (
     <div className="app-page" style={{ paddingBottom: 40 }}>
       <Toast message={toastMsg} visible={toastVisible} onDone={() => setToastVisible(false)} duration={3000} />
-
-      {/* 일일 보상 알림 */}
-      {showDailyReward && streakInfo.dailyReward > 0 && (
-        <div
-          className="animate-slide-up"
-          style={{
-            marginBottom: 16,
-            padding: '16px 20px',
-            borderRadius: 16,
-            background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
-            textAlign: 'center',
-            position: 'relative',
-            boxShadow: '0 4px 16px rgba(255, 165, 0, 0.35)',
-          }}
-        >
-          <button
-            onClick={() => setShowDailyReward(false)}
-            style={{ position: 'absolute', top: 6, right: 6, background: 'none', border: 'none', fontSize: 16, color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: 10, lineHeight: 1 }}
-          >✕</button>
-          <p style={{ margin: '0 0 4px', fontSize: 24 }}>{streakInfo.count >= 7 ? '🏆' : streakInfo.count >= 3 ? '🔥' : '🎁'}</p>
-          <p style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 800, color: '#fff' }}>
-            {streakInfo.count}일{streakInfo.count >= 2 ? ' 연속' : ''} 방문 보상!
-          </p>
-          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>
-            황금 열람권 {streakInfo.actualAdded}개가 지급되었어요 🎫
-          </p>
-          {streakInfo.count < 7 && (
-            <p style={{ margin: '6px 0 0', fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>
-              내일도 오면 열람권 {getDailyReward(streakInfo.count + 1)}개!
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* 스트릭 뱃지 (2일 이상일 때) */}
-      {streakInfo.count >= 2 && !showDailyReward && (
-        <div
-          className="animate-fade-in"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            marginBottom: 12,
-            padding: '8px 14px',
-            borderRadius: 12,
-            background: 'linear-gradient(135deg, rgba(255,165,0,0.1) 0%, rgba(255,215,0,0.08) 100%)',
-            border: '1px solid rgba(255,165,0,0.2)',
-          }}
-        >
-          <span style={{ fontSize: 16 }}>🔥</span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--gold-700)' }}>
-            {streakInfo.count}일 연속 방문 중!
-          </span>
-          <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--navy-400)', marginLeft: 'auto' }}>
-            내일 보상: 열람권 {getDailyReward(streakInfo.count + 1)}개 🎫
-          </span>
-        </div>
-      )}
 
       {/* 헤더 */}
       <header
@@ -191,306 +142,201 @@ export function HomeScreen({ onSelect }: Props) {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 12,
-          marginBottom: 8,
+          gap: 10,
+          marginBottom: 20,
         }}
       >
-        <LogoMark size={44} />
-        <div>
-          <h1
-            style={{
-              margin: 0,
-              fontSize: 22,
-              fontWeight: 800,
-              color: 'var(--navy-700)',
-              letterSpacing: '-0.03em',
-            }}
-          >
+        <LogoMark size={40} />
+        <div style={{ flex: 1 }}>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: 'var(--navy-700)', letterSpacing: '-0.03em' }}>
             명리연구소
           </h1>
-          <p
-            style={{
-              margin: 0,
-              fontSize: 12,
-              fontWeight: 500,
-              color: 'var(--gold-500)',
-              letterSpacing: '0.04em',
-            }}
-          >
+          <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: 'var(--gold-500)', letterSpacing: '0.02em' }}>
             AI 사주 × MBTI 운세
           </p>
         </div>
-        <div
-          style={{
-            marginLeft: 'auto',
-            background: 'linear-gradient(135deg, rgba(255,250,230,0.7), rgba(255,243,200,0.5))',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            borderRadius: 14,
-            padding: '7px 12px',
-            textAlign: 'center',
-            border: '1.5px solid rgba(212, 175, 55, 0.5)',
-            boxShadow: '0 4px 16px rgba(212, 175, 55, 0.2), 0 0 8px rgba(250, 220, 50, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.8)',
-          }}
-        >
-          <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--navy-700)', display: 'block', lineHeight: 1.4, opacity: 0.75 }}>
-            지금 확인하면
-          </span>
-          <span style={{ fontSize: 13, fontWeight: 900, color: 'var(--gold-600)', display: 'block', lineHeight: 1.3 }}>
-            포인트 GET 💰
-          </span>
-        </div>
-      </header>
-
-      {/* 날짜 */}
-      <p
-        className="animate-fade-in"
-        style={{
-          margin: '0 0 24px',
-          fontSize: 13,
-          fontWeight: 600,
-          color: 'var(--navy-300)',
-          animationDelay: '0.05s',
-        }}
-      >
-        📅 {dateStr}
-      </p>
-
-      {/* 어제 vs 오늘 비교 (어제 점수가 있을 때만) */}
-      {yesterdayScore !== null && (
         <button
-          type="button"
-          onClick={() => { haptic(); onSelect('fortune'); }}
-          className="premium-card animate-slide-up"
+          onClick={() => { haptic(); onIAP?.(); }}
           style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 14,
-            marginBottom: 16,
-            padding: '16px 20px',
-            animationDelay: '0.08s',
-            background: 'linear-gradient(135deg, rgba(91, 141, 239, 0.06) 0%, rgba(255, 255, 255, 0.95) 100%)',
-            border: '1px solid rgba(91, 141, 239, 0.12)',
-            cursor: 'pointer',
-            textAlign: 'left',
-            fontFamily: 'inherit',
-          }}
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--navy-300)' }}>어제</span>
-            <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--navy-400)' }}>{yesterdayScore}점</span>
-          </div>
-          <span style={{ fontSize: 18, color: 'var(--navy-300)' }}>→</span>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--gold-600)' }}>오늘</span>
-            <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--gold-600)' }}>?</span>
-          </div>
-          <div style={{ flex: 1, marginLeft: 4 }}>
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--navy-700)' }}>
-              오늘은 어제보다 좋을까?
-            </p>
-            <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--navy-400)' }}>
-              탭해서 오늘의 운세를 확인해보세요
-            </p>
-          </div>
-        </button>
-      )}
-
-      {/* 오늘의 한마디 */}
-      <div
-        className="premium-card gold-accent animate-slide-up"
-        style={{
-          marginBottom: 28,
-          padding: '20px 22px',
-          animationDelay: '0.1s',
-        }}
-      >
-        <p
-          style={{
-            margin: '0 0 6px',
-            fontSize: 11,
-            fontWeight: 700,
-            color: 'var(--gold-600)',
-            letterSpacing: '0.06em',
-          }}
-        >
-          ✨ 오늘의 한마디
-        </p>
-        <p
-          style={{
-            margin: 0,
-            fontSize: 16,
-            fontWeight: 600,
-            color: 'var(--navy-700)',
-            lineHeight: 1.55,
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '9px 16px', borderRadius: 12,
+            background: 'linear-gradient(135deg, #fff9e5 0%, #fef0c2 100%)',
+            border: '1.5px solid #e9c768',
+            boxShadow: '0 0 10px rgba(212, 168, 75, 0.25), 0 2px 6px rgba(212, 168, 75, 0.15)',
+            cursor: 'pointer', fontFamily: 'inherit',
+            fontSize: 12, fontWeight: 800, color: '#8a6715',
             letterSpacing: '-0.01em',
           }}
         >
-          {getDailyMessage(today)}
+          🎫 열람권 충전소
+        </button>
+      </header>
+
+      {/* 날짜 + 인사 */}
+      <div className="animate-fade-in" style={{ marginBottom: 16, animationDelay: '0.05s' }}>
+        <p style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 500, color: 'var(--navy-300)' }}>
+          {monthDay} · {weekLabel}
+        </p>
+        <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--navy-700)', lineHeight: 1.4, letterSpacing: '-0.02em' }}>
+          {userName ? `${userName}님의 하루,` : '오늘 하루,'}<br />
+          오늘도 좋은 기운이 흘러요
+        </h2>
+      </div>
+
+      {/* 연속방문 배너 */}
+      {streakInfo.count >= 1 && (() => {
+        const dayInCycle = ((streakInfo.count - 1) % 7) + 1;
+        const nextReward = getDailyReward(streakInfo.count + 1);
+        const isBonusDay = [3, 5, 7].includes(((streakInfo.count) % 7) + 1);
+        return (
+          <div
+            className="animate-slide-up"
+            style={{
+              marginBottom: 20,
+              padding: '14px 16px',
+              borderRadius: 16,
+              background: 'var(--gold-50)',
+              border: '1.5px solid rgba(212, 168, 75, 0.35)',
+              boxShadow: '0 0 12px rgba(212, 168, 75, 0.12)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+            }}
+          >
+            <div style={{
+              width: 42, height: 42, borderRadius: 100,
+              background: 'linear-gradient(135deg, #FFA500 0%, #FF8C00 100%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 20, flexShrink: 0,
+              boxShadow: '0 2px 8px rgba(255,140,0,0.3)',
+            }}>
+              {streakInfo.count >= 7 ? '🏆' : '🔥'}
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ margin: '0 0 2px', fontSize: 15, fontWeight: 800, color: 'var(--navy-700)' }}>
+                {streakInfo.count}일 연속 방문 중!
+              </p>
+              <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: 'var(--navy-500)' }}>
+                {showDailyReward && streakInfo.actualAdded > 0
+                  ? `황금 열람권 ${streakInfo.actualAdded}장 획득 🎉`
+                  : nextReward >= 2
+                    ? `내일 오면 황금 열람권 ${nextReward}장 획득 🎁`
+                    : `내일 오면 황금 열람권 ${nextReward}장 획득`}
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: 8, height: 8, borderRadius: '50%',
+                    background: i < dayInCycle ? '#d4a84b' : 'rgba(212,168,75,0.2)',
+                    transition: 'background 0.3s',
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* 오늘의 한 줄 — 명리 고전 인용 */}
+      <div
+        className="premium-card gold-accent animate-slide-up"
+        style={{ marginBottom: 24, padding: '18px 20px', animationDelay: '0.1s' }}
+      >
+        <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 700, color: 'var(--gold-600)', letterSpacing: '0.04em' }}>
+          오늘의 한 줄
+        </p>
+        <p style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 600, color: 'var(--navy-700)', lineHeight: 1.55, letterSpacing: '-0.01em' }}>
+          {dailyQuote.quote}
+        </p>
+        <p style={{ margin: 0, fontSize: 11, fontWeight: 500, color: 'var(--navy-300)' }}>
+          — {dailyQuote.source}, {dailyQuote.category}
         </p>
       </div>
 
-      {/* 기능 카드 그리드 */}
+      {/* 기능 카드 2x2 */}
       <div
         className="stagger-children"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: 14,
-        }}
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}
       >
-        {FEATURES.map((feature) => (
+        {FEATURES.map((f) => (
           <button
-            key={feature.key}
+            key={f.key}
             type="button"
             onClick={() => {
               haptic();
-              trackEvent('home_feature_clicked', { feature: feature.key, ready: feature.ready });
-              try { Analytics.click({ log_name: 'home_feature_select', feature: feature.key }); } catch (_) { /* noop */ }
-              if (feature.ready) {
-                onSelect(feature.key);
-              }
+              trackEvent('home_feature_clicked', { feature: f.key, ready: true });
+              try { Analytics.click({ log_name: 'home_feature_select', feature: f.key }); } catch (_) { /* noop */ }
+              onSelect(f.key);
             }}
             style={{
               position: 'relative',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'flex-start',
-              padding: '22px 18px',
-              background: feature.gradient,
-              border: 'none',
+              padding: '20px 16px',
+              background: 'var(--app-surface)',
+              border: '1px solid rgba(26, 39, 68, 0.06)',
               borderRadius: 'var(--radius-md)',
-              cursor: feature.ready ? 'pointer' : 'default',
-              transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+              cursor: 'pointer',
               textAlign: 'left',
               fontFamily: 'inherit',
-              minHeight: 160,
-              boxShadow: feature.ready
-                ? '0 4px 20px rgba(0,0,0,0.15), 0 1px 4px rgba(0,0,0,0.08)'
-                : '0 2px 12px rgba(0,0,0,0.08)',
-              opacity: feature.ready ? 1 : 0.65,
+              minHeight: 130,
+              boxShadow: 'var(--card-shadow)',
+              transition: 'all 0.2s ease',
               overflow: 'hidden',
             }}
           >
-            {/* 배경 일러스트 */}
-            <div
-              style={{
+            {f.tag && (
+              <span style={{
                 position: 'absolute',
-                top: -8,
-                right: -8,
-                pointerEvents: 'none',
-                opacity: 0.12,
-              }}
-            >
-              {feature.bgIcon}
-            </div>
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: '50%',
-                background: 'linear-gradient(to top, rgba(0,0,0,0.15) 0%, transparent 100%)',
-                pointerEvents: 'none',
-                borderRadius: 'inherit',
-              }}
-            />
-
-            {/* 준비 중 태그 */}
-            {feature.tag && (
-              <span
-                style={{
-                  position: 'absolute',
-                  top: 10,
-                  ...(feature.tagSide === 'left' ? { left: 10 } : { right: 10 }),
-                  padding: '4px 9px',
-                  borderRadius: 8,
-                  fontSize: 10,
-                  fontWeight: 800,
-                  letterSpacing: '0.08em',
-                  color: '#fff',
-                  background: feature.tagBg || 'rgba(255,255,255,0.18)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-                  textShadow: '0 1px 2px rgba(0,0,0,0.2)',
-                  zIndex: 1,
-                }}
-              >
-                {feature.tag}
+                top: 10,
+                right: 10,
+                padding: '3px 8px',
+                borderRadius: 6,
+                fontSize: 9,
+                fontWeight: 800,
+                letterSpacing: '0.06em',
+                color: '#fff',
+                background: f.tagColor,
+              }}>
+                {f.tag}
               </span>
             )}
-
-            {/* 아이콘 */}
-            <div
-              style={{
-                marginBottom: 12,
-                filter: feature.ready ? 'none' : 'grayscale(0.3) opacity(0.7)',
-              }}
-            >
-              {feature.icon}
+            <div style={{ marginBottom: 14 }}>
+              {f.icon}
             </div>
-
-            {/* 타이틀 */}
-            <p
-              style={{
-                margin: '0 0 6px',
-                fontSize: 17,
-                fontWeight: 800,
-                color: '#fff',
-                letterSpacing: '-0.02em',
-                lineHeight: 1.2,
-              }}
-            >
-              {feature.title}
+            <p style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 800, color: 'var(--navy-700)', letterSpacing: '-0.02em' }}>
+              {f.title}
             </p>
-
-            {/* 설명 */}
-            <p
-              style={{
-                margin: 0,
-                fontSize: 12,
-                fontWeight: 500,
-                color: 'rgba(255,255,255,0.7)',
-                lineHeight: 1.5,
-                whiteSpace: 'pre-line',
-              }}
-            >
-              {feature.description}
+            <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: 'var(--navy-400)' }}>
+              {f.description}
             </p>
           </button>
         ))}
       </div>
 
       {/* 오늘의 띠별 운세 미리보기 */}
-      <div
-        className="animate-slide-up"
-        style={{ marginTop: 24, animationDelay: '0.3s' }}
-      >
+      <div className="animate-slide-up" style={{ marginTop: 24, animationDelay: '0.3s' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--navy-700)' }}>
-            🐲 오늘의 띠별 운세
+          <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--navy-700)' }}>
+            오늘의 띠별 운세
           </p>
           <button
             onClick={() => { haptic(); onSelect('zodiac'); }}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: 12, fontWeight: 600, color: 'var(--gold-600)',
-              padding: '10px 4px',
-              margin: '-6px 0',
+              fontSize: 12, fontWeight: 600, color: 'var(--navy-300)',
+              padding: '10px 4px', margin: '-6px 0',
             }}
           >
-            전체보기 →
+            ← 옆으로 넘겨보세요
           </button>
         </div>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 10,
-          }}
-        >
-          {zodiacFortunes.slice(0, 6).map((z) => (
+        <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, scrollSnapType: 'x mandatory' }} className="hide-scrollbar">
+          {[...zodiacFortunes].sort((a, b) => b.score - a.score).map((z) => (
             <button
               key={z.animal}
               type="button"
@@ -499,67 +345,41 @@ export function HomeScreen({ onSelect }: Props) {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: 4,
-                padding: '14px 10px',
+                gap: 6,
+                padding: '14px 16px',
                 background: '#fff',
-                border: '1px solid rgba(15,23,42,0.06)',
+                border: '1px solid rgba(26,39,68,0.06)',
                 borderRadius: 14,
                 cursor: 'pointer',
                 fontFamily: 'inherit',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
+                minWidth: 90,
+                flexShrink: 0,
+                scrollSnapAlign: 'start',
               }}
             >
-              <span style={{ fontSize: 22 }}>{z.emoji}</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--navy-600)' }}>{z.animal}띠</span>
-              <span style={{ fontSize: 10, fontWeight: 500, color: 'var(--navy-400)', lineHeight: 1.3, textAlign: 'center' }}>
-                {z.fortune.length > 12 ? z.fortune.slice(0, 12) + '…' : z.fortune}
-              </span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--navy-600)' }}>{z.animal}띠</span>
+              <span style={{ fontSize: 20, fontWeight: 800, color: 'var(--gold-600)' }}>{z.score ?? '—'}</span>
+              <div style={{ width: '100%', height: 4, borderRadius: 2, background: 'rgba(26,39,68,0.06)', overflow: 'hidden' }}>
+                <div style={{
+                  width: `${z.score ?? 50}%`,
+                  height: '100%',
+                  borderRadius: 2,
+                  background: (z.score ?? 50) >= 80 ? 'var(--gold-500)' : (z.score ?? 50) >= 60 ? 'var(--navy-400)' : 'var(--navy-200)',
+                  transition: 'width 0.6s ease',
+                }} />
+              </div>
+              <span style={{ fontSize: 10, fontWeight: 500, color: 'var(--navy-300)' }}>띠별점수</span>
             </button>
           ))}
         </div>
-      </div>
-
-      {/* 궁합 바이럴 CTA */}
-      <div
-        className="animate-slide-up"
-        style={{ marginTop: 24, animationDelay: '0.35s' }}
-      >
-        <button
-          type="button"
-          onClick={() => { haptic(); onSelect('compatibility'); }}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 14,
-            padding: '18px 20px',
-            background: 'linear-gradient(135deg, rgba(244, 63, 94, 0.06) 0%, rgba(255, 245, 247, 1) 100%)',
-            border: '1.5px solid rgba(244, 63, 94, 0.15)',
-            borderRadius: 16,
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            textAlign: 'left',
-            boxShadow: '0 2px 12px rgba(244, 63, 94, 0.08)',
-          }}
-        >
-          <span style={{ fontSize: 28 }}>💕</span>
-          <div style={{ flex: 1 }}>
-            <p style={{ margin: '0 0 2px', fontSize: 15, fontWeight: 800, color: 'var(--navy-700)' }}>
-              친구에게 궁합 결과 보내기
-            </p>
-            <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: 'var(--navy-400)' }}>
-              연인·친구·가족과의 궁합을 확인하고 공유해보세요
-            </p>
-          </div>
-          <span style={{ fontSize: 16, color: 'var(--navy-300)' }}>→</span>
-        </button>
       </div>
 
       {/* 하단 안내 */}
       <p
         className="animate-fade-in"
         style={{
-          marginTop: 20,
+          marginTop: 28,
           textAlign: 'center',
           fontSize: 12,
           fontWeight: 500,
@@ -575,52 +395,11 @@ export function HomeScreen({ onSelect }: Props) {
       <div
         ref={bannerRef}
         style={{
-          marginTop: 20,
+          marginTop: 16,
           minHeight: bannerReady ? 80 : 0,
           borderRadius: 12,
         }}
       />
     </div>
   );
-}
-
-/** 날짜 기반 오늘의 한마디 (매일 바뀜) */
-function getDailyMessage(date: Date): string {
-  const messages = [
-    '작은 친절이 큰 행운을 불러오는 하루예요',
-    '가까운 사람에게 따뜻한 말 한마디가 큰 복이 됩니다',
-    '새로운 만남에 좋은 기운이 감도는 날이에요',
-    '마음을 비우면 좋은 기회가 찾아옵니다',
-    '오늘은 결단력이 빛나는 날, 망설이지 마세요',
-    '주변을 돌아보면 감사할 일이 가득합니다',
-    '차분한 마음으로 하루를 시작하면 좋은 일이 생겨요',
-    '웃는 얼굴에 복이 온다는 말이 딱 맞는 날이에요',
-    '오래된 인연에서 뜻밖의 도움을 받을 수 있어요',
-    '작은 변화가 큰 전환점이 될 수 있는 하루예요',
-    '오늘 하루 여유를 가지면 내일이 더 밝아집니다',
-    '진심을 담은 대화가 관계를 더 깊게 만들어요',
-    '자신을 믿으면 길이 열리는 하루예요',
-    '소중한 것을 지키는 힘이 생기는 날입니다',
-    '마음이 가는 대로 움직이면 좋은 결과가 있어요',
-    '오늘은 작은 것에서 행복을 느끼기 좋은 날이에요',
-    '기다리던 소식이 찾아올 수 있는 하루예요',
-    '나를 위한 시간을 가져보세요, 좋은 에너지가 채워져요',
-    '부드러운 말 한마디가 주변을 따뜻하게 합니다',
-    '오늘의 노력이 내일의 열매가 되는 날이에요',
-    '솔직한 마음이 통하는 하루가 될 거예요',
-    '평소와 다른 선택이 행운을 가져다줄 수 있어요',
-    '감사하는 마음이 더 큰 복을 부릅니다',
-    '오늘은 건강에 신경 쓰면 운도 따라와요',
-    '좋은 사람들과 함께하면 기운이 배가 됩니다',
-    '지금 하고 있는 일에 집중하면 좋은 성과가 있어요',
-    '여유로운 마음이 좋은 기회를 만들어줍니다',
-    '오늘 베푼 선행이 며칠 뒤 돌아옵니다',
-    '새로운 시작을 위한 좋은 에너지가 가득한 날이에요',
-    '가족과 함께하는 시간이 행운을 키워줍니다',
-    '오늘은 직감을 믿어도 좋은 날이에요',
-  ];
-  const dayOfYear = Math.floor(
-    (date.getTime() - new Date(date.getFullYear(), 0, 0).getTime()) / 86400000
-  );
-  return messages[dayOfYear % messages.length];
 }

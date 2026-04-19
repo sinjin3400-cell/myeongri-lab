@@ -1,11 +1,11 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { haptic } from '../utils/haptic';
-import { PageHeader } from '../components/PageHeader';
 import { ShareSheet } from '../components/ShareSheet';
 import { useInterstitialAd, useTossBanner, AD_IDS } from '../hooks/useAds';
 import { trackEvent } from '../utils/analytics';
 import { Analytics } from '@apps-in-toss/web-framework';
 import { usePremiumPass } from '../hooks/usePremiumPass';
+import { PurchaseSheet } from '../components/PurchaseSheet';
 import type { DreamResult } from '../types';
 
 type Tab = 'traditional' | 'psychological' | 'sajuLinked';
@@ -18,24 +18,32 @@ type Props = {
   onGoFortune?: () => void;
 };
 
-const TYPE_STYLE: Record<DreamResult['type'], { bg: string; color: string; emoji: string }> = {
-  길몽: { bg: 'rgba(34, 197, 94, 0.12)', color: '#059669', emoji: '🌟' },
-  흉몽: { bg: 'rgba(220, 38, 38, 0.10)', color: '#b91c1c', emoji: '🌫️' },
-  중립: { bg: 'rgba(100, 116, 139, 0.12)', color: '#475569', emoji: '🌙' },
+const TYPE_LABEL: Record<DreamResult['type'], { hanja: string; label: string; category: string }> = {
+  길몽: { hanja: '吉', label: '길몽', category: '재물운 상승' },
+  흉몽: { hanja: '凶', label: '흉몽', category: '주의 필요' },
+  중립: { hanja: '中', label: '중립', category: '변화의 조짐' },
 };
+
+function getLottoBallGradient(n: number): string {
+  if (n <= 10) return 'radial-gradient(circle at 30% 30%, #ffd166, #e8a008)';
+  if (n <= 20) return 'radial-gradient(circle at 30% 30%, #73b9ff, #1a73e8)';
+  if (n <= 30) return 'radial-gradient(circle at 30% 30%, #ff8a85, #c92a2a)';
+  if (n <= 40) return 'radial-gradient(circle at 30% 30%, #b0b9c6, #495267)';
+  return 'radial-gradient(circle at 30% 30%, #9ae6b4, #2f855a)';
+}
 
 export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortune }: Props) {
   const hasSaju = !!result.interpretation.sajuLinked;
   const [tab, setTab] = useState<Tab>(hasSaju ? 'sajuLinked' : 'traditional');
   const [unlocked, setUnlocked] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [showPurchase, setShowPurchase] = useState(false);
 
   const { isLoaded: rewardLoaded, showAd } = useInterstitialAd(AD_IDS.REWARDED);
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
-  const { count: passCount, hasPass, usePass } = usePremiumPass();
+  const { count: passCount, hasPass, usePass, addPasses } = usePremiumPass();
   const bannerRef = useRef<HTMLDivElement>(null);
 
-  // 앱인토스 전환지표: 꿈해몽 결과 화면 도달
   useEffect(() => {
     try { Analytics.impression({ log_name: 'fortune_result_view', feature: 'dream' }); } catch (_) { /* noop */ }
   }, []);
@@ -50,7 +58,7 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
     return () => { attached?.destroy(); };
   }, [bannerReady, attachBanner]);
 
-  const typeStyle = TYPE_STYLE[result.type];
+  const typeInfo = TYPE_LABEL[result.type];
 
   const visibleSets = useMemo(
     () => (unlocked ? result.luckyNumbers : result.luckyNumbers.slice(0, 1)),
@@ -60,10 +68,13 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
   const handleUnlock = async () => {
     haptic();
     trackEvent('dream_lotto_unlock_attempt', { rewardLoaded });
-    // 열람권 있으면 광고 스킵
     if (usePass()) {
       trackEvent('dream_lotto_unlocked', {});
       setUnlocked(true);
+      return;
+    }
+    if (!hasPass) {
+      setShowPurchase(true);
       return;
     }
     if (!rewardLoaded) {
@@ -91,128 +102,222 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
         ? result.interpretation.psychological
         : (result.interpretation.sajuLinked || '');
 
-  return (
-    <div className="app-page" style={{ paddingBottom: 200 }}>
-      <PageHeader title="꿈해몽 결과" subtitle={userName ? `${userName}님의 꿈 풀이` : '오늘의 꿈 풀이'} emoji="🌙" />
+  const hashtags = result.keywords.map((kw) => `#${kw.word}`);
 
-      {/* 요약 카드 */}
+  return (
+    <div className="app-page" style={{ paddingBottom: 120, background: '#fefcf9' }}>
+      <PurchaseSheet
+        open={showPurchase}
+        passCount={passCount}
+        lockedCount={4}
+        onClose={() => setShowPurchase(false)}
+        onPurchased={() => {
+          addPasses(1);
+          setShowPurchase(false);
+          trackEvent('dream_lotto_unlocked', {});
+          setUnlocked(true);
+        }}
+      />
+      {/* 헤더: 뒤로가기 + 타이틀 + 스텝 */}
       <div
-        className="premium-card animate-slide-up"
+        className="animate-fade-in"
         style={{
-          padding: '22px 20px',
-          marginBottom: 18,
-          background: 'linear-gradient(135deg, #f3eeff 0%, #ece5ff 60%, #e4daff 100%)',
-          border: '1px solid rgba(167, 139, 250, 0.2)',
-          textAlign: 'center',
+          display: 'flex',
+          alignItems: 'center',
+          marginBottom: 8,
         }}
       >
-        <span
+        <button
+          onClick={() => { haptic(); onRestart(); }}
           style={{
-            display: 'inline-block',
-            padding: '5px 12px',
-            borderRadius: 999,
-            fontSize: 12,
-            fontWeight: 700,
-            background: typeStyle.bg,
-            color: typeStyle.color,
-            border: `1px solid ${typeStyle.color}`,
-            marginBottom: 12,
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: 20, color: 'var(--navy-700)', padding: '8px 12px 8px 0',
+            fontFamily: 'inherit',
           }}
         >
-          {typeStyle.emoji} {result.type}
+          ‹
+        </button>
+        <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--navy-700)' }}>
+          꿈해몽
         </span>
-        <p style={{ margin: 0, fontSize: 18, fontWeight: 800, lineHeight: 1.5, letterSpacing: '-0.01em', color: 'var(--navy-700)' }}>
+        <span style={{ marginLeft: 'auto', fontSize: 14, fontWeight: 600, color: 'var(--navy-300)' }}>
+          3/3
+        </span>
+      </div>
+
+      {/* 프로그레스 바 */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 28 }}>
+        <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'var(--gold-500)' }} />
+        <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'var(--gold-500)' }} />
+        <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'var(--gold-500)' }} />
+      </div>
+
+      {/* 날짜 + 이름 */}
+      <header className="animate-fade-in" style={{ marginBottom: 16 }}>
+        <p style={{
+          margin: '0 0 4px',
+          fontSize: 12,
+          fontWeight: 500,
+          color: '#97a2b8',
+          lineHeight: '18px',
+        }}>
+          {userName ? `${userName}님의 꿈 풀이` : '오늘의 꿈 풀이'}
+        </p>
+        <h1 style={{
+          margin: 0,
+          fontSize: 24,
+          fontWeight: 800,
+          color: 'var(--navy-700)',
+          letterSpacing: '-0.84px',
+          lineHeight: '30.72px',
+          whiteSpace: 'pre-line',
+        }}>
           {result.summary}
+        </h1>
+      </header>
+
+      {/* 히어로 카드 */}
+      <div
+        className="animate-slide-up"
+        style={{
+          padding: '22px 20px',
+          marginBottom: 16,
+          background: 'linear-gradient(180deg, #f1eefb 0%, #fff 60%)',
+          border: '1px solid rgba(124, 106, 226, 0.18)',
+          borderRadius: 22,
+          boxShadow: '0 1px 2px rgba(26,39,68,0.04), 0 1px 1px rgba(26,39,68,0.02)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        {/* 장식 SVG (우상단) */}
+        <div style={{ position: 'absolute', top: -20, right: -10, opacity: 0.15 }}>
+          <svg width="140" height="140" viewBox="0 0 48 48" fill="none">
+            <circle cx="24" cy="24" r="20" stroke="#7c6ae2" strokeWidth="1.5" strokeDasharray="4 3" />
+            <circle cx="24" cy="24" r="12" stroke="#7c6ae2" strokeWidth="1" />
+            <path d="M24 14c-2 3-6 6-6 10a6 6 0 0012 0c0-4-4-7-6-10z" fill="#7c6ae2" opacity="0.4" />
+          </svg>
+        </div>
+
+        <p style={{
+          margin: '0 0 8px',
+          fontSize: 12,
+          fontWeight: 700,
+          color: '#7c6ae2',
+          letterSpacing: '0.06em',
+          position: 'relative',
+        }}>
+          {typeInfo.hanja} · {typeInfo.label} · {typeInfo.category}
+        </p>
+        <p style={{
+          margin: 0,
+          fontSize: 14,
+          fontWeight: 500,
+          color: '#455578',
+          lineHeight: 1.7,
+          letterSpacing: '-0.14px',
+          position: 'relative',
+        }}>
+          "{result.advice}"
         </p>
       </div>
 
       {/* 탭 */}
       {visibleTabs.length > 0 && (
         <div
-          className="premium-card animate-slide-up"
+          className="animate-slide-up"
           style={{
-            padding: 0,
             marginBottom: 16,
             animationDelay: '0.05s',
-            overflow: 'hidden',
-            background: '#fff',
-            border: '1px solid rgba(167, 139, 250, 0.15)',
           }}
         >
-          <div
-            style={{
-              display: 'flex',
-              gap: 6,
-              padding: '8px 8px 0',
-              background: 'rgba(243, 238, 255, 0.5)',
-            }}
-          >
+          <div style={{
+            display: 'flex',
+            gap: 4,
+            padding: 4,
+            background: 'rgba(124, 106, 226, 0.08)',
+            borderRadius: 12,
+            marginBottom: 12,
+          }}>
             {visibleTabs.map((t) => {
               const active = tab === t.key;
-              const isSaju = t.key === 'sajuLinked';
               return (
                 <button
                   key={t.key}
                   type="button"
                   onClick={() => { haptic(); setTab(t.key); }}
                   style={{
-                    position: 'relative',
                     flex: 1,
-                    padding: '12px 6px',
+                    padding: '10px 12px',
                     border: 'none',
-                    borderRadius: '12px 12px 0 0',
-                    background: active
-                      ? '#fff'
-                      : 'transparent',
-                    color: active
-                      ? (isSaju ? 'var(--gold-600)' : 'var(--navy-700)')
-                      : 'var(--navy-400)',
-                    fontWeight: active ? 800 : 600,
+                    borderRadius: 9,
+                    background: active ? '#fff' : 'transparent',
+                    color: active ? 'var(--navy-700)' : '#97a2b8',
+                    fontWeight: active ? 700 : 600,
                     fontSize: 13,
                     cursor: 'pointer',
                     fontFamily: 'inherit',
+                    letterSpacing: '-0.13px',
                     transition: 'all 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 4,
-                    boxShadow: active ? '0 -2px 8px rgba(0,0,0,0.04)' : 'none',
-                    borderBottom: active ? `2px solid ${isSaju ? 'var(--gold-500)' : '#a78bfa'}` : '2px solid transparent',
+                    boxShadow: active ? '0 1px 2px rgba(26,39,68,0.04), 0 1px 1px rgba(26,39,68,0.02)' : 'none',
                   }}
                 >
-                  {isSaju && <span style={{ fontSize: 12, lineHeight: 1 }}>✨</span>}
                   {t.label}
-                  {isSaju && !active && (
-                    <span
-                      style={{
-                        position: 'absolute',
-                        top: 4,
-                        right: 6,
-                        fontSize: 8,
-                        fontWeight: 800,
-                        color: '#fff',
-                        background: 'linear-gradient(135deg, #c9a962, #a07a2e)',
-                        padding: '2px 5px',
-                        borderRadius: 6,
-                        letterSpacing: '0.05em',
-                      }}
-                    >
-                      개인화
-                    </span>
-                  )}
                 </button>
               );
             })}
           </div>
-          <div style={{ padding: '18px 18px 20px' }}>
-            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.75, color: 'var(--navy-700)', whiteSpace: 'pre-wrap' }}>
+
+          {/* 해석 카드 */}
+          <div style={{
+            padding: '18px 20px',
+            background: '#fff',
+            border: '1px solid rgba(26,39,68,0.08)',
+            borderRadius: 22,
+            boxShadow: '0 1px 2px rgba(26,39,68,0.04), 0 1px 1px rgba(26,39,68,0.02)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <div style={{ width: 4, height: 16, background: '#7c6ae2', borderRadius: 100, flexShrink: 0 }} />
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: 'var(--navy-700)' }}>
+                {tab === 'traditional' ? '전통 해몽' : tab === 'psychological' ? '심리 해석' : '내 사주 결합 해석'}
+              </p>
+            </div>
+            <p style={{
+              margin: 0,
+              fontSize: 14,
+              fontWeight: 500,
+              lineHeight: '23.8px',
+              color: '#455578',
+              letterSpacing: '-0.14px',
+              whiteSpace: 'pre-wrap',
+            }}>
               {activeText || '해석 정보가 없어요.'}
             </p>
+
+            {hashtags.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+                {hashtags.map((tag) => (
+                  <span
+                    key={tag}
+                    style={{
+                      padding: '5px 10px',
+                      borderRadius: 8,
+                      background: 'rgba(124, 106, 226, 0.1)',
+                      color: '#5b49c8',
+                      fontSize: 11,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* 사주 결합 안내 (사주 없는 경우) → 클릭 시 사주풀이로 이동 */}
+      {/* 사주 결합 안내 (사주 없는 경우) */}
       {!hasSaju && (
         <button
           type="button"
@@ -221,7 +326,6 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
             haptic();
             onGoFortune();
           }}
-          className="premium-card"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -231,123 +335,78 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
             marginBottom: 16,
             background: 'linear-gradient(135deg, rgba(201, 169, 98, 0.10) 0%, rgba(255,255,255,0.95) 100%)',
             border: '1px dashed rgba(201, 169, 98, 0.45)',
+            borderRadius: 22,
             cursor: onGoFortune ? 'pointer' : 'default',
-            textAlign: 'left',
+            textAlign: 'left' as const,
             fontFamily: 'inherit',
+            boxShadow: '0 1px 2px rgba(26,39,68,0.04), 0 1px 1px rgba(26,39,68,0.02)',
           }}
         >
           <div style={{ flex: 1 }}>
-            <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: 'var(--gold-600)' }}>
-              🔮 더 정확한 해석을 원하시나요?
+            <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: '#b88a35' }}>
+              더 정확한 해석을 원하시나요?
             </p>
-            <p style={{ margin: 0, fontSize: 12, color: 'var(--navy-400)', lineHeight: 1.55 }}>
-              "오늘의 사주풀이"를 먼저 보고 오시면, 일주의 깊은 흐름과 결합한 개인화 꿈해몽을 받을 수 있어요.
+            <p style={{ margin: 0, fontSize: 12, color: '#97a2b8', lineHeight: 1.55 }}>
+              "오늘의 사주풀이"를 먼저 보고 오시면, 개인화 꿈해몽을 받을 수 있어요.
             </p>
           </div>
           {onGoFortune && (
-            <span style={{ fontSize: 18, color: 'var(--gold-600)', flexShrink: 0 }}>→</span>
+            <span style={{ fontSize: 18, color: '#b88a35', flexShrink: 0 }}>→</span>
           )}
         </button>
       )}
 
-      {/* 배너 광고 */}
+      {/* 행운의 로또번호 */}
       <div
-        ref={bannerRef}
+        className="animate-slide-up"
         style={{
-          marginBottom: 18,
-          minHeight: 80,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          border: bannerReady ? 'none' : '1.5px dashed var(--navy-200, #cbd5e1)',
-          borderRadius: 12,
-          background: bannerReady ? 'transparent' : 'rgba(0,0,0,0.02)',
-          color: 'var(--navy-300)',
-          fontSize: 12,
-          fontWeight: 600,
+          padding: '20px 18px',
+          marginBottom: 16,
+          background: 'linear-gradient(180deg, #fef9ec 0%, #fff 60%)',
+          border: '1px solid rgba(212, 168, 75, 0.24)',
+          borderRadius: 22,
+          boxShadow: '0 1px 2px rgba(26,39,68,0.04), 0 1px 1px rgba(26,39,68,0.02)',
+          animationDelay: '0.1s',
         }}
       >
-        {!bannerReady && '🎯 배너 광고 영역'}
-      </div>
-
-      {/* 키워드 분석 */}
-      {result.keywords.length > 0 && (
-        <div style={{ marginBottom: 18 }}>
-          <h3 style={{ margin: '0 0 10px', fontSize: 15, fontWeight: 800, color: 'var(--navy-700)' }}>
-            🔑 꿈 속 키워드 → 행운 번호
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {result.keywords.map((kw) => (
-              <div
-                key={kw.word}
-                className="premium-card"
-                style={{
-                  padding: '14px 16px',
-                  background: 'linear-gradient(135deg, #faf8ff 0%, #f3eeff 100%)',
-                  border: '1px solid rgba(167, 139, 250, 0.15)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--navy-700)' }}>
-                    {kw.word}
-                  </span>
-                  <span style={{ color: 'var(--navy-300)', fontSize: 13 }}>→</span>
-                  {kw.numbers.map((n) => (
-                    <span
-                      key={n}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: 30,
-                        height: 30,
-                        borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #f5d98a 0%, #c9a962 100%)',
-                        color: '#5a4510',
-                        fontSize: 13,
-                        fontWeight: 800,
-                        boxShadow: '0 2px 6px rgba(201, 169, 98, 0.3)',
-                      }}
-                    >
-                      {n}
-                    </span>
-                  ))}
-                </div>
-                <p style={{ margin: 0, fontSize: 12, color: 'var(--navy-400)', lineHeight: 1.55 }}>
-                  {kw.reason}
-                </p>
-              </div>
-            ))}
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: 'var(--navy-700)' }}>
+            행운의 로또번호
+          </p>
+          <span style={{
+            marginLeft: 'auto',
+            fontSize: 10,
+            fontWeight: 700,
+            color: '#b88a35',
+            padding: '3px 7px',
+            background: '#fef9ec',
+            borderRadius: 6,
+          }}>
+            5세트
+          </span>
         </div>
-      )}
-
-      {/* 로또 번호 */}
-      <div style={{ marginBottom: 20 }}>
-        <h3 style={{ margin: '0 0 10px', fontSize: 15, fontWeight: 800, color: 'var(--navy-700)' }}>
-          🎰 행운의 로또 번호
-        </h3>
+        <p style={{
+          margin: '0 0 16px',
+          fontSize: 12,
+          fontWeight: 500,
+          color: '#97a2b8',
+        }}>
+          꿈의 기운을 담은 번호예요. 재미로만 참고하세요.
+        </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {visibleSets.map((set, idx) => (
-            <div
-              key={idx}
-              className="premium-card"
-              style={{
-                padding: '14px 16px',
-                background: idx === 0
-                  ? 'linear-gradient(135deg, #fff7e0 0%, #fde9b8 60%, #f5d98a 100%)'
-                  : 'linear-gradient(135deg, #f8f5ff 0%, #f0ebff 60%, #e8e0ff 100%)',
-                border: idx === 0 ? '1px solid rgba(201, 169, 98, 0.4)' : '1px solid rgba(167, 139, 250, 0.2)',
-                boxShadow: idx === 0
-                  ? '0 4px 14px rgba(201, 169, 98, 0.25)'
-                  : '0 2px 8px rgba(167, 139, 250, 0.1)',
-              }}
-            >
-              <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 700, color: idx === 0 ? 'var(--gold-600)' : '#7c6bc4', letterSpacing: '0.04em' }}>
-                세트 {idx + 1}{idx === 0 ? ' · 키워드 매칭' : ''}
-              </p>
-              <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between' }}>
+            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{
+                width: 20,
+                fontSize: 11,
+                fontWeight: 800,
+                color: '#97a2b8',
+                fontFeatureSettings: '"tnum"',
+              }}>
+                #{idx + 1}
+              </div>
+              <div style={{ display: 'flex', gap: 6, flex: 1, justifyContent: 'space-between' }}>
                 {set.map((n) => (
                   <span
                     key={n}
@@ -355,15 +414,16 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      width: 38,
-                      height: 38,
-                      borderRadius: '50%',
-                      background: 'linear-gradient(145deg, #fef3cd 0%, #f5d98a 40%, #c9a962 100%)',
-                      color: '#5a3e0a',
+                      width: 36,
+                      height: 36,
+                      borderRadius: 100,
+                      background: getLottoBallGradient(n),
+                      color: '#fff',
                       fontSize: 14,
                       fontWeight: 800,
-                      border: '1.5px solid rgba(201, 169, 98, 0.5)',
-                      boxShadow: '0 3px 8px rgba(201, 169, 98, 0.3), inset 0 1px 2px rgba(255,255,255,0.6)',
+                      fontFeatureSettings: '"tnum"',
+                      letterSpacing: '-0.14px',
+                      boxShadow: 'inset 0 -4px 8px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08)',
                     }}
                   >
                     {n}
@@ -379,46 +439,67 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
             type="button"
             onClick={handleUnlock}
             style={{
-              marginTop: 12,
+              marginTop: 14,
               width: '100%',
               padding: '14px 16px',
               borderRadius: 14,
               border: 'none',
-              background: 'linear-gradient(135deg, #b794f6 0%, #8b5cf6 100%)',
+              background: 'linear-gradient(135deg, #9b85e3 0%, #7c6ae2 100%)',
               color: '#fff',
               fontSize: 14,
               fontWeight: 800,
               cursor: 'pointer',
               fontFamily: 'inherit',
-              boxShadow: '0 4px 14px rgba(139, 92, 246, 0.3)',
-              letterSpacing: '-0.01em',
+              boxShadow: '0 4px 14px rgba(124, 106, 226, 0.3)',
+              letterSpacing: '-0.14px',
             }}
           >
-            {hasPass ? `🎫 황금 열람권으로 바로 보기 (${passCount}회 남음)` : '🎬 광고 보고 4세트 더 받기'}
+            {hasPass ? `황금 열람권으로 바로 보기 (${passCount}회 남음)` : '광고 보고 4세트 더 받기'}
           </button>
         )}
+      </div>
+
+      {/* 배너 광고 */}
+      <div
+        ref={bannerRef}
+        style={{
+          marginBottom: 16,
+          minHeight: 80,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          border: bannerReady ? 'none' : '1.5px dashed var(--navy-200, #cbd5e1)',
+          borderRadius: 12,
+          background: bannerReady ? 'transparent' : 'rgba(0,0,0,0.02)',
+          color: 'var(--navy-300)',
+          fontSize: 12,
+          fontWeight: 600,
+        }}
+      >
+        {!bannerReady && '배너 광고 영역'}
       </div>
 
       {/* 공유 버튼 */}
       <button
         type="button"
         style={{
-          display: 'flex',
+          display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
           gap: 8,
           width: '100%',
           marginBottom: 14,
-          padding: '15px 20px',
+          padding: '16px 22px',
           fontSize: 16,
           fontWeight: 700,
           color: '#fff',
           border: 'none',
-          borderRadius: 16,
+          borderRadius: 14,
           cursor: 'pointer',
-          background: 'linear-gradient(135deg, var(--gold-500) 0%, var(--gold-600) 100%)',
-          boxShadow: '0 4px 14px rgba(201, 169, 98, 0.3)',
-          letterSpacing: '-0.01em',
+          fontFamily: 'inherit',
+          letterSpacing: '-0.32px',
+          background: 'linear-gradient(135deg, #d4a84b 0%, #b88a35 100%)',
+          boxShadow: '0 6px 20px rgba(212, 168, 75, 0.22)',
         }}
         onClick={() => { haptic(); setShowShare(true); }}
       >
@@ -430,16 +511,16 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
             strokeLinecap="round"
           />
         </svg>
-        ✨ 친구에게 결과 공유하기
+        꿈풀이 공유하기
       </button>
 
-      {/* CTA */}
+      {/* 하단 CTA */}
       <div className="app-footer-cta">
-        <button className="btn-secondary" onClick={() => { haptic(); onRestart(); }}>
-          다른 꿈 풀이하기 🌙
+        <button className="btn-primary" onClick={() => { haptic(); onRestart(); }}>
+          다른 꿈 풀이하기
         </button>
-        <button className="btn-primary" onClick={() => { haptic(); onHome(); }}>
-          홈으로
+        <button className="btn-secondary" onClick={() => { haptic(); onHome(); }}>
+          홈으로 돌아가기
         </button>
       </div>
 
@@ -449,7 +530,7 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
           shareInfo={{
             title: `${userName ?? '회원'}님의 꿈해몽 결과`,
             summaryLine: result.summary,
-            extraLine: `${typeStyle.emoji} ${result.type} · ${result.advice}`,
+            extraLine: `${typeInfo.hanja} ${result.type} · ${result.advice}`,
             serverData: {
               n: userName ?? '회원',
               sl: result.summary,

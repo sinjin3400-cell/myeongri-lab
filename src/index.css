@@ -19,6 +19,39 @@
   --app-cream: #fefbf7;
   --app-cream-deep: #f3ebe3;
   --app-navy-mist: #e4eaf4;
+
+  /* Design System — Navy */
+  --navy-700: #1a2744;
+  --navy-600: #2a3a5c;
+  --navy-500: #455578;
+  --navy-400: #6a7896;
+  --navy-300: #97a2b8;
+  --navy-200: #c2cad8;
+  --navy-100: #e4e8f0;
+  --navy-50:  #eef1f7;
+
+  /* Design System — Gold */
+  --gold-700: #8f6d28;
+  --gold-600: #b88a35;
+  --gold-500: #d4a84b;
+  --gold-400: #e0be70;
+  --gold-300: #ecd397;
+  --gold-200: #f4e4bc;
+  --gold-100: #faf0d8;
+  --gold-50:  #fef9ec;
+
+  /* Design System — Cream */
+  --cream-50:  #fefcf9;
+  --cream-100: #fdf8f1;
+  --cream-200: #f7eee0;
+
+  /* Feature colors */
+  --c-dream:  #7c6ae2;
+  --c-dream-soft:  #f1eefb;
+  --c-zodiac: #b9623d;
+  --c-zodiac-soft: #faece2;
+  --c-compat: #d1577a;
+  --c-compat-soft: #fbe8ed;
   --gradient-app: linear-gradient(
     168deg,
     #fefbf7 0%,
@@ -51,6 +84,7 @@ body,
   max-width: 480px;
   margin: 0 auto;
   min-height: 100dvh;
+  background: var(--cream-50, #fefcf9);
 }
 
 .app-footer-cta {
@@ -140,4 +174,14 @@ body,
 
 .app-cta-round {
   border-radius: 16px !important;
+}
+
+@keyframes sheet-dim-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sheet-slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }

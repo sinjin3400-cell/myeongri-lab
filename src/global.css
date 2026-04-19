@@ -31,9 +31,22 @@
   --cream-200: #f8f0e6;
   --cream-300: #f0e4d4;
 
+  --cream-50: #fefcf9;
+
   --rose-500: #e8627c;
   --green-500: #38b07e;
   --blue-500: #5b8def;
+
+  /* ── Section Colors ── */
+  --c-saju: #2a3a5c;
+  --c-saju-soft: #eef1f7;
+  --c-zodiac: #b9623d;
+  --c-zodiac-soft: #faece2;
+  --c-compat: #d1577a;
+  --c-compat-soft: #fbe8ed;
+  --c-dream: #7c6ae2;
+  --c-dream-soft: #f1eefb;
+  --line: rgba(26, 39, 68, 0.08);
 
   /* ── Semantic Tokens ── */
   --app-bg: linear-gradient(175deg, var(--cream-100) 0%, #f0eaf5 45%, var(--navy-50) 100%);

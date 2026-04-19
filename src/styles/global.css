@@ -35,6 +35,12 @@
   --green-500: #38b07e;
   --blue-500: #5b8def;
 
+  /* ── Feature Sub-colors ── */
+  --feature-fortune: var(--navy-700);
+  --feature-dream: #6b4c9a;
+  --feature-zodiac: #b45309;
+  --feature-compat: #e8627c;
+
   /* ── Semantic Tokens ── */
   --app-bg: linear-gradient(175deg, var(--cream-100) 0%, #f0eaf5 45%, var(--navy-50) 100%);
   --app-midnight: var(--navy-700);

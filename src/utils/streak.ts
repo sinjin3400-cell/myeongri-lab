@@ -130,7 +130,7 @@ const FORTUNE_LINES = [
   ['좋은 사람과의 만남이 복이에요', '끈기가 보상받는 하루예요', '자신감을 가지면 길이 열려요', '작은 것에서 행복을 느껴보세요'],
 ];
 
-export function getDailyZodiacFortunes(date: Date): { animal: string; emoji: string; fortune: string }[] {
+export function getDailyZodiacFortunes(date: Date): { animal: string; emoji: string; fortune: string; score: number }[] {
   const dayOfYear = Math.floor(
     (date.getTime() - new Date(date.getFullYear(), 0, 0).getTime()) / 86400000
   );
@@ -138,10 +138,13 @@ export function getDailyZodiacFortunes(date: Date): { animal: string; emoji: str
   return ZODIAC_ANIMALS.map((animal, i) => {
     const lineGroup = FORTUNE_LINES[(dayOfYear + i) % FORTUNE_LINES.length];
     const line = lineGroup[(dayOfYear + i * 3) % lineGroup.length];
+    const seed = (dayOfYear * 7 + i * 13 + 37) % 31;
+    const score = 65 + seed;
     return {
       animal,
       emoji: ZODIAC_EMOJIS[i],
       fortune: line,
+      score,
     };
   });
 }

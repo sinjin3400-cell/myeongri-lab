@@ -129,14 +129,12 @@ function validateHighlight(data: unknown): FortuneHighlight {
   return d as unknown as FortuneHighlight;
 }
 
-/** API 응답에서 FortuneResult 필수 필드 검증 */
+/** API 응답에서 FortuneResult 필수 필드 검증 (카테고리 텍스트만 필수, lucky/score/summaryLine은 highlight에서 가져옴) */
 function validateFortuneResult(data: unknown): FortuneResult {
   const d = data as Record<string, unknown>;
   if (!d || typeof d !== 'object') throw new Error('운세 데이터가 올바르지 않습니다');
-  if (typeof d.summaryLine !== 'string' && typeof d.overall !== 'string') {
-    throw new Error('운세 내용이 누락되었습니다');
-  }
-  if (!d.lucky || typeof d.lucky !== 'object') throw new Error('행운 정보가 누락되었습니다');
+  const hasCategoryText = ['overall', 'love', 'money', 'health'].some(k => typeof d[k] === 'string');
+  if (!hasCategoryText) throw new Error('운세 내용이 누락되었습니다');
   return d as unknown as FortuneResult;
 }
 
@@ -307,7 +305,7 @@ ${mbtiSection}
     "colorHex": "선택한 색상의 정확한 hex 코드",
     "number": "${luckyNumRange.join(', ')} 중 사주에 어울리는 숫자 선택",
     "direction": "행운 방향 (동/서/남/북/동남/동북/서남/서북 중 사주 오행에 맞는 방향)",
-    "item": "행운 아이템 (사주 오행의 부족한 기운을 채워주는 구체적 아이템)"
+    "item": "행운 아이템 이름만 2~3글자로 (예: 물병, 은반지, 우산, 머플러)"
   },
   "mbtiInsight": "MBTI 기반 특별 인사이트 한줄 (MBTI 없으면 빈 문자열)"
 }`;

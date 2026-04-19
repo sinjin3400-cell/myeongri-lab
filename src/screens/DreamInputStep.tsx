@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { haptic } from '../utils/haptic';
-import { PageHeader } from '../components/PageHeader';
 import { Analytics } from '@apps-in-toss/web-framework';
 import type { DreamInput, UserInfo } from '../types';
 
@@ -9,7 +8,6 @@ type Props = {
   onChange: (v: DreamInput) => void;
   onNext: () => void;
   onBack: () => void;
-  /** 사주 정보 자동 재사용 가능 여부 (App.tsx에서 info 채워졌는지로 판단) */
   hasSajuInfo: boolean;
   userInfo?: UserInfo | null;
 };
@@ -18,6 +16,8 @@ const MIN_LEN = 5;
 const MAX_LEN = 500;
 
 const PLACEHOLDER_EXAMPLE = `예) 하늘을 날다가 황금빛 문을 열었는데, 문 뒤에 넓은 꽃밭이 펼쳐져 있었어요. 누군가 손을 흔들고 있었는데 잠에서 깼어요.`;
+
+const DREAM_TAGS = ['물고기', '돼지', '조상님', '뱀', '불', '아기', '돈'];
 
 export function DreamInputStep({ value, onChange, onNext, onBack, hasSajuInfo, userInfo }: Props) {
   const [touched, setTouched] = useState(false);
@@ -34,29 +34,97 @@ export function DreamInputStep({ value, onChange, onNext, onBack, hasSajuInfo, u
     onNext();
   };
 
+  const handleTagClick = (tag: string) => {
+    haptic();
+    const currentText = value.text;
+    if (currentText.includes(tag)) return;
+    const separator = currentText.trim().length > 0 ? ' ' : '';
+    const newText = (currentText + separator + tag).slice(0, MAX_LEN);
+    onChange({ ...value, text: newText });
+  };
+
   return (
-    <div className="app-page" style={{ paddingBottom: 200 }}>
-      <PageHeader title="꿈해몽" subtitle="간밤의 꿈이 알려주는 메시지" emoji="🌙" />
+    <div className="app-page" style={{ paddingBottom: 120, background: '#fefcf9' }}>
+      {/* 헤더: 뒤로가기 + 타이틀 + 스텝 */}
+      <div
+        className="animate-fade-in"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          marginBottom: 8,
+        }}
+      >
+        <button
+          onClick={() => { haptic(); onBack(); }}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: 20, color: 'var(--navy-700)', padding: '8px 12px 8px 0',
+            fontFamily: 'inherit',
+          }}
+        >
+          ‹
+        </button>
+        <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--navy-700)' }}>
+          꿈해몽
+        </span>
+        <span style={{ marginLeft: 'auto', fontSize: 14, fontWeight: 600, color: 'var(--navy-300)' }}>
+          1/3
+        </span>
+      </div>
+
+      {/* 프로그레스 바 */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 28 }}>
+        <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'var(--gold-500)' }} />
+        <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'rgba(26,39,68,0.08)' }} />
+        <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'rgba(26,39,68,0.08)' }} />
+      </div>
 
       {/* 헤더 */}
       <div style={{ marginBottom: 20 }}>
-        <h2 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 800, color: 'var(--navy-700)', letterSpacing: '-0.02em' }}>
-          🌙 간밤에 꾼 꿈을<br />자유롭게 들려주세요
+        <p style={{
+          margin: '0 0 8px',
+          fontSize: 13,
+          fontWeight: 700,
+          color: '#7c6ae2',
+          letterSpacing: '0.06em',
+        }}>
+          간밤의 메시지
+        </p>
+        <h2 style={{
+          margin: '0 0 12px',
+          fontSize: 24,
+          fontWeight: 800,
+          color: 'var(--navy-700)',
+          letterSpacing: '-0.84px',
+          lineHeight: '30.72px',
+          whiteSpace: 'pre-line',
+        }}>
+          {'어떤 꿈을\n꾸셨나요?'}
         </h2>
-        <p style={{ margin: 0, fontSize: 14, color: 'var(--navy-400)', lineHeight: 1.55 }}>
-          AI가 한국 전통 해몽과 심리학을 더해<br />꿈의 의미와 행운의 번호를 풀어드려요
+        <p style={{
+          margin: 0,
+          fontSize: 15,
+          fontWeight: 500,
+          color: '#455578',
+          lineHeight: '24.75px',
+          letterSpacing: '-0.15px',
+          whiteSpace: 'pre-line',
+        }}>
+          {'꿈의 내용을 자유롭게 적어주세요.\n전통 해몽과 심리 해석을 함께 드려요.'}
         </p>
       </div>
 
-      {/* 입력 텍스트영역 */}
-      <div
-        className="premium-card"
-        style={{
-          padding: 16,
-          marginBottom: 14,
-          background: 'linear-gradient(135deg, rgba(167, 139, 250, 0.06) 0%, rgba(255,255,255,0.95) 100%)',
-        }}
-      >
+      {/* 꿈 내용 입력 */}
+      <div style={{ marginBottom: 16 }}>
+        <label style={{
+          display: 'block',
+          fontSize: 12,
+          fontWeight: 600,
+          color: '#6a7896',
+          marginBottom: 6,
+        }}>
+          꿈 내용
+        </label>
         <textarea
           value={text}
           onChange={(e) => onChange({ ...value, text: e.target.value.slice(0, MAX_LEN) })}
@@ -64,65 +132,104 @@ export function DreamInputStep({ value, onChange, onNext, onBack, hasSajuInfo, u
           rows={7}
           style={{
             width: '100%',
-            border: 'none',
+            padding: 16,
+            borderRadius: 14,
+            background: '#fff',
+            border: '1.5px solid var(--navy-700)',
             outline: 'none',
             resize: 'none',
             fontSize: 15,
-            lineHeight: 1.6,
+            fontWeight: 500,
+            lineHeight: 1.7,
             color: 'var(--navy-700)',
-            background: 'transparent',
             fontFamily: 'inherit',
+            minHeight: 160,
+            boxSizing: 'border-box',
           }}
         />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-          <span style={{ fontSize: 11, color: touched && !isValid ? '#dc2626' : 'var(--navy-300)' }}>
-            {touched && !isValid ? `최소 ${MIN_LEN}자 이상 입력해 주세요` : `${trimmedLen} / ${MAX_LEN}`}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginTop: 6,
+        }}>
+          <span style={{
+            fontSize: 12,
+            fontWeight: 500,
+            color: touched && !isValid ? '#dc2626' : '#97a2b8',
+          }}>
+            {touched && !isValid ? `최소 ${MIN_LEN}자 이상 입력해 주세요` : '짧아도 괜찮아요. 기억나는 만큼만'}
+          </span>
+          <span style={{
+            fontSize: 12,
+            fontWeight: 500,
+            color: '#97a2b8',
+            fontFeatureSettings: '"tnum"',
+          }}>
+            {trimmedLen}자
           </span>
         </div>
       </div>
 
-      {/* 안내 문구 */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: 8,
-          marginBottom: 18,
-          padding: '12px 14px',
-          background: 'rgba(167, 139, 250, 0.06)',
-          borderRadius: 12,
-          border: '1px solid rgba(167, 139, 250, 0.12)',
-        }}
-      >
-        <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>💡</span>
-        <p style={{ margin: 0, fontSize: 13, color: 'var(--navy-400)', lineHeight: 1.6 }}>
-          장소, 인물, 느낌 등 <span style={{ color: 'var(--navy-600)', fontWeight: 600 }}>기억나는 만큼 자유롭게</span> 적어주세요.
-          한 줄이어도 괜찮아요 — 자세할수록 더 깊은 풀이를 받을 수 있어요 ✨
-        </p>
+      {/* 자주 꾸는 꿈 태그 */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{
+          fontSize: 12,
+          fontWeight: 600,
+          color: '#6a7896',
+          marginBottom: 8,
+        }}>
+          자주 꾸는 꿈
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {DREAM_TAGS.map((tag) => {
+            const isSelected = text.includes(tag);
+            return (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => handleTagClick(tag)}
+                style={{
+                  padding: '8px 14px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  borderRadius: 100,
+                  border: isSelected ? '1.5px solid var(--navy-700)' : '1.5px solid rgba(26,39,68,0.08)',
+                  background: isSelected ? 'var(--navy-700)' : 'transparent',
+                  color: isSelected ? '#fff' : '#6a7896',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  fontFamily: 'inherit',
+                }}
+              >
+                {tag}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* 사주 결합 토글 */}
+      {/* 사주 연동 토글 */}
       <div
-        className="premium-card"
         style={{
-          padding: 14,
-          marginBottom: 18,
+          padding: '14px 16px',
+          marginBottom: 24,
           display: 'flex',
           alignItems: 'center',
           gap: 12,
-          background: hasSajuInfo
-            ? 'linear-gradient(135deg, rgba(201, 169, 98, 0.08) 0%, rgba(255,255,255,0.95) 100%)'
-            : 'rgba(0,0,0,0.02)',
+          borderRadius: 16,
+          background: '#fff',
+          border: '1px solid rgba(26,39,68,0.08)',
         }}
       >
         <div style={{ flex: 1 }}>
-          <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 700, color: 'var(--navy-700)' }}>
-            🔮 내 사주와 결합해서 해석
+          <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 800, color: 'var(--navy-700)' }}>
+            내 사주와 연결해 풀이
           </p>
-          <p style={{ margin: 0, fontSize: 11, color: 'var(--navy-400)', lineHeight: 1.5 }}>
+          <p style={{ margin: 0, fontSize: 11, fontWeight: 500, color: '#97a2b8', lineHeight: 1.5 }}>
             {hasSajuInfo
-              ? `${userInfo?.name || ''}님의 사주 정보가 자동으로 반영돼요`
-              : '먼저 "오늘의 사주풀이"를 보고 오면 활성화돼요'}
+              ? `${userInfo?.name || ''}님의 사주 입력 정보가 있을 때 더 정확해요`
+              : '사주 입력 정보가 있을 때 더 정확해요'}
           </p>
         </div>
         <button
@@ -136,9 +243,9 @@ export function DreamInputStep({ value, onChange, onNext, onBack, hasSajuInfo, u
           style={{
             width: 44,
             height: 26,
-            borderRadius: 13,
+            borderRadius: 100,
             border: 'none',
-            background: value.useSaju && hasSajuInfo ? 'var(--gold-500)' : 'rgba(0,0,0,0.15)',
+            background: value.useSaju && hasSajuInfo ? '#7c6ae2' : 'rgba(0,0,0,0.15)',
             position: 'relative',
             cursor: hasSajuInfo ? 'pointer' : 'not-allowed',
             transition: 'background 0.2s',
@@ -149,10 +256,10 @@ export function DreamInputStep({ value, onChange, onNext, onBack, hasSajuInfo, u
           <span
             style={{
               position: 'absolute',
-              top: 3,
-              left: value.useSaju && hasSajuInfo ? 21 : 3,
-              width: 20,
-              height: 20,
+              top: 2,
+              left: value.useSaju && hasSajuInfo ? 20 : 2,
+              width: 22,
+              height: 22,
               borderRadius: '50%',
               background: '#fff',
               transition: 'left 0.2s',
@@ -163,19 +270,31 @@ export function DreamInputStep({ value, onChange, onNext, onBack, hasSajuInfo, u
       </div>
 
       {/* CTA */}
-      <div className="app-footer-cta">
-        <button className="btn-secondary" onClick={() => { haptic(); onBack(); }}>
-          홈으로
-        </button>
-        <button
-          className="btn-primary"
-          onClick={handleSubmit}
-          disabled={!isValid}
-          style={{ opacity: isValid ? 1 : 0.5 }}
-        >
-          꿈 풀이 시작하기 ✨
-        </button>
-      </div>
+      <button
+        style={{
+          width: '100%',
+          padding: '16px 22px',
+          fontSize: 16,
+          fontWeight: 700,
+          color: '#fff',
+          border: 'none',
+          borderRadius: 14,
+          cursor: isValid ? 'pointer' : 'default',
+          fontFamily: 'inherit',
+          letterSpacing: '-0.32px',
+          background: isValid ? '#2a1f5e' : 'var(--navy-100)',
+          opacity: isValid ? 1 : 0.5,
+          transition: 'all 0.2s ease',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6,
+        }}
+        disabled={!isValid}
+        onClick={handleSubmit}
+      >
+        꿈 풀어보기 <span style={{ color: '#c9bdff' }}>&rarr;</span>
+      </button>
     </div>
   );
 }

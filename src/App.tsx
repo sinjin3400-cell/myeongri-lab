@@ -9,7 +9,8 @@ import {
 import type { FortuneResult, FortuneHighlight, FortuneCategory, FortunePeriod, Step, UserInfo, ZodiacInput, ZodiacResult, CompatInput, CompatResult, DreamInput, DreamResult } from './types';
 import type { MbtiType } from './api';
 import { requestFortuneHighlight, requestFortuneFull, requestZodiacFortune, requestCompatibility, requestDreamInterpretation } from './api';
-import { HomeScreen } from './screens/HomeScreen';
+import { HomeScreen, saveLastUserName } from './screens/HomeScreen';
+import { IAPScreen } from './screens/IAPScreen';
 import { InfoStep } from './screens/InfoStep';
 import { MbtiStep } from './screens/MbtiStep';
 import { LoadingStep } from './screens/LoadingStep';
@@ -120,10 +121,11 @@ export default function App() {
 
   const goNextFromInfo = useCallback(() => {
     haptic();
+    if (info.name) saveLastUserName(info.name);
     trackFormSubmit(info.gender, !!info.birthSijin || info.birthTimeUnknown);
     trackStepView('mbti');
     setStep('mbti');
-  }, [info.gender, info.birthSijin, info.birthTimeUnknown]);
+  }, [info.name, info.gender, info.birthSijin, info.birthTimeUnknown]);
 
   const goNextFromMbti = useCallback(() => {
     haptic();
@@ -351,7 +353,10 @@ export default function App() {
   return (
     <>
       {step === 'home' && (
-        <HomeScreen onSelect={handleFeatureSelect} />
+        <HomeScreen onSelect={handleFeatureSelect} onIAP={() => setStep('iap')} />
+      )}
+      {step === 'iap' && (
+        <IAPScreen onBack={restart} />
       )}
       {step === 'info' && (
         <InfoStep value={info} onChange={setInfo} onNext={goNextFromInfo} onHome={restart} />
@@ -362,26 +367,91 @@ export default function App() {
           onSelect={setMbti}
           onSkip={skipMbti}
           onConfirm={goNextFromMbti}
+          onBack={() => { haptic(); setStep('info'); }}
           errorMessage={loadError}
         />
       )}
       {step === 'loading' && <LoadingStep onRun={runAnalysis} />}
       {step === 'error' && (
-        <div className="app-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80dvh', textAlign: 'center', gap: 16 }}>
-          <span style={{ fontSize: 48 }}>😥</span>
-          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--navy-700)' }}>
-            분석에 실패했어요
+        <div className="app-page" style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center', minHeight: '100dvh', textAlign: 'center',
+          background: 'var(--cream-50)',
+        }}>
+          {/* 아이콘 원 */}
+          <div style={{
+            width: 96, height: 96, borderRadius: 100,
+            background: 'var(--cream-100)',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: 24,
+            border: '1px solid rgba(212, 168, 75, 0.2)',
+          }}>
+            <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+              <circle cx="22" cy="22" r="18" stroke="#d4a84b" strokeWidth="1.8" />
+              <path d="M22 14v9M22 29v.5" stroke="#d4a84b" strokeWidth="2.5" strokeLinecap="round" />
+            </svg>
+          </div>
+
+          <h2 style={{
+            margin: '0 0 10px', fontSize: 24, fontWeight: 800,
+            color: 'var(--navy-700)', lineHeight: '30.72px',
+            letterSpacing: '-0.84px',
+          }}>
+            잠시 기운이<br/>흐트러졌어요
           </h2>
-          <p style={{ margin: 0, fontSize: 15, color: 'var(--navy-400)', lineHeight: 1.6 }}>
-            {loadError || '일시적인 오류가 발생했어요.'}
-            <br />잠시 후 다시 시도해주세요.
+          <p style={{
+            margin: '0 0 28px', fontSize: 15, fontWeight: 500,
+            color: 'var(--navy-400)', lineHeight: 1.6, padding: '0 20px',
+          }}>
+            네트워크 연결을 확인한 뒤<br/>다시 시도해주세요
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 300, marginTop: 8 }}>
-            <button className="btn-primary" onClick={() => { setLoadError(null); setStep('loading'); }}>
-              다시 시도하기 🔄
+
+          {/* 에러 코드 카드 */}
+          <div style={{
+            width: '100%', maxWidth: 320,
+            padding: '14px 16px', textAlign: 'left',
+            background: '#fff', borderRadius: 16,
+            border: '1px solid rgba(26,39,68,0.08)',
+            boxShadow: '0 1px 2px rgba(26,39,68,0.04), 0 1px 1px rgba(26,39,68,0.02)',
+            marginBottom: 28,
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--navy-400)', letterSpacing: '0.04em', marginBottom: 6 }}>
+              ERROR · 503
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--navy-500)', lineHeight: 1.6 }}>
+              {loadError || '운세 서버가 잠시 쉬고 있어요.'}<br/>
+              1분 뒤 자동으로 다시 시도돼요.
+            </div>
+          </div>
+
+          {/* 버튼 스택 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 320 }}>
+            <button
+              onClick={() => { setLoadError(null); setStep('loading'); }}
+              style={{
+                width: '100%', padding: '16px 22px', fontSize: 16, fontWeight: 700,
+                background: 'linear-gradient(135deg, var(--gold-500) 0%, var(--gold-400) 100%)',
+                color: '#fff', border: 'none', borderRadius: 14,
+                cursor: 'pointer', fontFamily: 'inherit',
+                boxShadow: '0 6px 20px rgba(212, 168, 75, 0.22)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M14 8A6 6 0 1 1 8 2M14 2v4h-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              다시 시도하기
             </button>
-            <button className="btn-secondary" onClick={restart}>
-              처음부터 다시 하기
+            <button
+              onClick={restart}
+              style={{
+                width: '100%', padding: '14px 22px', fontSize: 14, fontWeight: 600,
+                background: 'transparent', color: 'var(--navy-400)',
+                border: 'none', borderRadius: 14,
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              홈으로 돌아가기
             </button>
           </div>
         </div>
@@ -505,6 +575,7 @@ export default function App() {
       {step === 'compat-result' && compatResult && (
         <CompatResultStep
           result={compatResult}
+          input={compatInput}
           onRestart={() => { setCompatResult(null); setStep('compat-input'); }}
           onHome={restart}
           onSelectFeature={(feature) => {

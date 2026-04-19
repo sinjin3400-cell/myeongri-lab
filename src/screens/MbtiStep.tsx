@@ -1,6 +1,5 @@
 import { useRef, useEffect } from 'react';
 import { haptic } from '../utils/haptic';
-import { MbtiHeroIllustration } from '../components/MbtiHeroIllustration';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
 import { Analytics } from '@apps-in-toss/web-framework';
 import type { MbtiType } from '../api';
@@ -11,14 +10,15 @@ type Props = {
   onSelect: (m: MbtiType) => void;
   onSkip: () => void;
   onConfirm: () => void;
+  onBack?: () => void;
   errorMessage: string | null;
 };
 
-const MBTI_GROUPS = [
-  { label: '분석형 NT', emoji: '🧠', types: ['INTJ', 'INTP', 'ENTJ', 'ENTP'] as MbtiType[] },
-  { label: '이상형 NF', emoji: '🦋', types: ['INFJ', 'INFP', 'ENFJ', 'ENFP'] as MbtiType[] },
-  { label: '안정형 SJ', emoji: '🛡️', types: ['ISTJ', 'ISFJ', 'ESTJ', 'ESFJ'] as MbtiType[] },
-  { label: '탐험형 SP', emoji: '🏄', types: ['ISTP', 'ISFP', 'ESTP', 'ESFP'] as MbtiType[] },
+const MBTI_ROWS: MbtiType[][] = [
+  ['INTJ', 'INTP', 'ENTJ', 'ENTP'],
+  ['INFJ', 'INFP', 'ENFJ', 'ENFP'],
+  ['ISTJ', 'ISFJ', 'ESTJ', 'ESFJ'],
+  ['ISTP', 'ISFP', 'ESTP', 'ESFP'],
 ];
 
 export function MbtiStep({
@@ -26,11 +26,11 @@ export function MbtiStep({
   onSelect,
   onSkip,
   onConfirm,
+  onBack,
   errorMessage,
 }: Props) {
   const selectedProfile = selected ? MBTI_PROFILES[selected] : null;
 
-  // 배너 광고
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
   const bannerRef = useRef<HTMLDivElement>(null);
 
@@ -46,181 +46,129 @@ export function MbtiStep({
 
   return (
     <div className="app-page">
-      {/* 히어로 */}
-      <div className="animate-fade-in" style={{ marginBottom: 24 }}>
-        <MbtiHeroIllustration />
+      {/* 헤더 */}
+      <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+        {onBack && (
+          <button
+            onClick={() => { haptic(); onBack(); }}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 20, color: 'var(--navy-700)', padding: '8px 12px 8px 0',
+              fontFamily: 'inherit',
+            }}
+          >
+            ‹
+          </button>
+        )}
+        <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--navy-700)' }}>사주풀이</span>
+        <span style={{ marginLeft: 'auto', fontSize: 14, fontWeight: 600, color: 'var(--navy-300)' }}>2/4</span>
       </div>
 
-      {/* 헤더 */}
-      <header
-        className="animate-fade-in"
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 10,
-          marginBottom: 28,
-          animationDelay: '0.1s',
-        }}
-      >
-        <h1
-          style={{
-            margin: 0,
-            fontSize: 24,
-            fontWeight: 800,
-            color: 'var(--navy-700)',
-            lineHeight: 1.3,
-            letterSpacing: '-0.03em',
-          }}
-        >
-          나의 성격 유형은?
-        </h1>
-        <p
-          style={{
-            margin: 0,
-            fontSize: 15,
-            fontWeight: 500,
-            color: 'var(--navy-400)',
-            lineHeight: 1.6,
-          }}
-        >
-          MBTI를 알려주시면 사주 해석을{' '}
-          <span style={{ color: 'var(--gold-600)', fontWeight: 600 }}>
-            나의 성격에 맞게
-          </span>{' '}
-          풀어드려요
+      {/* 프로그레스 바 */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 28 }}>
+        <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'var(--gold-500)' }} />
+        <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'var(--gold-500)' }} />
+        <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'rgba(26,39,68,0.08)' }} />
+        <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'rgba(26,39,68,0.08)' }} />
+      </div>
+
+      {/* 섹션 라벨 + 타이틀 */}
+      <div className="animate-fade-in" style={{ marginBottom: 8, animationDelay: '0.05s' }}>
+        <p className="section-label" style={{ color: 'var(--gold-600)' }}>선택 정보</p>
+        <h2 style={{ margin: '0 0 8px', fontSize: 24, fontWeight: 800, color: 'var(--navy-700)', lineHeight: 1.4, letterSpacing: '-0.02em' }}>
+          MBTI를 알려주시면<br />더 정확해져요
+        </h2>
+        <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: 'var(--navy-400)', lineHeight: 1.5 }}>
+          사주의 기운과 성향을 함께 풀어드려요.<br />모르셔도 괜찮아요.
         </p>
-      </header>
+      </div>
 
       {/* 에러 메시지 */}
       {errorMessage && (
-        <div
-          style={{
-            padding: '12px 16px',
-            borderRadius: 12,
-            background: 'rgba(240, 68, 82, 0.08)',
-            border: '1px solid rgba(240, 68, 82, 0.15)',
-            marginBottom: 20,
-          }}
-        >
-          <p style={{ margin: 0, fontSize: 14, color: '#e8627c', fontWeight: 500 }}>
-            {errorMessage}
-          </p>
+        <div style={{
+          padding: '12px 16px', borderRadius: 12,
+          background: 'rgba(240, 68, 82, 0.08)', border: '1px solid rgba(240, 68, 82, 0.15)',
+          marginBottom: 20,
+        }}>
+          <p style={{ margin: 0, fontSize: 14, color: '#e8627c', fontWeight: 500 }}>{errorMessage}</p>
         </div>
       )}
 
-      {/* MBTI 그룹별 선택 */}
-      <div
-        className="stagger-children"
-        style={{ display: 'flex', flexDirection: 'column', gap: 20, marginBottom: 16 }}
-      >
-        {MBTI_GROUPS.map((group) => (
-          <div key={group.label}>
-            <p
-              style={{
-                margin: '0 0 8px',
-                fontSize: 12,
-                fontWeight: 700,
-                color: 'var(--gold-500)',
-                letterSpacing: '0.04em',
-              }}
-            >
-              {group.emoji} {group.label}
-            </p>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: 8,
-              }}
-            >
-              {group.types.map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  className={`btn-chip ${selected === m ? 'selected' : ''}`}
-                  onClick={() => {
-                    haptic();
-                    try { Analytics.click({ log_name: 'mbti_select', mbti: m }); } catch (_) { /* noop */ }
-                    onSelect(m);
-                  }}
-                >
-                  {m}
-                </button>
-              ))}
-            </div>
+      {/* MBTI 4x4 그리드 */}
+      <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20, animationDelay: '0.1s' }}>
+        {MBTI_ROWS.map((row, ri) => (
+          <div key={ri} style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+            {row.map((m) => (
+              <button
+                key={m}
+                type="button"
+                className={`btn-chip ${selected === m ? 'selected' : ''}`}
+                onClick={() => {
+                  haptic();
+                  try { Analytics.click({ log_name: 'mbti_select', mbti: m }); } catch (_) { /* noop */ }
+                  onSelect(m);
+                }}
+                style={{ padding: '12px 6px', fontSize: 14 }}
+              >
+                {m}
+              </button>
+            ))}
           </div>
         ))}
       </div>
 
-      {/* 선택된 MBTI 미리보기 */}
+      {/* 선택된 MBTI 프로필 */}
       {selectedProfile && (
-        <div
-          className="premium-card gold-accent animate-fade-in"
-          style={{ marginBottom: 20, padding: '16px 18px' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-            <span style={{ fontSize: 22 }}>{selectedProfile.emoji}</span>
-            <div>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 16,
-                  fontWeight: 700,
-                  color: 'var(--navy-700)',
-                }}
-              >
-                {selectedProfile.type} — {selectedProfile.nickname}
-              </p>
-            </div>
+        <div className="premium-card gold-accent animate-fade-in" style={{ marginBottom: 24, padding: '16px 18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--green-500)' }}>{selected}</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--navy-400)' }}>·</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--navy-600)' }}>{selectedProfile.nickname}</span>
           </div>
-          <p
-            style={{
-              margin: 0,
-              fontSize: 13,
-              color: 'var(--navy-400)',
-              lineHeight: 1.55,
-            }}
-          >
-            핵심가치: {selectedProfile.values.join(' · ')}
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--navy-400)', lineHeight: 1.55 }}>
+            {selectedProfile.values[0]} 성향. 사주의 기운과 잘 맞아요.
           </p>
         </div>
       )}
 
       {/* CTA */}
-      <div
-        className="app-footer-cta"
-        style={{
-          position: 'static',
-          padding: 0,
-          background: 'transparent',
-          marginTop: 28,
-          maxWidth: 'none',
-          zIndex: 'auto',
-        }}
-      >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
         <button
-          className="btn-secondary"
-          onClick={onSkip}
+          onClick={() => { haptic(); onSkip(); }}
+          style={{
+            width: '100%',
+            padding: '14px 20px',
+            background: 'rgba(26, 39, 68, 0.04)',
+            border: '1.5px dashed rgba(26, 39, 68, 0.15)',
+            borderRadius: 14,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            fontSize: 15,
+            fontWeight: 600,
+            color: 'var(--navy-500)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+          }}
         >
-          MBTI를 잘 모르겠어요 →
+          🤔  MBTI를 모르겠어요
+          <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--navy-300)' }}>· 건너뛰기</span>
         </button>
         <button
           className="btn-primary"
           onClick={onConfirm}
           disabled={!selected}
-          style={!selected ? { opacity: 0.85 } : {}}
         >
-          {selected
-            ? `${selected} 유형으로 운세 분석하기 ✨`
-            : '먼저 MBTI를 선택해주세요'}
+          다음 →
         </button>
-
-        {/* 배너 광고 */}
-        <div
-          ref={bannerRef}
-          style={{ width: '100%', height: 96, marginTop: 16 }}
-        />
       </div>
+
+      {/* 하단 배너 광고 */}
+      <div
+        ref={bannerRef}
+        style={{ marginTop: 20, minHeight: bannerReady ? 80 : 0, borderRadius: 12 }}
+      />
     </div>
   );
 }

@@ -1,7 +1,5 @@
 import { useRef, useEffect } from 'react';
 import { haptic } from '../utils/haptic';
-import { HeroIllustration } from '../components/HeroIllustration';
-import { LogoMark } from '../components/LogoMark';
 import { SijinSelect } from '../components/SijinSelect';
 import { Analytics } from '@apps-in-toss/web-framework';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
@@ -64,7 +62,6 @@ export function InfoStep({ value, onChange, onNext, onHome }: Props) {
     try { Analytics.impression({ log_name: 'info_input_view' }); } catch (_) { /* noop */ }
   }, []);
 
-  // 배너 광고
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
   const bannerRef = useRef<HTMLDivElement>(null);
 
@@ -106,108 +103,95 @@ export function InfoStep({ value, onChange, onNext, onHome }: Props) {
 
   return (
     <div className="app-page">
-      {/* 헤더 */}
+      {/* 헤더: 뒤로가기 + 사주풀이 + 스텝 */}
       <div
         className="animate-fade-in"
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 12,
-          marginBottom: 20,
+          marginBottom: 8,
         }}
       >
-        <LogoMark size={44} />
-        <div>
-          <h1
+        {onHome && (
+          <button
+            onClick={() => { haptic(); onHome(); }}
             style={{
-              margin: 0,
-              fontSize: 22,
-              fontWeight: 800,
-              color: 'var(--navy-700)',
-              letterSpacing: '-0.03em',
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 20, color: 'var(--navy-700)', padding: '8px 12px 8px 0',
+              fontFamily: 'inherit',
             }}
           >
-            명리연구소
-          </h1>
-          <p
-            style={{
-              margin: 0,
-              fontSize: 12,
-              fontWeight: 500,
-              color: 'var(--gold-500)',
-              letterSpacing: '0.04em',
-            }}
-          >
-            AI 사주 × MBTI 운세
-          </p>
-        </div>
+            ‹
+          </button>
+        )}
+        <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--navy-700)' }}>
+          사주풀이
+        </span>
+        <span style={{ marginLeft: 'auto', fontSize: 14, fontWeight: 600, color: 'var(--navy-300)' }}>
+          1/4
+        </span>
       </div>
 
-      {/* 히어로 일러스트 */}
-      <div className="animate-fade-in" style={{ marginBottom: 24, animationDelay: '0.1s' }}>
-        <HeroIllustration />
+      {/* 프로그레스 바 */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 28 }}>
+        <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'var(--gold-500)' }} />
+        <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'rgba(26,39,68,0.08)' }} />
+        <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'rgba(26,39,68,0.08)' }} />
+        <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'rgba(26,39,68,0.08)' }} />
       </div>
 
-      {/* 인트로 */}
-      <p
-        className="animate-fade-in"
-        style={{
-          margin: '0 0 32px',
-          fontSize: 16,
-          fontWeight: 500,
-          color: 'var(--navy-400)',
-          lineHeight: 1.6,
-          animationDelay: '0.15s',
-        }}
-      >
-        사주와 MBTI를 결합해서,{' '}
-        <span style={{ color: 'var(--gold-600)', fontWeight: 600 }}>나에게 딱 맞는 언어</span>로
-        오늘의 운세를 풀어드려요 ✨
-      </p>
+      {/* 섹션 라벨 + 타이틀 */}
+      <div className="animate-fade-in" style={{ marginBottom: 32, animationDelay: '0.05s' }}>
+        <p className="section-label" style={{ color: 'var(--gold-600)' }}>기본 정보</p>
+        <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: 'var(--navy-700)', lineHeight: 1.4, letterSpacing: '-0.02em' }}>
+          어떻게<br />불러드릴까요?
+        </h2>
+      </div>
 
       {/* 폼 */}
       <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-        {/* 이름 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <label
-            style={{
-              fontSize: 15,
-              fontWeight: 700,
-              color: 'var(--navy-700)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            <span style={{ fontSize: 18 }}>👋</span>
-            어떻게 불러드릴까요?
+        {/* 이름 — 밑줄 스타일 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--navy-400)' }}>
+            이름
           </label>
-          <input
-            className="toss-like-input"
-            type="text"
-            name="name"
-            autoComplete="name"
-            enterKeyHint="next"
-            placeholder="이름이나 닉네임을 알려주세요"
-            value={value.name}
-            onChange={(e) => onChange({ ...value, name: e.target.value })}
-          />
+          <div style={{ position: 'relative' }}>
+            <input
+              type="text"
+              name="name"
+              autoComplete="name"
+              enterKeyHint="next"
+              placeholder="이름을 알려주세요"
+              value={value.name}
+              onChange={(e) => onChange({ ...value, name: e.target.value })}
+              style={{
+                width: '100%',
+                padding: '12px 32px 12px 0',
+                fontSize: 20,
+                fontWeight: 700,
+                fontFamily: 'inherit',
+                color: 'var(--navy-700)',
+                background: 'transparent',
+                border: 'none',
+                borderBottom: '2px solid var(--navy-100)',
+                borderRadius: 0,
+                outline: 'none',
+                transition: 'border-color 0.2s',
+                letterSpacing: '-0.01em',
+              }}
+              onFocus={(e) => { e.target.style.borderBottomColor = 'var(--gold-500)'; }}
+              onBlur={(e) => { e.target.style.borderBottomColor = 'var(--navy-100)'; }}
+            />
+            <span style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', fontSize: 18, color: 'var(--gold-500)' }}>
+              ✏️
+            </span>
+          </div>
         </div>
 
         {/* 생년월일 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <label
-            style={{
-              fontSize: 15,
-              fontWeight: 700,
-              color: 'var(--navy-700)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            <span style={{ fontSize: 18 }}>🎂</span>
-            언제 태어나셨어요?
+          <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--navy-400)' }}>
+            생년월일
           </label>
           {/* 양력/음력 선택 */}
           <div style={{ display: 'flex', gap: 6 }}>
@@ -221,23 +205,12 @@ export function InfoStep({ value, onChange, onNext, onHome }: Props) {
                 <button
                   key={key}
                   type="button"
+                  className={`btn-chip ${selected ? 'selected' : ''}`}
                   onClick={() => {
                     haptic();
                     onChange({ ...value, calendarType: key });
                   }}
-                  style={{
-                    flex: 1,
-                    padding: '8px 6px',
-                    borderRadius: 10,
-                    border: selected ? '2px solid var(--gold-500)' : '1.5px solid var(--navy-100)',
-                    background: selected ? 'var(--gold-50, #fff8e7)' : '#fff',
-                    color: selected ? 'var(--navy-700)' : 'var(--navy-400)',
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    fontSize: 13,
-                    fontWeight: selected ? 700 : 500,
-                    transition: 'all 0.18s ease',
-                  }}
+                  style={{ flex: 1, padding: '10px 6px', fontSize: 13 }}
                 >
                   {label}
                 </button>
@@ -245,46 +218,50 @@ export function InfoStep({ value, onChange, onNext, onHome }: Props) {
             })}
           </div>
           <input
-            className="toss-like-input"
             type="text"
             inputMode="numeric"
             name="birthDate"
             autoComplete="bday"
             enterKeyHint="next"
-            placeholder="19950315"
+            placeholder="1995.03.15"
             value={birthDisplayValue(value.birthDate)}
             onChange={handleBirthDateChange}
+            style={{
+              width: '100%',
+              padding: '12px 0',
+              fontSize: 20,
+              fontWeight: 700,
+              fontFamily: 'inherit',
+              color: 'var(--navy-700)',
+              background: 'transparent',
+              border: 'none',
+              borderBottom: '2px solid var(--navy-100)',
+              borderRadius: 0,
+              outline: 'none',
+              transition: 'border-color 0.2s',
+              letterSpacing: '0.02em',
+            }}
+            onFocus={(e) => { e.target.style.borderBottomColor = 'var(--gold-500)'; }}
+            onBlur={(e) => { e.target.style.borderBottomColor = 'var(--navy-100)'; }}
           />
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--navy-200)', lineHeight: 1.5 }}>
-            {(value.calendarType ?? 'solar') === 'solar'
-              ? '양력 생년월일 숫자 8자리를 입력해주세요'
-              : '음력 생년월일 숫자 8자리를 입력해주세요'}
+          <p style={{ margin: 0, fontSize: 12, color: 'var(--navy-200)', lineHeight: 1.5 }}>
+            숫자 8자리를 순서대로 입력해주세요
           </p>
         </div>
 
         {/* 성별 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <label
-            style={{
-              fontSize: 15,
-              fontWeight: 700,
-              color: 'var(--navy-700)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            <span style={{ fontSize: 18 }}>✨</span>
-            성별을 알려주세요
+          <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--navy-400)' }}>
+            성별
           </label>
           <div style={{ display: 'flex', gap: 10 }}>
             {(
               [
-                ['male', '남성', '♂️'],
-                ['female', '여성', '♀️'],
-                ['other', '기타', '🌈'],
+                ['female', '여성'],
+                ['male', '남성'],
+                ['other', '기타'],
               ] as const
-            ).map(([g, label, icon], i) => (
+            ).map(([g, label], i) => (
               <button
                 key={g}
                 ref={i === 0 ? genderFirstRef : undefined}
@@ -295,26 +272,16 @@ export function InfoStep({ value, onChange, onNext, onHome }: Props) {
                   onChange({ ...value, gender: g as Gender });
                 }}
               >
-                {icon} {label}
+                {label}
               </button>
             ))}
           </div>
         </div>
 
-        {/* 시진 */}
+        {/* 태어난 시간 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <label
-            style={{
-              fontSize: 15,
-              fontWeight: 700,
-              color: 'var(--navy-700)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            <span style={{ fontSize: 18 }}>🕐</span>
-            태어난 시간을 알고 계신가요?
+          <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--navy-400)' }}>
+            태어난 시간
           </label>
           <SijinSelect
             value={value}
@@ -322,24 +289,14 @@ export function InfoStep({ value, onChange, onNext, onHome }: Props) {
             onSelectSijin={selectSijin}
             onSelectUnknown={selectUnknown}
           />
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--navy-200)', lineHeight: 1.5 }}>
+          <p style={{ margin: 0, fontSize: 12, color: 'var(--navy-200)', lineHeight: 1.5 }}>
             시진을 알면 시주까지 분석해서 더 정확해져요
           </p>
         </div>
       </div>
 
-      {/* CTA */}
-      <div
-        className="app-footer-cta"
-        style={{
-          position: 'static',
-          padding: 0,
-          background: 'transparent',
-          marginTop: 28,
-          maxWidth: 'none',
-          zIndex: 'auto',
-        }}
-      >
+      {/* 하단 CTA */}
+      <div style={{ marginTop: 36, paddingBottom: 24 }}>
         <button
           className="btn-primary"
           onClick={() => {
@@ -347,33 +304,20 @@ export function InfoStep({ value, onChange, onNext, onHome }: Props) {
             onNext();
           }}
           disabled={!canSubmit}
+          style={{ fontSize: 17 }}
         >
-          내 운세 보러 가기 →
+          다음 →
         </button>
-        {onHome && (
-          <button
-            className="btn-secondary"
-            onClick={() => { haptic(); onHome(); }}
-            style={{ marginTop: 10 }}
-          >
-            ← 홈으로 돌아가기
-          </button>
-        )}
 
-        {/* 배너 광고 */}
+        {/* 하단 배너 광고 */}
         <div
           ref={bannerRef}
           style={{
-            width: '100%', minHeight: 80, marginTop: 16,
-            display: 'flex', justifyContent: 'center', alignItems: 'center',
-            border: bannerReady ? 'none' : '1.5px dashed var(--navy-200, #cbd5e1)',
+            marginTop: 20,
+            minHeight: bannerReady ? 80 : 0,
             borderRadius: 12,
-            background: bannerReady ? 'transparent' : 'rgba(0,0,0,0.02)',
-            color: 'var(--navy-300)', fontSize: 12, fontWeight: 600,
           }}
-        >
-          {!bannerReady && '🎯 배너 광고 영역 (테스트)'}
-        </div>
+        />
       </div>
     </div>
   );
