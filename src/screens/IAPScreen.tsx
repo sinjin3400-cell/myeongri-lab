@@ -10,17 +10,16 @@ type Props = {
 };
 
 const PACKS = [
-  { n: 1, price: 440, save: null, best: false, sku: SKU.PASS_1 },
-  { n: 3, price: 1100, save: null, best: false, sku: SKU.PASS_3 },
-  { n: 5, price: 1540, save: '77원 할인', best: false, sku: SKU.PASS_5 },
-  { n: 10, price: 2750, save: '650원 할인', best: true, sku: SKU.PASS_10 },
+  { n: 3, price: 990, save: null, best: false, sku: SKU.PASS_3 },
+  { n: 5, price: 1540, save: '220원 할인', best: false, sku: SKU.PASS_5 },
+  { n: 10, price: 2750, save: '550원 할인', best: true, sku: SKU.PASS_10 },
 ] as const;
 
 export function IAPScreen({ onBack }: Props) {
   const { count, addPasses } = usePremiumPass();
   const { showAd: showRewardedAd } = useInterstitialAd(AD_IDS.REWARDED);
   const { purchaseConsumable, loading: iapLoading } = useIAP();
-  const [selectedPack, setSelectedPack] = useState(2);
+  const [selectedPack, setSelectedPack] = useState(1);
 
   const handleSubscribe = () => {
     haptic();
@@ -222,7 +221,7 @@ export function IAPScreen({ onBack }: Props) {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--navy-700)' }}>열람권 충전소</div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--navy-400)' }}>1장당 ₩440 · 낱개 구매</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--navy-400)' }}>3장 ₩990부터 · 묶음 구매</div>
           </div>
           <div style={{
             marginLeft: 'auto', padding: '5px 10px',

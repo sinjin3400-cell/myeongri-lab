@@ -25,12 +25,12 @@ export function PurchaseSheet({ open, onClose, onPurchased, passCount, lockedCou
     // TODO: 구독 상품 등록 후 연동
   };
 
-  const handleBuy1 = () => {
+  const handleBuy3 = () => {
     if (iapLoading) return;
     haptic();
-    trackEvent('purchase_sheet_buy_1');
+    trackEvent('purchase_sheet_buy_3');
     purchaseConsumable(
-      SKU.PASS_1,
+      SKU.PASS_3,
       (amount) => {
         addPasses(amount);
         onPurchased?.();
@@ -165,9 +165,9 @@ export function PurchaseSheet({ open, onClose, onPurchased, passCount, lockedCou
           </button>
         </div>
 
-        {/* 열람권 1장 (Secondary) */}
+        {/* 열람권 3장 (Secondary) */}
         <button
-          onClick={handleBuy1}
+          onClick={handleBuy3}
           disabled={iapLoading}
           style={{
             width: '100%', padding: '14px 16px', marginBottom: 10,
@@ -181,14 +181,14 @@ export function PurchaseSheet({ open, onClose, onPurchased, passCount, lockedCou
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 14 }}>🎫</span>
             <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--navy-700)' }}>
-              {iapLoading ? '결제 진행 중...' : '열람권 1장 구매'}
+              {iapLoading ? '결제 진행 중...' : '열람권 3장 구매'}
             </span>
           </span>
           <span style={{
             fontSize: 14, fontWeight: 800, color: 'var(--navy-700)',
             fontFeatureSettings: '"tnum"',
           }}>
-            ₩440
+            ₩990
           </span>
         </button>
 
