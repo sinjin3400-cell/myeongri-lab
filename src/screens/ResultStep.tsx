@@ -740,8 +740,8 @@ export function ResultStep({
           }}
           onClose={() => setShowShare(false)}
           onShareReward={() => {
-            const { capped } = addPasses(5);
-            if (capped) { setCapToastMsg('🎫 열람권 한도(20개)가 가득 찼어요!'); setCapToastVisible(true); }
+            const { capped } = addPasses(1);
+            if (capped) { setCapToastMsg('🎫 열람권 한도(99개)가 가득 찼어요!'); setCapToastVisible(true); }
           }}
         />
       )}

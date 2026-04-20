@@ -106,7 +106,7 @@ export function HomeScreen({ onSelect, onIAP }: Props) {
       if (added > 0) setShowDailyReward(true);
       if (capped) {
         setTimeout(() => {
-          setToastMsg('🎫 열람권 한도(20개)가 가득 찼어요! 사용 후 다시 받을 수 있어요');
+          setToastMsg('🎫 열람권 한도(99개)가 가득 찼어요! 사용 후 다시 받을 수 있어요');
           setToastVisible(true);
         }, 2500);
       }

@@ -255,7 +255,7 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
             <span>
               <span style={{ display: 'block' }}>친구 초대하고 황금 열람권 받기</span>
               <span style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#a07a2e', marginTop: 2 }}>
-                공유 완료 시 황금 열람권 5개 지급!
+                공유 완료 시 황금 열람권 1개 지급!
               </span>
             </span>
           </button>

@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 
 const STORAGE_KEY = 'premium_passes_v2';
-const MAX_PASSES = 20;
+const MAX_PASSES = 99;
 const EXPIRY_DAYS = 7;
 
 type PassEntry = { acquiredAt: string }; // ISO date string (YYYY-MM-DD)
