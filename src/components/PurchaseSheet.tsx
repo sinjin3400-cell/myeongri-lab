@@ -2,6 +2,7 @@ import { haptic } from '../utils/haptic';
 import { useInterstitialAd, AD_IDS } from '../hooks/useAds';
 import { useIAP, SKU } from '../hooks/useIAP';
 import { usePremiumPass } from '../hooks/usePremiumPass';
+import { useSubscription } from '../hooks/useSubscription';
 import { trackEvent } from '../utils/analytics';
 
 type Props = {
@@ -14,15 +15,23 @@ type Props = {
 
 export function PurchaseSheet({ open, onClose, onPurchased, passCount, lockedCount = 2 }: Props) {
   const { showAd: showRewardedAd } = useInterstitialAd(AD_IDS.REWARDED);
-  const { purchaseConsumable, loading: iapLoading } = useIAP();
+  const { purchaseConsumable, purchaseGoldenKey, loading: iapLoading } = useIAP();
   const { addPasses } = usePremiumPass();
+  const { activate } = useSubscription();
 
   if (!open) return null;
 
   const handleSubscribe = () => {
+    if (iapLoading) return;
     haptic();
     trackEvent('purchase_sheet_subscribe');
-    // TODO: 구독 상품 등록 후 연동
+    purchaseGoldenKey(
+      () => {
+        activate(`gk_${Date.now()}`);
+        onPurchased?.();
+      },
+      () => trackEvent('purchase_sheet_subscribe_error'),
+    );
   };
 
   const handleBuy3 = () => {

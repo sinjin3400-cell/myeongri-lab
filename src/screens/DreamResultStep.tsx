@@ -5,6 +5,7 @@ import { useInterstitialAd, useTossBanner, AD_IDS } from '../hooks/useAds';
 import { trackEvent } from '../utils/analytics';
 import { Analytics } from '@apps-in-toss/web-framework';
 import { usePremiumPass } from '../hooks/usePremiumPass';
+import { useSubscription } from '../hooks/useSubscription';
 import { PurchaseSheet } from '../components/PurchaseSheet';
 import type { DreamResult } from '../types';
 
@@ -42,6 +43,7 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
   const { isLoaded: rewardLoaded, showAd } = useInterstitialAd(AD_IDS.REWARDED);
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
   const { count: passCount, hasPass, usePass, addPasses } = usePremiumPass();
+  const { isSubscribed } = useSubscription();
   const bannerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -60,14 +62,20 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
 
   const typeInfo = TYPE_LABEL[result.type];
 
+  const allUnlocked = unlocked || isSubscribed;
   const visibleSets = useMemo(
-    () => (unlocked ? result.luckyNumbers : result.luckyNumbers.slice(0, 1)),
-    [unlocked, result.luckyNumbers],
+    () => (allUnlocked ? result.luckyNumbers : result.luckyNumbers.slice(0, 1)),
+    [allUnlocked, result.luckyNumbers],
   );
 
   const handleUnlock = async () => {
     haptic();
     trackEvent('dream_lotto_unlock_attempt', { rewardLoaded });
+    if (isSubscribed) {
+      trackEvent('dream_lotto_unlocked', { method: 'subscription' });
+      setUnlocked(true);
+      return;
+    }
     if (usePass()) {
       trackEvent('dream_lotto_unlocked', {});
       setUnlocked(true);
@@ -434,7 +442,7 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
           ))}
         </div>
 
-        {!unlocked && (
+        {!allUnlocked && (
           <button
             type="button"
             onClick={handleUnlock}

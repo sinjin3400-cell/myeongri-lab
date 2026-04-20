@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { haptic } from '../utils/haptic';
 import { usePremiumPass } from '../hooks/usePremiumPass';
+import { useSubscription } from '../hooks/useSubscription';
 import { useInterstitialAd, AD_IDS } from '../hooks/useAds';
 import { useIAP, SKU } from '../hooks/useIAP';
 import { trackEvent } from '../utils/analytics';
@@ -17,14 +18,21 @@ const PACKS = [
 
 export function IAPScreen({ onBack }: Props) {
   const { count, addPasses } = usePremiumPass();
+  const { isSubscribed, activate } = useSubscription();
   const { showAd: showRewardedAd } = useInterstitialAd(AD_IDS.REWARDED);
-  const { purchaseConsumable, loading: iapLoading } = useIAP();
+  const { purchaseConsumable, purchaseGoldenKey, loading: iapLoading } = useIAP();
   const [selectedPack, setSelectedPack] = useState(1);
 
   const handleSubscribe = () => {
+    if (iapLoading) return;
     haptic();
     trackEvent('iap_subscribe_click');
-    // TODO: 구독 상품 등록 후 IAP.createSubscriptionPurchaseOrder 연동
+    purchaseGoldenKey(
+      () => {
+        activate(`gk_${Date.now()}`);
+      },
+      () => trackEvent('iap_subscribe_error'),
+    );
   };
 
   const handleBuyPack = () => {
@@ -188,17 +196,27 @@ export function IAPScreen({ onBack }: Props) {
 
         <button
           onClick={handleSubscribe}
+          disabled={isSubscribed || iapLoading}
           style={{
             width: '100%', padding: '16px 22px', fontSize: 15, fontWeight: 700,
-            background: 'linear-gradient(135deg, #1a2744 0%, #2a3a5c 100%)',
+            background: isSubscribed
+              ? 'linear-gradient(135deg, #38B07E 0%, #2d9469 100%)'
+              : 'linear-gradient(135deg, #1a2744 0%, #2a3a5c 100%)',
             color: '#fff', border: 'none', borderRadius: 14,
-            cursor: 'pointer', fontFamily: 'inherit',
+            cursor: isSubscribed ? 'default' : iapLoading ? 'not-allowed' : 'pointer',
+            fontFamily: 'inherit',
             boxShadow: '0 4px 14px rgba(26,39,68,0.25)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             position: 'relative',
+            opacity: iapLoading ? 0.7 : 1,
           }}
         >
-          🗝️ 황금열쇠 시작하기 <span style={{ color: '#d4a84b' }}>&rarr;</span>
+          {isSubscribed
+            ? '✅ 황금열쇠 이용 중'
+            : iapLoading
+              ? '결제 진행 중...'
+              : <>🗝️ 황금열쇠 시작하기 <span style={{ color: '#d4a84b' }}>&rarr;</span></>
+          }
         </button>
       </div>
 

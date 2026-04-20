@@ -12,6 +12,7 @@ import { usePromotion } from '../hooks/usePromotion';
 import { trackFullFortuneClicked, trackFortuneCardExpanded, trackShareButtonClicked, trackRewardGranted } from '../utils/analytics';
 import { Analytics } from '@apps-in-toss/web-framework';
 import { usePremiumPass } from '../hooks/usePremiumPass';
+import { useSubscription } from '../hooks/useSubscription';
 import { PurchaseSheet } from '../components/PurchaseSheet';
 import { Toast } from '../components/Toast';
 
@@ -245,6 +246,7 @@ export function ResultStep({
   const { grantReward } = usePromotion();
   const [rewardInfo, setRewardInfo] = useState<{ amount: number; isGolden: boolean } | null>(null);
   const { count: passCount, hasPass, usePass, addPasses } = usePremiumPass();
+  const { isSubscribed } = useSubscription();
   const [capToastMsg, setCapToastMsg] = useState('');
   const [capToastVisible, setCapToastVisible] = useState(false);
   const [showPurchase, setShowPurchase] = useState(false);
@@ -330,10 +332,15 @@ export function ResultStep({
 
   const handleChangePeriodWithAd = useCallback(async (newPeriod: FortunePeriod) => {
     haptic();
+    if (isSubscribed) {
+      if (newPeriod === 'tomorrow') { onTomorrow(); return; }
+      onChangePeriod(newPeriod);
+      return;
+    }
     if (newPeriod === 'tomorrow') { if (!usePass()) await showRewardedAd(); onTomorrow(); return; }
     if (!usePass()) await showRewardedAd();
     onChangePeriod(newPeriod);
-  }, [onChangePeriod, onTomorrow, showRewardedAd, usePass]);
+  }, [isSubscribed, onChangePeriod, onTomorrow, showRewardedAd, usePass]);
 
   const shareResult: FortuneResult = fullResult ?? {
     overall: highlight.bestCategory === 'overall' ? highlight.bestSummary : highlight.cautionCategory === 'overall' ? highlight.cautionSummary : '',
@@ -344,6 +351,7 @@ export function ResultStep({
   };
 
   const isCardLocked = (key: FortuneCategory): boolean => {
+    if (isSubscribed) return false;
     if (key === highlight.bestCategory || key === highlight.cautionCategory) return false;
     return !unlockedCards.has(key);
   };
@@ -360,15 +368,16 @@ export function ResultStep({
     return { summary: '운세 내용을 불러오고 있어요...' };
   };
 
-  // fullResult가 없는데 언락된 카드가 있으면 자동 재로딩
-  const hasUnlockedWithoutData = !fullResult && Array.from(unlockedCards).some(
-    k => k !== highlight.bestCategory && k !== highlight.cautionCategory
+  // 구독자이거나 언락된 카드가 있는데 데이터 없으면 자동 로딩
+  const needsFullLoad = !fullResult && (
+    isSubscribed ||
+    Array.from(unlockedCards).some(k => k !== highlight.bestCategory && k !== highlight.cautionCategory)
   );
   useEffect(() => {
-    if (hasUnlockedWithoutData) {
+    if (needsFullLoad) {
       onLoadFull();
     }
-  }, [hasUnlockedWithoutData, onLoadFull]);
+  }, [needsFullLoad, onLoadFull]);
 
   const getBadge = (key: FortuneCategory) => {
     if (key === highlight.bestCategory) return { text: 'BEST', bg: 'rgba(209,87,122,0.1)', color: 'rgb(196,86,106)' };

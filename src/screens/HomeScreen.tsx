@@ -6,6 +6,7 @@ import { FortuneIcon, DreamIcon, ZodiacIcon, CompatibilityIcon } from '../compon
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
 import { recordVisit, getDailyZodiacFortunes, getDailyReward } from '../utils/streak';
 import { usePremiumPass } from '../hooks/usePremiumPass';
+import { useSubscription } from '../hooks/useSubscription';
 import { Toast } from '../components/Toast';
 import { DAILY_QUOTES } from '../data/daily-quotes';
 import { Analytics } from '@apps-in-toss/web-framework';
@@ -93,6 +94,7 @@ export function HomeScreen({ onSelect, onIAP }: Props) {
   const [toastMsg, setToastMsg] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
   const { addPasses } = usePremiumPass();
+  const { isSubscribed } = useSubscription();
 
   const userName = getLastUserName();
 
@@ -160,15 +162,20 @@ export function HomeScreen({ onSelect, onIAP }: Props) {
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
             padding: '9px 16px', borderRadius: 12,
-            background: 'linear-gradient(135deg, #fff9e5 0%, #fef0c2 100%)',
-            border: '1.5px solid #e9c768',
-            boxShadow: '0 0 10px rgba(212, 168, 75, 0.25), 0 2px 6px rgba(212, 168, 75, 0.15)',
+            background: isSubscribed
+              ? 'linear-gradient(135deg, #1a2744 0%, #2a3a5c 100%)'
+              : 'linear-gradient(135deg, #fff9e5 0%, #fef0c2 100%)',
+            border: isSubscribed ? '1.5px solid #2a3a5c' : '1.5px solid #e9c768',
+            boxShadow: isSubscribed
+              ? '0 0 10px rgba(26, 39, 68, 0.25)'
+              : '0 0 10px rgba(212, 168, 75, 0.25), 0 2px 6px rgba(212, 168, 75, 0.15)',
             cursor: 'pointer', fontFamily: 'inherit',
-            fontSize: 12, fontWeight: 800, color: '#8a6715',
+            fontSize: 12, fontWeight: 800,
+            color: isSubscribed ? '#d4a84b' : '#8a6715',
             letterSpacing: '-0.01em',
           }}
         >
-          🎫 열람권 충전소
+          {isSubscribed ? '🗝️ 황금열쇠' : '🎫 열람권 충전소'}
         </button>
       </header>
 

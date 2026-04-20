@@ -8,6 +8,7 @@ export const SKU = {
   PASS_3: 'ait.0000024218.e3de3f71.482f1e81e1.6644422266',
   PASS_5: 'ait.0000024218.58d8a9b9.8ce5413f98.6644429046',
   PASS_10: 'ait.0000024218.f23e5db9.eb23243bb4.6644474476',
+  GOLDEN_KEY: 'ait.0000024218.7dfc8fed.3e5d5b6e51.6649360039',
 } as const;
 
 export const SKU_TO_AMOUNT: Record<string, number> = {
@@ -94,5 +95,50 @@ export function useIAP() {
     }
   }, []);
 
-  return { products, loading, purchaseConsumable };
+  const purchaseGoldenKey = useCallback((
+    onSuccess: () => void,
+    onError?: (err: unknown) => void,
+  ) => {
+    if (!SKU.GOLDEN_KEY) {
+      trackEvent('iap_golden_key_no_sku', {});
+      onError?.(new Error('황금열쇠 상품이 아직 등록되지 않았습니다.'));
+      return;
+    }
+    setLoading(true);
+    try {
+      const cleanup = IAP.createOneTimePurchaseOrder({
+        options: {
+          sku: SKU.GOLDEN_KEY,
+          processProductGrant: async ({ orderId }) => {
+            trackEvent('iap_golden_key_grant', { orderId });
+            return true;
+          },
+        },
+        onEvent: async (event) => {
+          if (event.type === 'success') {
+            trackEvent('iap_golden_key_success', {});
+            onSuccess();
+          }
+          setLoading(false);
+          cleanupRef.current = null;
+        },
+        onError: (err) => {
+          const code = (err as { code?: string })?.code;
+          trackEvent('iap_golden_key_error', { error: code ?? 'unknown' });
+          if (code !== 'USER_CANCELED') {
+            onError?.(err);
+          }
+          setLoading(false);
+          cleanupRef.current = null;
+        },
+      });
+      cleanupRef.current = cleanup;
+    } catch (err) {
+      trackEvent('iap_golden_key_init_error', {});
+      onError?.(err);
+      setLoading(false);
+    }
+  }, []);
+
+  return { products, loading, purchaseConsumable, purchaseGoldenKey };
 }
