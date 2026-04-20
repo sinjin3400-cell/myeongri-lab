@@ -29,6 +29,7 @@ type Props = {
   onRestart: () => void;
   onTomorrow: () => void;
   onGoDream?: () => void;
+  onIAP?: () => void;
 };
 
 type CategoryInfo = {
@@ -229,6 +230,7 @@ export function ResultStep({
   onRestart,
   onTomorrow,
   onGoDream,
+  onIAP,
 }: Props) {
   const [showShare, setShowShare] = useState(false);
   const [unlockedCards, setUnlockedCards] = useState<Set<FortuneCategory>>(new Set());
@@ -664,21 +666,18 @@ export function ResultStep({
             링크 복사
           </button>
           <button
-            onClick={() => { haptic(); scrollToLockedCard(); }}
+            onClick={() => { haptic(); onIAP?.(); }}
             style={{
-              flex: 1, padding: '14px 12px', fontSize: 14, fontWeight: 600,
-              color: 'var(--gold-700)', background: 'rgba(212,168,75,0.08)',
-              border: '1.5px solid rgba(212,168,75,0.2)', borderRadius: 14,
+              flex: 1, padding: '14px 12px', fontSize: 14, fontWeight: 800,
+              color: '#8a6715',
+              background: 'linear-gradient(135deg, #fff9e5 0%, #fef0c2 100%)',
+              border: '1.5px solid #e9c768', borderRadius: 14,
               cursor: 'pointer', fontFamily: 'inherit',
+              boxShadow: '0 0 10px rgba(212, 168, 75, 0.25), 0 2px 6px rgba(212, 168, 75, 0.15)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <rect x="3" y="7" width="18" height="14" rx="2" stroke="var(--gold-600)" strokeWidth="1.8" fill="none" />
-              <path d="M7 7V5a5 5 0 0110 0v2" stroke="var(--gold-600)" strokeWidth="1.8" strokeLinecap="round" />
-              <circle cx="12" cy="15" r="1.5" fill="var(--gold-600)" />
-            </svg>
-            열람권 충전소
+            🎫 열람권 충전소
           </button>
         </div>
       </div>

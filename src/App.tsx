@@ -468,11 +468,11 @@ export default function App() {
           onRestart={restart}
           onTomorrow={handleTomorrow}
           onGoDream={() => {
-            // info를 유지한 채로 꿈해몽으로 이동 → 사주 결합 모드 자동 활성
             trackStepView('dream-input');
             setDreamInput({ text: '', useSaju: true });
             setStep('dream-input');
           }}
+          onIAP={() => setStep('iap')}
         />
       )}
 
