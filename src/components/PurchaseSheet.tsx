@@ -146,7 +146,7 @@ export function PurchaseSheet({ open, onClose, onPurchased, passCount, lockedCou
                 황금열쇠 · 월간 무제한
               </div>
               <div style={{ fontSize: 11, fontWeight: 600, color: '#8a6715', marginTop: 2 }}>
-                첫 7일 무료 체험 가능
+                월간 무제한 이용
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>

@@ -183,7 +183,7 @@ export function IAPScreen({ onBack }: Props) {
           fontSize: 11, fontWeight: 600, color: '#8a6715',
           marginBottom: 14, position: 'relative',
         }}>
-          ✦ 첫 7일 무료 · 결제일 전 취소 가능
+          ✦ 결제일 전 취소 가능
         </div>
 
         <button
