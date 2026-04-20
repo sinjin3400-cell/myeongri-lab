@@ -26,19 +26,6 @@ type Props = {
   onShareReward?: () => void;
 };
 
-function loadKakaoSDK(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if ((window as unknown as Record<string, unknown>).Kakao) {
-      resolve();
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js';
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Kakao SDK 로드 실패'));
-    document.head.appendChild(script);
-  });
-}
 
 const SHARE_REWARD_MODULE_ID = 'faa9cc68-4c06-4174-8303-1fa5b7250c1d';
 
@@ -185,63 +172,23 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
     trackShareMethod('kakao');
     try { Analytics.click({ log_name: 'fortune_share', method: 'kakao' }); } catch (_) { /* noop */ }
 
-    // TODO: 디버그용 - 카카오 도메인 등록 후 제거
-    alert(`[디버그] origin: ${window.location.origin}\nhref: ${window.location.href}`);
+    const url = await getShareUrl();
+    const text = buildShareText(url);
 
-    try {
-      await loadKakaoSDK();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const Kakao = (window as any).Kakao;
-      if (!Kakao.isInitialized()) {
-        const key = (import.meta.env.VITE_KAKAO_JS_KEY as string | undefined)?.trim();
-        if (!key) {
-          // 키 없음 → 네이티브 공유로 대체
-          await handleNativeShare();
-          return;
-        }
-        Kakao.init(key);
-      }
-
-      const kakaoShareUrl = await getShareUrl();
-      const desc = score != null
-        ? `🎯 ${score}점 · "${summaryLine}"\n\n나의 운세도 확인해보세요!`
-        : `"${summaryLine}"\n\n나의 운세도 확인해보세요!`;
-
-      Kakao.Share.sendDefault({
-        objectType: 'feed',
-        content: {
-          title: `✨ ${title}`,
-          description: desc,
-          imageUrl: `${WEB_BASE_URL}/og-image.png?v=3`,
-          link: {
-            mobileWebUrl: kakaoShareUrl,
-            webUrl: kakaoShareUrl,
-          },
-        },
-        buttons: [
-          {
-            title: '나도 무료로 운세 보기 🔮',
-            link: {
-              mobileWebUrl: kakaoShareUrl,
-              webUrl: kakaoShareUrl,
-            },
-          },
-        ],
-      });
-      closeWithReward();
-    } catch (err) {
-      // 카카오 SDK 에러 (4019 등) → 네이티브 공유로 대체
-      console.warn('카카오 공유 실패:', err);
-      if (navigator.share) {
-        try {
-          const fallbackUrl = await getShareUrl();
-          await navigator.share({ title, text: buildShareText(fallbackUrl) });
-          closeWithReward();
-        } catch { /* 취소 */ }
-      } else {
-        // 최종 fallback: 텍스트 복사
-        await handleCopy();
-      }
+    // 토스 웹뷰에서는 카카오 URL 스킴이 차단되므로 시스템 공유 메뉴 사용
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${title} - 명리연구소`,
+          text,
+        });
+        closeWithReward();
+        return;
+      } catch { /* 사용자 취소 */ }
+    } else {
+      await copyToClipboard(text);
+      showToast('✨ 운세가 복사되었어요! 카카오톡에 붙여넣기 하세요');
+      setTimeout(closeWithReward, 1500);
     }
   };
 
