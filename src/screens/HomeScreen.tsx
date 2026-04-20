@@ -20,43 +20,53 @@ type Props = {
 const FEATURES: {
   key: AppFeature;
   icon: React.ReactNode;
+  bgIcon: React.ReactNode;
   title: string;
   description: string;
   accentColor: string;
+  oldGradient: string;
   tag?: string;
   tagColor?: string;
 }[] = [
   {
     key: 'fortune',
     icon: <FortuneIcon size={36} color="var(--navy-700)" />,
+    bgIcon: <FortuneIcon size={100} />,
     title: '사주풀이',
     description: '오늘 나의 기운',
     accentColor: 'var(--navy-700)',
+    oldGradient: 'linear-gradient(135deg, #1a2744 0%, #2d446c 100%)',
     tag: 'BEST',
     tagColor: 'var(--gold-600)',
   },
   {
     key: 'dream',
     icon: <DreamIcon size={36} color="#6b4c9a" />,
+    bgIcon: <DreamIcon size={100} color="#7b5eb5" />,
     title: '꿈해몽',
     description: '간밤의 메시지',
     accentColor: '#6b4c9a',
+    oldGradient: 'linear-gradient(135deg, #2d1b69 0%, #4a2d8a 100%)',
     tag: 'HOT',
     tagColor: '#e11d48',
   },
   {
     key: 'zodiac',
     icon: <ZodiacIcon size={36} color="#b45309" />,
+    bgIcon: <ZodiacIcon size={100} color="#b8863a" />,
     title: '띠별운세',
     description: '12간지의 지혜',
     accentColor: '#b45309',
+    oldGradient: 'linear-gradient(135deg, #7c2d12 0%, #b45309 100%)',
   },
   {
     key: 'compatibility',
     icon: <CompatibilityIcon size={36} color="#e8627c" />,
+    bgIcon: <CompatibilityIcon size={100} />,
     title: '궁합보기',
     description: '우리 사이는',
     accentColor: '#e8627c',
+    oldGradient: 'linear-gradient(135deg, #9f1239 0%, #e11d48 100%)',
   },
 ];
 
@@ -296,6 +306,26 @@ export function HomeScreen({ onSelect, onIAP }: Props) {
               overflow: 'hidden',
             }}
           >
+            {/* 리디자인 전 그래디언트 배경 (반투명) */}
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              background: f.oldGradient,
+              opacity: 0.1,
+              pointerEvents: 'none',
+              borderRadius: 'inherit',
+            }} />
+            {/* 리디자인 전 배경 아이콘 (흐릿하게) */}
+            <div style={{
+              position: 'absolute',
+              top: -5,
+              right: -5,
+              pointerEvents: 'none',
+              opacity: 0.3,
+              filter: 'blur(1px)',
+            }}>
+              {f.bgIcon}
+            </div>
             {f.tag && (
               <span style={{
                 position: 'absolute',
@@ -308,17 +338,18 @@ export function HomeScreen({ onSelect, onIAP }: Props) {
                 letterSpacing: '0.06em',
                 color: '#fff',
                 background: f.tagColor,
+                zIndex: 2,
               }}>
                 {f.tag}
               </span>
             )}
-            <div style={{ marginBottom: 14 }}>
+            <div style={{ marginBottom: 14, position: 'relative', zIndex: 1 }}>
               {f.icon}
             </div>
-            <p style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 800, color: 'var(--navy-700)', letterSpacing: '-0.02em' }}>
+            <p style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 800, color: 'var(--navy-700)', letterSpacing: '-0.02em', position: 'relative', zIndex: 1 }}>
               {f.title}
             </p>
-            <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: 'var(--navy-400)' }}>
+            <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: 'var(--navy-400)', position: 'relative', zIndex: 1 }}>
               {f.description}
             </p>
           </button>
