@@ -184,6 +184,10 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
   const handleKakaoShare = async () => {
     trackShareMethod('kakao');
     try { Analytics.click({ log_name: 'fortune_share', method: 'kakao' }); } catch (_) { /* noop */ }
+
+    // TODO: 디버그용 - 카카오 도메인 등록 후 제거
+    alert(`[디버그] origin: ${window.location.origin}\nhref: ${window.location.href}`);
+
     try {
       await loadKakaoSDK();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
