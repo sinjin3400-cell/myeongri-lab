@@ -3,14 +3,14 @@ import type { FortuneHighlight } from '../types';
 import type { FortuneTexts } from '../utils/shareUrl';
 import { CATEGORY_LABEL } from '../utils/categoryLabel';
 
-const TOSS_APP_SCHEME = 'supertoss://miniapp?appkey=myeongri-lab&path=/';
+const TOSS_DEEP_LINK = 'intoss://myeongri-lab';
 const TOSS_IOS_STORE = 'https://apps.apple.com/kr/app/id839333328';
 const TOSS_ANDROID_STORE = 'https://play.google.com/store/apps/details?id=viva.republica.toss';
 
 function openTossApp() {
   const isIOS = /iPhone|iPad/i.test(navigator.userAgent);
   const storeUrl = isIOS ? TOSS_IOS_STORE : TOSS_ANDROID_STORE;
-  window.location.href = TOSS_APP_SCHEME;
+  window.location.href = TOSS_DEEP_LINK;
   setTimeout(() => {
     if (document.hidden) return;
     window.location.href = storeUrl;

@@ -714,7 +714,7 @@ export function ResultStep({
             <p style={{ margin: '0 0 2px', fontSize: 14, fontWeight: 700, color: 'var(--navy-600)' }}>명리연구소가 도움이 됐나요?</p>
             <p style={{ margin: 0, fontSize: 12, color: 'var(--navy-400)' }}>별점 한 줄이면 큰 힘이 돼요</p>
           </div>
-          <button onClick={() => { haptic(); setShowReviewPrompt(false); try { window.location.href = 'supertoss://miniapp?appkey=myeongri-lab&path=/review'; } catch { /* noop */ } }}
+          <button onClick={() => { haptic(); setShowReviewPrompt(false); try { window.location.href = 'intoss://myeongri-lab/review'; } catch { /* noop */ } }}
             style={{ padding: '8px 16px', fontSize: 13, fontWeight: 700, color: 'var(--gold-600)', background: 'rgba(201,169,98,0.12)', border: 'none', borderRadius: 10, cursor: 'pointer', whiteSpace: 'nowrap' }}>리뷰 쓰기</button>
           <button onClick={() => setShowReviewPrompt(false)}
             style={{ background: 'none', border: 'none', fontSize: 14, color: 'var(--navy-300)', cursor: 'pointer', padding: '4px 2px' }}>✕</button>
