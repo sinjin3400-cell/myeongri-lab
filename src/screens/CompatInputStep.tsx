@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { haptic } from '../utils/haptic';
 import { trackEvent } from '../utils/analytics';
+import { NavBackButton } from '../components/NavBackButton';
 import { Analytics } from '@apps-in-toss/web-framework';
 import { getZodiacAnimal } from '../utils/zodiac';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
@@ -187,16 +188,7 @@ export function CompatInputStep({ value, onChange, onNext, onBack }: Props) {
           marginBottom: 8,
         }}
       >
-        <button
-          onClick={() => { haptic(); onBack(); }}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: 20, color: 'var(--navy-700)', padding: '8px 12px 8px 0',
-            fontFamily: 'inherit',
-          }}
-        >
-          ‹
-        </button>
+        <NavBackButton onClick={onBack} />
         <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--navy-700)' }}>
           궁합보기
         </span>

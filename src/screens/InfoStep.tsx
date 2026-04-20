@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { haptic } from '../utils/haptic';
 import { SijinSelect } from '../components/SijinSelect';
+import { NavBackButton } from '../components/NavBackButton';
 import { Analytics } from '@apps-in-toss/web-framework';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
 import type { UserInfo, Gender, CalendarType } from '../types';
@@ -112,18 +113,7 @@ export function InfoStep({ value, onChange, onNext, onHome }: Props) {
           marginBottom: 8,
         }}
       >
-        {onHome && (
-          <button
-            onClick={() => { haptic(); onHome(); }}
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: 20, color: 'var(--navy-700)', padding: '8px 12px 8px 0',
-              fontFamily: 'inherit',
-            }}
-          >
-            ‹
-          </button>
-        )}
+        {onHome && <NavBackButton onClick={onHome} />}
         <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--navy-700)' }}>
           사주풀이
         </span>

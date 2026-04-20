@@ -3,7 +3,7 @@ import type { FortuneHighlight } from '../types';
 import type { FortuneTexts } from '../utils/shareUrl';
 import { CATEGORY_LABEL } from '../utils/categoryLabel';
 
-const TOSS_APP_SCHEME = 'supertoss://miniapp?appkey=myeongri-lab';
+const TOSS_APP_SCHEME = 'supertoss://miniapp?appkey=myeongri-lab&path=/';
 const TOSS_IOS_STORE = 'https://apps.apple.com/kr/app/id839333328';
 const TOSS_ANDROID_STORE = 'https://play.google.com/store/apps/details?id=viva.republica.toss';
 
@@ -274,35 +274,6 @@ export function SharedResultView({ userName, highlight, texts, onTryOwn }: Props
           }}
         >
           내 운세도 풀어보기 <span style={{ color: '#e0be70' }}>&rarr;</span>
-        </button>
-      </div>
-
-      {/* 궁합 바이럴 CTA */}
-      <div style={{
-        padding: '20px', borderRadius: 18, textAlign: 'center',
-        background: 'linear-gradient(135deg, rgba(232, 98, 124, 0.04) 0%, rgba(255, 245, 247, 1) 100%)',
-        border: '1px solid rgba(26,39,68,0.08)',
-        marginBottom: 16,
-      }}>
-        <p style={{ margin: '0 0 4px', fontSize: 22 }}>💕</p>
-        <p style={{ margin: '0 0 4px', fontSize: 15, fontWeight: 700, color: 'var(--navy-700)' }}>
-          {userName}님과 나의 궁합은?
-        </p>
-        <p style={{ margin: '0 0 14px', fontSize: 12, color: 'var(--navy-400)' }}>
-          사주 기반 궁합 분석으로 우리 사이를 알아보세요
-        </p>
-        <button
-          onClick={handleCTA}
-          style={{
-            width: '100%', padding: '14px 16px', fontSize: 15, fontWeight: 700,
-            background: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)',
-            color: '#fff', border: 'none', borderRadius: 14,
-            cursor: 'pointer', fontFamily: 'inherit',
-            boxShadow: '0 4px 14px rgba(244, 63, 94, 0.25)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-          }}
-        >
-          {isInToss ? '궁합 보러가기 💕' : '토스에서 궁합 확인하기 💕'}
         </button>
       </div>
 

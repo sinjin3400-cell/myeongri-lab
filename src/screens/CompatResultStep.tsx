@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { haptic } from '../utils/haptic';
 import { trackEvent } from '../utils/analytics';
+import { NavBackButton } from '../components/NavBackButton';
+import { FloatingHomeButton } from '../components/FloatingHomeButton';
 import { Analytics } from '@apps-in-toss/web-framework';
 import { SemiCircleGauge } from '../components/SemiCircleGauge';
 import { ShareSheet } from '../components/ShareSheet';
@@ -66,16 +68,7 @@ export function CompatResultStep({ result, input, onRestart, onHome }: Props) {
           marginBottom: 8,
         }}
       >
-        <button
-          onClick={() => { haptic(); onRestart(); }}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: 20, color: 'var(--navy-700)', padding: '8px 12px 8px 0',
-            fontFamily: 'inherit',
-          }}
-        >
-          ‹
-        </button>
+        <NavBackButton onClick={onRestart} />
         <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--navy-700)' }}>
           궁합보기
         </span>
@@ -361,6 +354,7 @@ export function CompatResultStep({ result, input, onRestart, onHome }: Props) {
           onClose={() => setShowShare(false)}
         />
       )}
+      <FloatingHomeButton onClick={onHome} />
     </div>
   );
 }

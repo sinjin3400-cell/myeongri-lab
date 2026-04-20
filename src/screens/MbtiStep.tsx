@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { haptic } from '../utils/haptic';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
+import { NavBackButton } from '../components/NavBackButton';
 import { Analytics } from '@apps-in-toss/web-framework';
 import type { MbtiType } from '../api';
 import { MBTI_PROFILES } from '../data/mbtiProfiles';
@@ -48,18 +49,7 @@ export function MbtiStep({
     <div className="app-page">
       {/* 헤더 */}
       <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-        {onBack && (
-          <button
-            onClick={() => { haptic(); onBack(); }}
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: 20, color: 'var(--navy-700)', padding: '8px 12px 8px 0',
-              fontFamily: 'inherit',
-            }}
-          >
-            ‹
-          </button>
-        )}
+        {onBack && <NavBackButton onClick={onBack} />}
         <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--navy-700)' }}>사주풀이</span>
         <span style={{ marginLeft: 'auto', fontSize: 14, fontWeight: 600, color: 'var(--navy-300)' }}>2/4</span>
       </div>

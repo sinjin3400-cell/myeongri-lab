@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { haptic } from '../utils/haptic';
 import { trackEvent } from '../utils/analytics';
+import { NavBackButton } from '../components/NavBackButton';
 import { Analytics } from '@apps-in-toss/web-framework';
 import { getZodiacByDate } from '../utils/zodiac';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
@@ -111,16 +112,7 @@ export function ZodiacInputStep({ value, onChange, onNext, onBack }: Props) {
           marginBottom: 8,
         }}
       >
-        <button
-          onClick={() => { haptic(); onBack(); }}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: 20, color: 'var(--navy-700)', padding: '8px 12px 8px 0',
-            fontFamily: 'inherit',
-          }}
-        >
-          ‹
-        </button>
+        <NavBackButton onClick={onBack} />
         <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--navy-700)' }}>
           띠별운세
         </span>

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { trackShareMethod } from '../utils/analytics';
 import { Analytics, contactsViral, setClipboardText } from '@apps-in-toss/web-framework';
 import { Toast } from './Toast';
@@ -67,9 +67,30 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
 
   const { title, summaryLine, score, extraLine, serverData } = shareInfo;
 
-  /** 공유 URL 생성 — 항상 서버에 데이터 저장 후 웹 URL 반환 */
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!serverData) {
+      setShareUrl(WEB_BASE_URL);
+      return;
+    }
+    const apiBase = import.meta.env.VITE_API_BASE || '';
+    fetch(`${apiBase}/api/share`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(serverData),
+    })
+      .then(r => r.json())
+      .then(({ id }) => {
+        setShareUrl(id ? `${WEB_BASE_URL}/s/${id}` : WEB_BASE_URL);
+      })
+      .catch(() => {
+        setShareUrl(WEB_BASE_URL);
+      });
+  }, []);
+
   const getShareUrl = async (): Promise<string> => {
-    // 서버에 공유 데이터 저장 → 웹 URL 반환 (카카오/문자/링크복사 등 외부 공유에 사용)
+    if (shareUrl) return shareUrl;
     if (serverData) {
       try {
         const apiBase = import.meta.env.VITE_API_BASE || '';
@@ -80,7 +101,7 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
         });
         const { id } = await shareRes.json();
         if (id) return `${WEB_BASE_URL}/s/${id}`;
-      } catch { /* 실패 시 기본 URL */ }
+      } catch { /* fallback */ }
     }
     return WEB_BASE_URL;
   };
@@ -168,34 +189,31 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
     }
   };
 
-  const [shareLoading, setShareLoading] = useState(false);
+  const shareBusy = useRef(false);
 
-  const handleSystemShare = async () => {
-    if (shareLoading) return;
-    setShareLoading(true);
+  const handleSystemShare = () => {
+    if (shareBusy.current || !shareUrl) return;
+    shareBusy.current = true;
+
+    const text = buildShareText(shareUrl);
+
+    if (navigator.share) {
+      navigator.share({ title: `${title} - 명리연구소`, text })
+        .then(() => closeWithReward())
+        .catch(() => {})
+        .finally(() => { shareBusy.current = false; });
+    } else {
+      copyToClipboard(text)
+        .then(() => {
+          showToast('✨ 운세가 복사되었어요! 원하는 앱에 붙여넣기 하세요');
+          setTimeout(closeWithReward, 1500);
+        })
+        .finally(() => { shareBusy.current = false; });
+    }
+
+    setTimeout(() => { shareBusy.current = false; }, 3000);
     trackShareMethod('system_share');
     try { Analytics.click({ log_name: 'fortune_share', method: 'system_share' }); } catch (_) { /* noop */ }
-
-    try {
-      const url = await getShareUrl();
-      const text = buildShareText(url);
-
-      if (navigator.share) {
-        await navigator.share({
-          title: `${title} - 명리연구소`,
-          text,
-        });
-        closeWithReward();
-      } else {
-        await copyToClipboard(text);
-        showToast('✨ 운세가 복사되었어요! 원하는 앱에 붙여넣기 하세요');
-        setTimeout(closeWithReward, 1500);
-      }
-    } catch {
-      // 사용자 취소
-    } finally {
-      setShareLoading(false);
-    }
   };
 
   const handleSmsShare = async () => {
@@ -264,16 +282,16 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
           <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
             <button
               onClick={handleSystemShare}
-              disabled={shareLoading}
+              disabled={!shareUrl}
               style={{
                 flex: 1, display: 'flex', flexDirection: 'column',
                 alignItems: 'center', gap: 8,
                 padding: '16px 8px',
                 background: 'linear-gradient(135deg, var(--gold-500) 0%, var(--gold-400) 100%)',
                 color: '#fff',
-                border: 'none', borderRadius: 14, cursor: shareLoading ? 'not-allowed' : 'pointer',
+                border: 'none', borderRadius: 14, cursor: shareUrl ? 'pointer' : 'wait',
+                opacity: shareUrl ? 1 : 0.6,
                 fontFamily: 'inherit',
-                opacity: shareLoading ? 0.7 : 1,
               }}
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none">

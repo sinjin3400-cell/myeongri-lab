@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { haptic } from '../utils/haptic';
+import { NavBackButton } from '../components/NavBackButton';
+import { FloatingHomeButton } from '../components/FloatingHomeButton';
 import { ShareSheet } from '../components/ShareSheet';
 import { useInterstitialAd, useTossBanner, AD_IDS } from '../hooks/useAds';
 import { trackEvent } from '../utils/analytics';
@@ -135,16 +137,7 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
           marginBottom: 8,
         }}
       >
-        <button
-          onClick={() => { haptic(); onRestart(); }}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: 20, color: 'var(--navy-700)', padding: '8px 12px 8px 0',
-            fontFamily: 'inherit',
-          }}
-        >
-          ‹
-        </button>
+        <NavBackButton onClick={onRestart} />
         <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--navy-700)' }}>
           꿈해몽
         </span>
@@ -553,6 +546,7 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
           onClose={() => setShowShare(false)}
         />
       )}
+      <FloatingHomeButton onClick={onHome} />
     </div>
   );
 }

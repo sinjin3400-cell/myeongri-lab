@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { haptic } from '../utils/haptic';
+import { NavBackButton } from '../components/NavBackButton';
+import { FloatingHomeButton } from '../components/FloatingHomeButton';
 import { ResultSparkleDecor } from '../components/ResultSparkleDecor';
 import { SemiCircleGauge } from '../components/SemiCircleGauge';
 import { ShareSheet } from '../components/ShareSheet';
@@ -429,14 +431,7 @@ export function ResultStep({
 
       {/* 헤더: ‹ 사주풀이 + 공유 아이콘 */}
       <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
-        <button
-          onClick={() => { haptic(); onRestart(); }}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px 8px 0' }}
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <path d="M14 6l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+        <NavBackButton onClick={onRestart} />
         <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--navy-700)', letterSpacing: '-0.02em' }}>사주풀이</span>
         <button
           onClick={() => { haptic(); trackShareButtonClicked(); setShowShare(true); }}
@@ -725,6 +720,8 @@ export function ResultStep({
             style={{ background: 'none', border: 'none', fontSize: 14, color: 'var(--navy-300)', cursor: 'pointer', padding: '4px 2px' }}>✕</button>
         </div>
       )}
+
+      <FloatingHomeButton onClick={onRestart} />
 
       {showShare && (
         <ShareSheet

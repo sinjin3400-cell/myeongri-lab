@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { haptic } from '../utils/haptic';
 import { trackEvent } from '../utils/analytics';
+import { NavBackButton } from '../components/NavBackButton';
+import { FloatingHomeButton } from '../components/FloatingHomeButton';
 import { Analytics } from '@apps-in-toss/web-framework';
 import { SemiCircleGauge } from '../components/SemiCircleGauge';
 import { ShareSheet } from '../components/ShareSheet';
@@ -76,16 +78,7 @@ export function ZodiacResultStep({ result, userName, onRestart, onHome, onSelect
           marginBottom: 8,
         }}
       >
-        <button
-          onClick={() => { haptic(); onRestart(); }}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: 20, color: 'var(--navy-700)', padding: '8px 12px 8px 0',
-            fontFamily: 'inherit',
-          }}
-        >
-          ‹
-        </button>
+        <NavBackButton onClick={onRestart} />
         <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--navy-700)' }}>
           띠별운세
         </span>
@@ -408,6 +401,7 @@ export function ZodiacResultStep({ result, userName, onRestart, onHome, onSelect
           onClose={() => setShowShare(false)}
         />
       )}
+      <FloatingHomeButton onClick={onHome} />
     </div>
   );
 }

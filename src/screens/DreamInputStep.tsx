@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { haptic } from '../utils/haptic';
+import { NavBackButton } from '../components/NavBackButton';
 import { Analytics } from '@apps-in-toss/web-framework';
 import type { DreamInput, UserInfo } from '../types';
 
@@ -54,16 +55,7 @@ export function DreamInputStep({ value, onChange, onNext, onBack, hasSajuInfo, u
           marginBottom: 8,
         }}
       >
-        <button
-          onClick={() => { haptic(); onBack(); }}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: 20, color: 'var(--navy-700)', padding: '8px 12px 8px 0',
-            fontFamily: 'inherit',
-          }}
-        >
-          ‹
-        </button>
+        <NavBackButton onClick={onBack} />
         <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--navy-700)' }}>
           꿈해몽
         </span>

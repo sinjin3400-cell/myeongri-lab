@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { haptic } from '../utils/haptic';
+import { NavBackButton } from '../components/NavBackButton';
 import { usePremiumPass } from '../hooks/usePremiumPass';
 import { useSubscription } from '../hooks/useSubscription';
 import { useInterstitialAd, AD_IDS } from '../hooks/useAds';
@@ -58,16 +59,7 @@ export function IAPScreen({ onBack }: Props) {
     <div className="app-page" style={{ background: 'var(--cream-50)' }}>
       {/* 헤더: 뒤로가기 + 타이틀 + 보유 */}
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-        <button
-          onClick={() => { haptic(); onBack(); }}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: 20, color: 'var(--navy-700)', padding: '8px 12px 8px 0',
-            fontFamily: 'inherit',
-          }}
-        >
-          ‹
-        </button>
+        <NavBackButton onClick={onBack} />
         <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--navy-700)' }}>
           열람권 구매
         </span>
