@@ -1,5 +1,7 @@
 import { haptic } from '../utils/haptic';
 import { useInterstitialAd, AD_IDS } from '../hooks/useAds';
+import { useIAP, SKU } from '../hooks/useIAP';
+import { usePremiumPass } from '../hooks/usePremiumPass';
 import { trackEvent } from '../utils/analytics';
 
 type Props = {
@@ -12,24 +14,36 @@ type Props = {
 
 export function PurchaseSheet({ open, onClose, onPurchased, passCount, lockedCount = 2 }: Props) {
   const { showAd: showRewardedAd } = useInterstitialAd(AD_IDS.REWARDED);
+  const { purchaseConsumable, loading: iapLoading } = useIAP();
+  const { addPasses } = usePremiumPass();
 
   if (!open) return null;
 
   const handleSubscribe = () => {
     haptic();
     trackEvent('purchase_sheet_subscribe');
+    // TODO: 구독 상품 등록 후 연동
   };
 
   const handleBuy1 = () => {
+    if (iapLoading) return;
     haptic();
     trackEvent('purchase_sheet_buy_1');
-    onPurchased?.();
+    purchaseConsumable(
+      SKU.PASS_1,
+      (amount) => {
+        addPasses(amount);
+        onPurchased?.();
+      },
+      () => trackEvent('purchase_sheet_buy_error'),
+    );
   };
 
   const handleWatchAd = async () => {
     haptic();
     trackEvent('purchase_sheet_watch_ad');
     await showRewardedAd();
+    addPasses(1);
     onPurchased?.();
   };
 
@@ -154,24 +168,27 @@ export function PurchaseSheet({ open, onClose, onPurchased, passCount, lockedCou
         {/* 열람권 1장 (Secondary) */}
         <button
           onClick={handleBuy1}
+          disabled={iapLoading}
           style={{
             width: '100%', padding: '14px 16px', marginBottom: 10,
             borderRadius: 14,
-            background: '#fff',
+            background: iapLoading ? 'var(--navy-50)' : '#fff',
             border: '1.5px solid rgba(26,39,68,0.08)',
-            cursor: 'pointer', fontFamily: 'inherit',
+            cursor: iapLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}
         >
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 14 }}>🎫</span>
-            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--navy-700)' }}>열람권 1장 구매</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--navy-700)' }}>
+              {iapLoading ? '결제 진행 중...' : '열람권 1장 구매'}
+            </span>
           </span>
           <span style={{
             fontSize: 14, fontWeight: 800, color: 'var(--navy-700)',
             fontFeatureSettings: '"tnum"',
           }}>
-            ₩300
+            ₩440
           </span>
         </button>
 

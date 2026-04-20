@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { haptic } from '../utils/haptic';
 import { usePremiumPass } from '../hooks/usePremiumPass';
 import { useInterstitialAd, AD_IDS } from '../hooks/useAds';
+import { useIAP, SKU } from '../hooks/useIAP';
 import { trackEvent } from '../utils/analytics';
 
 type Props = {
@@ -9,27 +10,34 @@ type Props = {
 };
 
 const PACKS = [
-  { n: 1, price: 300, save: null, best: false },
-  { n: 3, price: 900, save: null, best: false },
-  { n: 5, price: 1400, save: '67원 할인', best: false },
-  { n: 10, price: 2500, save: '500원 할인', best: true },
+  { n: 1, price: 440, save: null, best: false, sku: SKU.PASS_1 },
+  { n: 3, price: 1100, save: null, best: false, sku: SKU.PASS_3 },
+  { n: 5, price: 1540, save: '77원 할인', best: false, sku: SKU.PASS_5 },
+  { n: 10, price: 2750, save: '650원 할인', best: true, sku: SKU.PASS_10 },
 ] as const;
 
 export function IAPScreen({ onBack }: Props) {
   const { count, addPasses } = usePremiumPass();
   const { showAd: showRewardedAd } = useInterstitialAd(AD_IDS.REWARDED);
+  const { purchaseConsumable, loading: iapLoading } = useIAP();
   const [selectedPack, setSelectedPack] = useState(2);
 
   const handleSubscribe = () => {
     haptic();
     trackEvent('iap_subscribe_click');
+    // TODO: 구독 상품 등록 후 IAP.createSubscriptionPurchaseOrder 연동
   };
 
   const handleBuyPack = () => {
+    if (iapLoading) return;
     haptic();
     const pack = PACKS[selectedPack];
     trackEvent('iap_buy_pack', { n: pack.n, price: pack.price });
-    addPasses(pack.n);
+    purchaseConsumable(
+      pack.sku,
+      (amount) => addPasses(amount),
+      () => trackEvent('iap_buy_pack_error', { n: pack.n }),
+    );
   };
 
   const handleWatchAd = async () => {
@@ -214,7 +222,7 @@ export function IAPScreen({ onBack }: Props) {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--navy-700)' }}>열람권 충전소</div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--navy-400)' }}>1장당 ₩300 · 낱개 구매</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--navy-400)' }}>1장당 ₩440 · 낱개 구매</div>
           </div>
           <div style={{
             marginLeft: 'auto', padding: '5px 10px',
@@ -291,15 +299,18 @@ export function IAPScreen({ onBack }: Props) {
 
         <button
           onClick={handleBuyPack}
+          disabled={iapLoading}
           style={{
             width: '100%', padding: '16px 22px', fontSize: 15, fontWeight: 700,
-            background: 'linear-gradient(135deg, var(--gold-500) 0%, var(--gold-400) 100%)',
+            background: iapLoading
+              ? 'var(--navy-200)'
+              : 'linear-gradient(135deg, var(--gold-500) 0%, var(--gold-400) 100%)',
             color: '#fff', border: 'none', borderRadius: 14,
-            cursor: 'pointer', fontFamily: 'inherit',
-            boxShadow: '0 6px 20px rgba(212, 168, 75, 0.22)',
+            cursor: iapLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+            boxShadow: iapLoading ? 'none' : '0 6px 20px rgba(212, 168, 75, 0.22)',
           }}
         >
-          {PACKS[selectedPack].n}장 구매하기 · ₩{PACKS[selectedPack].price.toLocaleString()}
+          {iapLoading ? '결제 진행 중...' : `${PACKS[selectedPack].n}장 구매하기 · ₩${PACKS[selectedPack].price.toLocaleString()}`}
         </button>
 
         {/* 광고 버튼 */}
