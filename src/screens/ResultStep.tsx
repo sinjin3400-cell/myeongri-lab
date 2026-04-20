@@ -647,9 +647,10 @@ export function ResultStep({
           onClick={() => { haptic(); trackShareButtonClicked(); setShowShare(true); }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="M12 4C7 4 3 7.3 3 11.3c0 2.6 1.7 4.9 4.3 6.2L6.5 21l3.8-2.2c.6.1 1.2.1 1.7.1 5 0 9-3.3 9-7.6S17 4 12 4z" fill="#fff" />
+            <path d="M12 3v12M12 3l-4 4M12 3l4 4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M4 15v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          카카오톡으로 공유하기
+          운세 공유하기
         </button>
         <div style={{ display: 'flex', gap: 8 }}>
           <button

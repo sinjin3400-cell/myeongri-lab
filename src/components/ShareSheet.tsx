@@ -168,27 +168,33 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
     }
   };
 
-  const handleKakaoShare = async () => {
-    trackShareMethod('kakao');
-    try { Analytics.click({ log_name: 'fortune_share', method: 'kakao' }); } catch (_) { /* noop */ }
+  const [shareLoading, setShareLoading] = useState(false);
 
-    const url = await getShareUrl();
-    const text = buildShareText(url);
+  const handleSystemShare = async () => {
+    if (shareLoading) return;
+    setShareLoading(true);
+    trackShareMethod('system_share');
+    try { Analytics.click({ log_name: 'fortune_share', method: 'system_share' }); } catch (_) { /* noop */ }
 
-    // 토스 웹뷰에서는 카카오 URL 스킴이 차단되므로 시스템 공유 메뉴 사용
-    if (navigator.share) {
-      try {
+    try {
+      const url = await getShareUrl();
+      const text = buildShareText(url);
+
+      if (navigator.share) {
         await navigator.share({
           title: `${title} - 명리연구소`,
           text,
         });
         closeWithReward();
-        return;
-      } catch { /* 사용자 취소 */ }
-    } else {
-      await copyToClipboard(text);
-      showToast('✨ 운세가 복사되었어요! 카카오톡에 붙여넣기 하세요');
-      setTimeout(closeWithReward, 1500);
+      } else {
+        await copyToClipboard(text);
+        showToast('✨ 운세가 복사되었어요! 원하는 앱에 붙여넣기 하세요');
+        setTimeout(closeWithReward, 1500);
+      }
+    } catch {
+      // 사용자 취소
+    } finally {
+      setShareLoading(false);
     }
   };
 
@@ -257,20 +263,24 @@ export function ShareSheet({ shareInfo, onClose, onShareReward }: Props) {
           {/* 공유 방법 그리드 (카카오톡 / 문자 / 링크복사) */}
           <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
             <button
-              onClick={handleKakaoShare}
+              onClick={handleSystemShare}
+              disabled={shareLoading}
               style={{
                 flex: 1, display: 'flex', flexDirection: 'column',
                 alignItems: 'center', gap: 8,
                 padding: '16px 8px',
-                background: '#FEE500', color: '#191919',
-                border: 'none', borderRadius: 14, cursor: 'pointer',
+                background: 'linear-gradient(135deg, var(--gold-500) 0%, var(--gold-400) 100%)',
+                color: '#fff',
+                border: 'none', borderRadius: 14, cursor: shareLoading ? 'not-allowed' : 'pointer',
                 fontFamily: 'inherit',
+                opacity: shareLoading ? 0.7 : 1,
               }}
             >
-              <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
-                <path d="M10 3C5.58 3 2 5.87 2 9.35c0 2.21 1.47 4.15 3.68 5.25l-.94 3.44c-.08.29.25.52.5.35l4.12-2.73c.21.02.42.03.64.03 4.42 0 8-2.87 8-6.35S14.42 3 10 3z" fill="#191919"/>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M12 3v12M12 3l-4 4M12 3l4 4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M4 15v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              <span style={{ fontSize: 12, fontWeight: 700 }}>카카오톡</span>
+              <span style={{ fontSize: 12, fontWeight: 700 }}>공유하기</span>
             </button>
 
             <button
