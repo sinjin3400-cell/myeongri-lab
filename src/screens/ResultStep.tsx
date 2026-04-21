@@ -346,12 +346,15 @@ export function ResultStep({
     onChangePeriod(newPeriod);
   }, [isSubscribed, onChangePeriod, onTomorrow, showRewardedAd, usePass]);
 
-  const shareResult: FortuneResult = fullResult ?? {
-    overall: highlight.bestCategory === 'overall' ? highlight.bestSummary : highlight.cautionCategory === 'overall' ? highlight.cautionSummary : '',
-    love: highlight.bestCategory === 'love' ? highlight.bestSummary : highlight.cautionCategory === 'love' ? highlight.cautionSummary : '',
-    money: highlight.bestCategory === 'money' ? highlight.bestSummary : highlight.cautionCategory === 'money' ? highlight.cautionSummary : '',
-    health: highlight.bestCategory === 'health' ? highlight.bestSummary : highlight.cautionCategory === 'health' ? highlight.cautionSummary : '',
-    summaryLine: highlight.summaryLine, lucky: highlight.lucky, score: highlight.score, mbtiInsight: highlight.mbtiInsight,
+  const shareResult: FortuneResult = {
+    ...(fullResult ?? {
+      overall: highlight.bestCategory === 'overall' ? highlight.bestSummary : highlight.cautionCategory === 'overall' ? highlight.cautionSummary : '',
+      love: highlight.bestCategory === 'love' ? highlight.bestSummary : highlight.cautionCategory === 'love' ? highlight.cautionSummary : '',
+      money: highlight.bestCategory === 'money' ? highlight.bestSummary : highlight.cautionCategory === 'money' ? highlight.cautionSummary : '',
+      health: highlight.bestCategory === 'health' ? highlight.bestSummary : highlight.cautionCategory === 'health' ? highlight.cautionSummary : '',
+      summaryLine: highlight.summaryLine, lucky, score: highlight.score, mbtiInsight: highlight.mbtiInsight,
+    }),
+    lucky,
   };
 
   const isCardLocked = (key: FortuneCategory): boolean => {
