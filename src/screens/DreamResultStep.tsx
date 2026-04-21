@@ -212,7 +212,7 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
         </p>
         <p style={{
           margin: 0,
-          fontSize: 14,
+          fontSize: 16,
           fontWeight: 500,
           color: '#455578',
           lineHeight: 1.7,
@@ -285,9 +285,9 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
             </div>
             <p style={{
               margin: 0,
-              fontSize: 14,
+              fontSize: 16,
               fontWeight: 500,
-              lineHeight: '23.8px',
+              lineHeight: 1.7,
               color: '#455578',
               letterSpacing: '-0.14px',
               whiteSpace: 'pre-wrap',

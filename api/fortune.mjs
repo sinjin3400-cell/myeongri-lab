@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     const { systemPrompt, userPrompt } = req.body;
     if (!OPENAI_KEY) throw new Error('OPENAI_API_KEY가 설정되지 않았습니다.');
 
-    const safeSystemPrompt = systemPrompt + '\n반드시 JSON 형식으로만 응답하세요.';
+    const safeSystemPrompt = systemPrompt + '\n반드시 JSON 형식으로만 응답하세요.\n모든 문자열 값은 한국어로만 작성하세요. 영어 단어(budget, plan, tip, energy 등)를 섞지 말고 한국어로 번역해서 표현하세요.';
 
     const r = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: MODEL,
         temperature: 0.85,
-        max_tokens: 2500,
+        max_tokens: 2000,
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: safeSystemPrompt },

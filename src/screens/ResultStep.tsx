@@ -122,11 +122,11 @@ function DetailCard({
         </div>
         {/* 내용 영역 — 약한 블러 */}
         <div style={{ filter: 'blur(2.5px)', pointerEvents: 'none', userSelect: 'none' }}>
-          <p style={{ margin: '0 0 14px', fontSize: 14, color: 'var(--navy-500)', lineHeight: 1.7 }}>
+          <p style={{ margin: '0 0 14px', fontSize: 16, color: 'var(--navy-500)', lineHeight: 1.7 }}>
             오늘의 {cat.title}에는 특별한 기운이 감지되고 있어요. 당신의 사주와 오행이 만들어내는 독특한 흐름을 확인해보세요. 주변 환경의 변화에 민감하게 반응하는 하루가 될 거예요.
           </p>
           <div style={{ borderTop: '1px solid rgba(26,39,68,0.06)', paddingTop: 14 }}>
-            <p style={{ margin: 0, fontSize: 14, color: 'var(--navy-400)', lineHeight: 1.7 }}>
+            <p style={{ margin: 0, fontSize: 16, color: 'var(--navy-400)', lineHeight: 1.7 }}>
               자세한 운세 내용과 실천 조언이 준비되어 있어요. 잠금을 해제하고 오늘 하루를 더 잘 준비해보세요. 작은 행동 하나가 큰 변화의 시작점이 될 수 있어요. 평소와 다른 선택이 뜻밖의 결과를 가져올 수 있습니다.
             </p>
           </div>
@@ -187,12 +187,12 @@ function DetailCard({
           </span>
         )}
       </div>
-      <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: '#455578', lineHeight: 1.7, letterSpacing: '-0.01em', whiteSpace: 'pre-wrap' }}>{summary}</p>
+      <p style={{ margin: 0, fontSize: 16, fontWeight: 500, color: '#455578', lineHeight: 1.7, letterSpacing: '-0.01em', whiteSpace: 'pre-wrap' }}>{summary}</p>
       {hasDetail && (
         <>
           <div className={`accordion-content ${open ? 'open' : ''}`}>
             <div style={{ borderTop: '1px solid rgba(26,39,68,0.06)', paddingTop: 14 }}>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 400, color: '#455578', lineHeight: 1.7, whiteSpace: 'pre-wrap', opacity: 0.8 }}>{detail}</p>
+              <p style={{ margin: 0, fontSize: 16, fontWeight: 400, color: '#455578', lineHeight: 1.7, whiteSpace: 'pre-wrap', opacity: 0.8 }}>{detail}</p>
             </div>
           </div>
           <div style={{
@@ -499,7 +499,7 @@ export function ResultStep({
           background: 'var(--gold-50)', border: '1px solid rgba(212,168,75,0.2)',
         }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--gold-600)', letterSpacing: '0.06em', marginBottom: 4 }}>✦ 한 줄 요약</div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--navy-700)', letterSpacing: '-0.01em', lineHeight: 1.5 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--navy-700)', letterSpacing: '-0.01em', lineHeight: 1.5 }}>
             {highlight.summaryLine}
           </div>
         </div>
@@ -531,7 +531,7 @@ export function ResultStep({
                 <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--navy-500)' }}>{cat.title}</div>
                 <MiniScoreRing score={cat.score} color={cat.color} size={40} />
               </div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--navy-700)', lineHeight: 1.55, letterSpacing: '-0.01em' }}>
+              <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--navy-700)', lineHeight: 1.6, letterSpacing: '-0.01em' }}>
                 {getCategorySummaryShort(cat.key) || `${cat.title}의 기운이 흐르는 하루`}
               </div>
             </div>

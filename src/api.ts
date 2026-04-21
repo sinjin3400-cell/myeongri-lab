@@ -56,6 +56,13 @@ const ALL_COLORS = [
   '피치오렌지', '스카이블루', '차콜그레이', '플럼퍼플', '터콰이즈',
 ];
 
+const ALL_ITEMS = [
+  '물병', '은반지', '우산', '머플러', '손수건', '향초', '수첩', '만년필',
+  '도장', '손목시계', '머리핀', '목걸이', '귀걸이', '가죽지갑', '에코백',
+  '텀블러', '책갈피', '립밤', '가죽벨트', '유리컵', '양말', '모자', '팔찌',
+  '열쇠고리', '향수', '거울', '노트', '연필', '브로치', '스카프',
+];
+
 const ALL_CATEGORIES: FortuneCategory[] = ['overall', 'love', 'money', 'health'];
 
 function simpleHash(str: string): number {
@@ -208,7 +215,17 @@ const FRIENDLY_TONE = `## 말투 & 톤
 - 딱딱한 해설 대신, 공감과 응원이 담긴 말투로 전달하세요.
 - "오늘의 일진이 甲辰으로" 같은 사주 용어 나열은 하지 마세요. 일반인이 읽기 쉬운 말로만 풀어주세요.
 - 사주 분석 결과를 바탕으로 하되, 한자나 오행 용어를 직접 언급하지 마세요.
-- MBTI가 있으면 그 유형의 강점·약점·행동 특성을 운세에 구체적으로 녹여주세요.`;
+- MBTI가 있으면 그 유형의 강점·약점·행동 특성을 운세에 구체적으로 녹여주세요.
+
+## 언어 규칙 (절대 준수)
+- 모든 본문 텍스트는 **반드시 한국어**로만 작성하세요.
+- 아래는 대표 예시일 뿐이며, **나열된 단어 외에도 모든 일상 영어 단어를 한국어로 번역**해서 쓰세요. 어색하게 영어 원어를 섞지 마세요.
+  - budget → 예산 / plan → 계획 / item → 물건·소품 / energy → 기운 / balance → 균형 / tip → 조언
+  - shake → 흔들림 / vibe → 분위기 / chill → 여유 / boost → 북돋움 / flow → 흐름 / reward → 보상
+  - work → 업무·일 / update → 새 소식 / deadline → 마감 / target → 목표 / touch → 영향
+- 위 목록에 없는 단어라도 동일 원칙 적용. 영어 단어가 떠오르면 한국어로 바꿔 쓸지 먼저 고민하세요.
+- 불가피한 고유명사(MBTI 유형명, 브랜드명)만 예외이며, 일반 명사·동사·형용사·형용어에 영어 원어를 섞지 마세요.
+- JSON 키 값과 관계없이, 사용자에게 표시되는 모든 문장은 한국어로만 출력하세요.`;
 
 function buildMbtiSection(
   mbtiProfile: (typeof MBTI_PROFILES)[keyof typeof MBTI_PROFILES] | null,
@@ -255,11 +272,13 @@ function buildHighlightSystemPrompt(
 ): string {
   const mbtiSection = buildMbtiSection(mbtiProfile);
   const shuffledColors = shuffleWithSeed(ALL_COLORS, seed);
+  const shuffledItems = shuffleWithSeed(ALL_ITEMS, seed);
   const shuffledCats = shuffleWithSeed(ALL_CATEGORIES, seed);
   const suggestedBest = shuffledCats[0];
   const suggestedCaution = shuffledCats[1];
   const luckyNumRange = [(seed % 90) + 1, ((seed * 7) % 90) + 1, ((seed * 13) % 90) + 1];
   const colorList = shuffledColors.join(', ');
+  const itemList = shuffledItems.slice(0, 8).join(', ');
 
   return `당신은 "명리연구소"의 수석 사주 분석가입니다.
 동양 철학(사주명리학)에 깊은 이해를 가지고 있으며, 현대인의 언어로 사주를 쉽고 따뜻하게 풀어줍니다.
@@ -284,6 +303,8 @@ ${mbtiSection}
 - 행운 색상은 아래 목록에서 앞쪽에 있는 색상을 우선 고려하세요.
 - 행운 숫자는 ${luckyNumRange.join(', ')} 중 사주에 가장 어울리는 것을 선택하세요.
 - 행운 방향은 동/서/남/북/동남/동북/서남/서북 중에서 사주 오행에 맞게 선택하세요.
+- 행운 아이템은 아래 후보 목록에서 앞쪽에 있는 것을 우선 고려하세요: ${itemList}
+  (후보 목록 외의 아이템을 쓰고 싶으면 사주에 명확한 근거가 있을 때만 변경 가능. 같은 아이템이 반복되지 않게 주의.)
 
 ## 문체 규칙
 - 각 운세 문단 시작이나 핵심 포인트에 적절한 이모지를 1~2개 자연스럽게 넣으세요. (예: 💰 금전운이 활짝 열리는 날이에요! / ⚡ 오늘은 에너지가 넘치는 하루!)
@@ -295,17 +316,17 @@ ${mbtiSection}
   "summaryLine": "${periodLabel}의 핵심 한줄 메시지 (30자 이내, 친근한 톤, 이모지 1개 포함)",
   "score": ${periodLabel} 운세 점수 (${(seed % 46) + 50}~${(seed % 46) + 55} 범위에서 사주에 맞게),
   "bestCategory": "가장 좋은 운세 카테고리 (${suggestedBest}를 우선 고려, 사주가 강하게 가리키면 변경 가능)",
-  "bestSummary": "가장 좋은 운세 요약 (5~6문장, 이모지 포함, 구체적 상황 예시 + MBTI 맞춤 조언, 친근한 톤)",
-  "bestDetail": "가장 좋은 운세 상세 해석 (7~8문장, MBTI 관점 실천 팁 + 구체적 시간대/장소 추천, 읽기 쉬운 말)",
+  "bestSummary": "가장 좋은 운세 요약 (4~5문장, 이모지 포함, 구체적 상황 예시 + MBTI 맞춤 조언, 친근한 톤)",
+  "bestDetail": "가장 좋은 운세 상세 해석 (5~6문장, MBTI 관점 실천 조언 + 구체적 행동 팁, 읽기 쉬운 말)",
   "cautionCategory": "조심할 운세 카테고리 (${suggestedCaution}를 우선 고려, bestCategory와 달라야 함)",
-  "cautionSummary": "조심할 운세 요약 (5~6문장, 이모지 포함, 구체적으로 어떤 상황을 조심해야 하는지 + 왜 조심해야 하는지 + MBTI 특성상 빠지기 쉬운 함정 언급 + 구체적 대처법)",
-  "cautionDetail": "조심할 운세 상세 (7~8문장, 이렇게 하면 괜찮아요 식의 긍정적 전환 + 피해야 할 시간대/행동 + 대신 하면 좋은 것)",
+  "cautionSummary": "조심할 운세 요약 (4~5문장, 이모지 포함, 어떤 상황을 조심해야 하는지 + 왜 조심해야 하는지 + MBTI 특성상 빠지기 쉬운 함정 + 대처법)",
+  "cautionDetail": "조심할 운세 상세 (5~6문장, 긍정적 전환 + 피해야 할 행동 + 대신 하면 좋은 것)",
   "lucky": {
     "color": "다음 중 앞쪽 색상을 우선 고려: ${colorList}",
     "colorHex": "선택한 색상의 정확한 hex 코드",
     "number": "${luckyNumRange.join(', ')} 중 사주에 어울리는 숫자 선택",
     "direction": "행운 방향 (동/서/남/북/동남/동북/서남/서북 중 사주 오행에 맞는 방향)",
-    "item": "행운 아이템 이름만 2~3글자로 (예: 물병, 은반지, 우산, 머플러)"
+    "item": "행운 아이템 이름만 2~4글자로 (위 후보 목록 앞쪽 우선, 같은 값 반복 금지)"
   },
   "mbtiInsight": "MBTI 기반 특별 인사이트 한줄 (MBTI 없으면 빈 문자열)"
 }`;
@@ -324,8 +345,8 @@ function buildFullSystemPrompt(
   const catList = categories.map(c => CATEGORY_NAMES[c]).join(', ');
 
   const fields = categories.map(c => {
-    return `  "${c}": "${periodLabel} ${CATEGORY_NAMES[c]} (4~5문장, 이모지 포함, MBTI 맞춤 구체적 상황 예시)",
-  "${c}Detail": "${CATEGORY_NAMES[c]} 상세 (6~7문장, MBTI 관점 실천 팁 포함)"`;
+    return `  "${c}": "${periodLabel} ${CATEGORY_NAMES[c]} (3~4문장, 이모지 포함, MBTI 맞춤 구체적 상황 예시)",
+  "${c}Detail": "${CATEGORY_NAMES[c]} 상세 (4~5문장, MBTI 관점 실천 조언 포함)"`;
   }).join(',\n');
 
   return `당신은 "명리연구소"의 수석 사주 분석가입니다.

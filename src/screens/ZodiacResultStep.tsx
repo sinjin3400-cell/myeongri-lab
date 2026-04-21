@@ -189,10 +189,10 @@ export function ZodiacResultStep({ result, userName, onRestart, onHome, onSelect
           </div>
           <p style={{
             margin: 0,
-            fontSize: 14,
+            fontSize: 16,
             fontWeight: 500,
             color: '#455578',
-            lineHeight: '23.8px',
+            lineHeight: 1.7,
             letterSpacing: '-0.14px',
             whiteSpace: 'pre-line',
           }}>
@@ -218,10 +218,10 @@ export function ZodiacResultStep({ result, userName, onRestart, onHome, onSelect
             </div>
             <p style={{
               margin: 0,
-              fontSize: 14,
+              fontSize: 16,
               fontWeight: 500,
               color: '#455578',
-              lineHeight: '23.8px',
+              lineHeight: 1.7,
               letterSpacing: '-0.14px',
               whiteSpace: 'pre-line',
             }}>
