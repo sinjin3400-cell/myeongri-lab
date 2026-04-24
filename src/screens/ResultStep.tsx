@@ -15,8 +15,8 @@ import { trackFullFortuneClicked, trackFortuneCardExpanded, trackShareButtonClic
 import { Analytics } from '@apps-in-toss/web-framework';
 import { usePremiumPass } from '../hooks/usePremiumPass';
 import { useSubscription } from '../hooks/useSubscription';
-import { PurchaseSheet } from '../components/PurchaseSheet';
 import { Toast } from '../components/Toast';
+import { AdBadge } from '../components/AdBadge';
 
 type Props = {
   highlight: FortuneHighlight;
@@ -92,6 +92,8 @@ function MiniScoreRing({ score, color, size = 40 }: { score: number; color: stri
   );
 }
 
+type UnlockMode = 'golden' | 'pass' | 'ad';
+
 function DetailCard({
   cat,
   summary,
@@ -100,6 +102,8 @@ function DetailCard({
   locked,
   onUnlock,
   unlocking,
+  unlockMode,
+  passCount,
 }: {
   cat: CategoryInfo;
   summary: string;
@@ -108,11 +112,51 @@ function DetailCard({
   locked: boolean;
   onUnlock?: () => void;
   unlocking?: boolean;
+  unlockMode: UnlockMode;
+  passCount: number;
 }) {
   const [open, setOpen] = useState(false);
   const hasDetail = !!detail;
 
   if (locked) {
+    const buttonLabel = unlocking
+      ? '열람 중...'
+      : unlockMode === 'golden'
+        ? '황금열쇠로 열기'
+        : unlockMode === 'pass'
+          ? '열람권 1장 사용하기'
+          : '운세 열람하기';
+    const subtitle =
+      unlockMode === 'golden'
+        ? '황금열쇠 이용 중 · 무제한'
+        : unlockMode === 'pass'
+          ? `열람권 ${passCount}장 보유 중`
+          : '광고 시청 후 바로 열람';
+    const buttonBg =
+      unlockMode === 'golden'
+        ? 'linear-gradient(135deg, #b88a35 0%, #d4a84b 100%)'
+        : unlockMode === 'pass'
+          ? 'linear-gradient(135deg, #c4566a 0%, #a83d56 100%)'
+          : 'var(--navy-700)';
+    const renderIcon = () => {
+      if (unlockMode === 'golden') {
+        return (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="9" cy="10" r="4.5" stroke="#fff" strokeWidth="2" />
+            <path d="M13 10l7 0M17 10v3M20 10v2" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        );
+      }
+      if (unlockMode === 'pass') {
+        return (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M4 8h16a1 1 0 011 1v2a2 2 0 000 4v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2a2 2 0 000-4V9a1 1 0 011-1z" stroke="#fff" strokeWidth="2" strokeLinejoin="round" />
+            <path d="M10 8v9" stroke="#fff" strokeWidth="2" strokeDasharray="2 2" />
+          </svg>
+        );
+      }
+      return <AdBadge variant="dark" />;
+    };
     return (
       <section className="premium-card" style={{ position: 'relative', overflow: 'hidden', cursor: 'pointer', minHeight: 260, padding: '18px 20px' }} onClick={onUnlock}>
         {/* 제목 영역 — 블러 없이 노출 */}
@@ -138,22 +182,19 @@ function DetailCard({
           background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0.7) 55%, rgba(255,255,255,0.35) 100%)',
         }}>
           <div style={{
-            padding: '13px 30px', borderRadius: 14,
-            background: 'var(--navy-700)',
+            padding: '13px 24px', borderRadius: 14,
+            background: buttonBg,
             color: '#fff', fontSize: 15, fontWeight: 700,
             display: 'flex', alignItems: 'center', gap: 8,
             boxShadow: '0 4px 20px rgba(26,39,68,0.22)',
             opacity: unlocking ? 0.7 : 1,
             letterSpacing: '-0.01em',
           }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <rect x="3" y="11" width="18" height="11" rx="2" stroke="#fff" strokeWidth="2" />
-              <path d="M7 11V7a5 5 0 0110 0v4" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            {unlocking ? '열람 중...' : '운세 열람하기'}
+            {renderIcon()}
+            {buttonLabel}
           </div>
           <p style={{ margin: '8px 0 0', fontSize: 11, color: 'var(--navy-400)', fontWeight: 500 }}>
-            열람권 1장 또는 광고 시청
+            {subtitle}
           </p>
         </div>
       </section>
@@ -241,8 +282,8 @@ export function ResultStep({
   const categories = deriveCategoryScores(highlight.score, highlight.bestCategory, highlight.cautionCategory);
 
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
-  const { showAd: showInterstitialAd } = useInterstitialAd(AD_IDS.INTERSTITIAL);
   const { showAd: showRewardedAd } = useInterstitialAd(AD_IDS.REWARDED);
+  const { showAd: showInterstitialAd } = useInterstitialAd(AD_IDS.INTERSTITIAL);
   const bannerRef = useRef<HTMLDivElement>(null);
   const bottomBannerRef = useRef<HTMLDivElement>(null);
 
@@ -253,13 +294,7 @@ export function ResultStep({
   const { isSubscribed } = useSubscription();
   const [capToastMsg, setCapToastMsg] = useState('');
   const [capToastVisible, setCapToastVisible] = useState(false);
-  const [showPurchase, setShowPurchase] = useState(false);
-  const [pendingUnlockCat, setPendingUnlockCat] = useState<FortuneCategory | null>(null);
   const lockedCardRef = useRef<HTMLDivElement>(null);
-  const scrollToLockedCard = () => {
-    lockedCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  };
-
   useEffect(() => {
     try { Analytics.impression({ log_name: 'fortune_result_view' }); } catch (_) { /* noop */ }
     if (period === 'today') {
@@ -313,26 +348,31 @@ export function ResultStep({
   const doUnlock = useCallback(async (cat: FortuneCategory) => {
     setUnlockingCard(cat);
     try {
-      if (!fullResult) {
-        trackFullFortuneClicked();
-        if (usePass()) { await onLoadFull(); } else { await Promise.all([showInterstitialAd(), onLoadFull()]); }
+      if (isSubscribed) {
+        // 황금열쇠: 열람권 소진 X, 광고 X — 바로 열람
+        if (!fullResult) { trackFullFortuneClicked(); await onLoadFull(); }
+      } else if (hasPass) {
+        // 열람권 보유: 1장 소진, 광고 X — 바로 열람
+        usePass();
+        if (!fullResult) { trackFullFortuneClicked(); await onLoadFull(); }
       } else {
-        if (!usePass()) await showRewardedAd();
+        // 미보유: 리워드 광고 시청 후 열람
+        if (!fullResult) {
+          trackFullFortuneClicked();
+          await Promise.all([showRewardedAd(), onLoadFull()]);
+        } else {
+          await showRewardedAd();
+        }
       }
     } catch { /* proceed with unlock even on error */ }
     await completeUnlock(cat);
-  }, [fullResult, onLoadFull, showInterstitialAd, showRewardedAd, usePass, completeUnlock]);
+  }, [isSubscribed, hasPass, fullResult, onLoadFull, showRewardedAd, usePass, completeUnlock]);
 
   const handleUnlockCard = useCallback(async (cat: FortuneCategory) => {
     haptic();
     try { Analytics.click({ log_name: 'card_unlock', category: cat }); } catch (_) { /* noop */ }
-    if (!hasPass) {
-      setPendingUnlockCat(cat);
-      setShowPurchase(true);
-      return;
-    }
     await doUnlock(cat);
-  }, [hasPass, doUnlock]);
+  }, [doUnlock]);
 
   const handleChangePeriodWithAd = useCallback(async (newPeriod: FortunePeriod) => {
     haptic();
@@ -341,10 +381,11 @@ export function ResultStep({
       onChangePeriod(newPeriod);
       return;
     }
-    if (newPeriod === 'tomorrow') { if (!usePass()) await showRewardedAd(); onTomorrow(); return; }
-    if (!usePass()) await showRewardedAd();
+    // 전면광고: 열람권 소진 X, 스킵 가능
+    await showInterstitialAd();
+    if (newPeriod === 'tomorrow') { onTomorrow(); return; }
     onChangePeriod(newPeriod);
-  }, [isSubscribed, onChangePeriod, onTomorrow, showRewardedAd, usePass]);
+  }, [isSubscribed, onChangePeriod, onTomorrow, showInterstitialAd]);
 
   const shareResult: FortuneResult = {
     ...(fullResult ?? {
@@ -409,29 +450,6 @@ export function ResultStep({
   return (
     <div className="app-page">
       <Toast message={capToastMsg} visible={capToastVisible} onDone={() => setCapToastVisible(false)} duration={3000} />
-      <PurchaseSheet
-        open={showPurchase}
-        passCount={passCount}
-        lockedCount={sortedCategories.filter(c => isCardLocked(c.key)).length}
-        onClose={() => {
-          setShowPurchase(false);
-          setPendingUnlockCat(null);
-        }}
-        onPurchased={async () => {
-          setShowPurchase(false);
-          const cat = pendingUnlockCat;
-          setPendingUnlockCat(null);
-          if (!cat) return;
-          setUnlockingCard(cat);
-          try {
-            if (!fullResult) {
-              trackFullFortuneClicked();
-              await onLoadFull();
-            }
-          } catch { /* ignore */ }
-          await completeUnlock(cat);
-        }}
-      />
       <ResultSparkleDecor />
 
       {/* 헤더: ‹ 사주풀이 + 공유 아이콘 */}
@@ -611,6 +629,8 @@ export function ResultStep({
                 badge={getBadge(cat.key)} locked={locked}
                 onUnlock={() => handleUnlockCard(cat.key)}
                 unlocking={unlockingCard === cat.key}
+                unlockMode={isSubscribed ? 'golden' : hasPass ? 'pass' : 'ad'}
+                passCount={passCount}
               />
               {i === 1 && (
                 <div ref={bannerRef} style={{ width: '100%', minHeight: bannerReady ? 96 : 0, marginTop: 14, borderRadius: 12 }} />

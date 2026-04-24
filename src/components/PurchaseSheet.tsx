@@ -4,6 +4,7 @@ import { useIAP, SKU } from '../hooks/useIAP';
 import { usePremiumPass } from '../hooks/usePremiumPass';
 import { useSubscription } from '../hooks/useSubscription';
 import { trackEvent } from '../utils/analytics';
+import { AdBadge } from './AdBadge';
 
 type Props = {
   open: boolean;
@@ -213,10 +214,8 @@ export function PurchaseSheet({ open, onClose, onPurchased, passCount, lockedCou
             cursor: 'pointer',
           }}
         >
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M2 1l7 4-7 4V1z" fill="currentColor"/>
-          </svg>
-          광고 보고 무료로 받기
+          <AdBadge variant="light" />
+          <span>보고 무료로 받기</span>
         </button>
 
         <p style={{

@@ -9,6 +9,7 @@ import { Analytics } from '@apps-in-toss/web-framework';
 import { usePremiumPass } from '../hooks/usePremiumPass';
 import { useSubscription } from '../hooks/useSubscription';
 import { PurchaseSheet } from '../components/PurchaseSheet';
+import { AdBadge } from '../components/AdBadge';
 import type { DreamResult } from '../types';
 
 type Tab = 'traditional' | 'psychological' | 'sajuLinked';
@@ -453,9 +454,20 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
               fontFamily: 'inherit',
               boxShadow: '0 4px 14px rgba(124, 106, 226, 0.3)',
               letterSpacing: '-0.14px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
             }}
           >
-            {hasPass ? `황금 열람권으로 바로 보기 (${passCount}회 남음)` : '광고 보고 4세트 더 받기'}
+            {hasPass ? (
+              `열람권 1장 사용 · 4세트 보기 (${passCount}장 보유)`
+            ) : (
+              <>
+                <AdBadge variant="dark" />
+                <span>4세트 더 받기</span>
+              </>
+            )}
           </button>
         )}
       </div>
