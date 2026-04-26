@@ -25,6 +25,7 @@ import { SimpleLoadingStep } from './screens/SimpleLoadingStep';
 import { SharedResultView } from './screens/SharedResultView';
 import { decodeShareData, decodeShareDataCompact, sharedDataToHighlight } from './utils/shareUrl';
 import type { SharedFortuneData, FortuneTexts } from './utils/shareUrl';
+import { loadUserProfile, partsToDotted, saveUserProfile, dottedToParts } from './utils/userProfile';
 
 /** URL에서 공유 데이터 동기 확인 (base64 인코딩된 경우) */
 function getSharedDataSync(): { userName: string; highlight: FortuneHighlight; texts: FortuneTexts } | null {
@@ -63,13 +64,53 @@ async function fetchSharedData(id: string): Promise<{ userName: string; highligh
   }
 }
 
-const initialInfo: UserInfo = {
-  name: '',
-  birthDate: '',
-  gender: '',
-  birthSijin: null,
-  birthTimeUnknown: false,
-};
+function getInitialInfo(): UserInfo {
+  const saved = loadUserProfile();
+  const base: UserInfo = {
+    name: '',
+    birthDate: '',
+    gender: '',
+    birthSijin: null,
+    birthTimeUnknown: false,
+  };
+  if (!saved) return base;
+  return {
+    ...base,
+    name: saved.name,
+    birthDate: partsToDotted(saved.birthYear, saved.birthMonth, saved.birthDay),
+    gender: saved.gender,
+    calendarType: saved.calendarType,
+  };
+}
+
+function getInitialZodiacInput(): ZodiacInput {
+  const saved = loadUserProfile();
+  if (!saved) return { name: '', birthYear: '', gender: '' };
+  return {
+    name: saved.name,
+    birthYear: saved.birthYear,
+    birthMonth: saved.birthMonth || undefined,
+    birthDay: saved.birthDay || undefined,
+    gender: saved.gender,
+    calendarType: saved.calendarType,
+  };
+}
+
+function getInitialCompatInput(): CompatInput {
+  const saved = loadUserProfile();
+  const empty = { name: '', birthYear: '', gender: '' as const };
+  if (!saved) return { person1: { ...empty }, person2: { ...empty } };
+  return {
+    person1: {
+      name: saved.name,
+      birthYear: saved.birthYear,
+      birthMonth: saved.birthMonth || undefined,
+      birthDay: saved.birthDay || undefined,
+      gender: saved.gender,
+    },
+    person2: { ...empty },
+  };
+}
 
 export default function App() {
   const [sharedView, setSharedView] = useState(() => getSharedDataSync());
@@ -97,7 +138,7 @@ export default function App() {
       .finally(() => setSharedLoading(false));
   }, []);
   const [step, setStep] = useState<Step>('home');
-  const [info, setInfo] = useState<UserInfo>(initialInfo);
+  const [info, setInfo] = useState<UserInfo>(getInitialInfo);
   const [mbti, setMbti] = useState<MbtiType | null>(null);
   const [highlight, setHighlight] = useState<FortuneHighlight | null>(null);
   const [fullResult, setFullResult] = useState<FortuneResult | null>(null);
@@ -105,14 +146,11 @@ export default function App() {
   const [period, setPeriod] = useState<FortunePeriod>('today');
 
   // 띠별운세 상태
-  const [zodiacInput, setZodiacInput] = useState<ZodiacInput>({ name: '', birthYear: '', gender: '' });
+  const [zodiacInput, setZodiacInput] = useState<ZodiacInput>(getInitialZodiacInput);
   const [zodiacResult, setZodiacResult] = useState<ZodiacResult | null>(null);
 
   // 궁합보기 상태
-  const [compatInput, setCompatInput] = useState<CompatInput>({
-    person1: { name: '', birthYear: '', gender: '' },
-    person2: { name: '', birthYear: '', gender: '' },
-  });
+  const [compatInput, setCompatInput] = useState<CompatInput>(getInitialCompatInput);
   const [compatResult, setCompatResult] = useState<CompatResult | null>(null);
 
   // 꿈해몽 상태
@@ -122,10 +160,17 @@ export default function App() {
   const goNextFromInfo = useCallback(() => {
     haptic();
     if (info.name) saveLastUserName(info.name);
+    const { y, m, d } = dottedToParts(info.birthDate);
+    saveUserProfile({
+      name: info.name,
+      birthYear: y, birthMonth: m, birthDay: d,
+      gender: info.gender,
+      calendarType: info.calendarType,
+    });
     trackFormSubmit(info.gender, !!info.birthSijin || info.birthTimeUnknown);
     trackStepView('mbti');
     setStep('mbti');
-  }, [info.name, info.gender, info.birthSijin, info.birthTimeUnknown]);
+  }, [info.name, info.gender, info.birthSijin, info.birthTimeUnknown, info.birthDate, info.calendarType]);
 
   const goNextFromMbti = useCallback(() => {
     haptic();
@@ -221,15 +266,15 @@ export default function App() {
     haptic();
     trackRestart();
     trackStepView('home');
-    setInfo(initialInfo);
+    setInfo(getInitialInfo());
     setMbti(null);
     setHighlight(null);
     setFullResult(null);
     setLoadError(null);
     setPeriod('today');
-    setZodiacInput({ name: '', birthYear: '', gender: '' });
+    setZodiacInput(getInitialZodiacInput());
     setZodiacResult(null);
-    setCompatInput({ person1: { name: '', birthYear: '', gender: '' }, person2: { name: '', birthYear: '', gender: '' } });
+    setCompatInput(getInitialCompatInput());
     setCompatResult(null);
     setDreamInput({ text: '', useSaju: true });
     setDreamResult(null);
@@ -238,12 +283,18 @@ export default function App() {
 
   const handleFeatureSelect = useCallback((feature: string) => {
     if (feature === 'fortune') {
+      // 다른 폼에서 입력했을 수 있는 최신 프로필을 반영 (단, 사용자가 이미 채운 값은 보존)
+      setInfo((prev) => prev.name && prev.birthDate ? prev : getInitialInfo());
       trackStepView('info');
       setStep('info');
     } else if (feature === 'zodiac') {
+      setZodiacInput((prev) => prev.name && prev.birthYear ? prev : getInitialZodiacInput());
       trackStepView('zodiac-input');
       setStep('zodiac-input');
     } else if (feature === 'compatibility') {
+      setCompatInput((prev) =>
+        prev.person1.name && prev.person1.birthYear ? prev : getInitialCompatInput()
+      );
       trackStepView('compat-input');
       setStep('compat-input');
     } else if (feature === 'dream') {
@@ -481,7 +532,18 @@ export default function App() {
         <ZodiacInputStep
           value={zodiacInput}
           onChange={setZodiacInput}
-          onNext={() => { setLoadError(null); setStep('zodiac-loading'); }}
+          onNext={() => {
+            saveUserProfile({
+              name: zodiacInput.name,
+              birthYear: zodiacInput.birthYear,
+              birthMonth: zodiacInput.birthMonth,
+              birthDay: zodiacInput.birthDay,
+              gender: zodiacInput.gender,
+              calendarType: zodiacInput.calendarType,
+            });
+            setLoadError(null);
+            setStep('zodiac-loading');
+          }}
           onBack={restart}
         />
       )}
@@ -516,7 +578,18 @@ export default function App() {
         <CompatInputStep
           value={compatInput}
           onChange={setCompatInput}
-          onNext={() => { setLoadError(null); setStep('compat-loading'); }}
+          onNext={() => {
+            const p1 = compatInput.person1;
+            saveUserProfile({
+              name: p1.name,
+              birthYear: p1.birthYear,
+              birthMonth: p1.birthMonth,
+              birthDay: p1.birthDay,
+              gender: p1.gender,
+            });
+            setLoadError(null);
+            setStep('compat-loading');
+          }}
           onBack={restart}
         />
       )}
