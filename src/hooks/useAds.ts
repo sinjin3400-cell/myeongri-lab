@@ -1,16 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Analytics,
   TossAds,
   loadFullScreenAd,
   showFullScreenAd,
 } from '@apps-in-toss/web-framework';
 import type { TossAdsAttachBannerOptions } from '@apps-in-toss/web-framework';
+import { trackEvent } from '../utils/analytics';
 
 export const AD_IDS = {
   REWARDED: 'ait.v2.live.6092731822e14b96',
   INTERSTITIAL: 'ait.v2.live.c3b604dbb2954ad5',
   BANNER: 'ait.v2.live.15a1f64067844a40',
 } as const;
+
+type AdType = 'rewarded' | 'interstitial';
+
+function trackAd(logName: string, adType: AdType, extra: Record<string, string | number | boolean> = {}) {
+  try { Analytics.click({ log_name: logName, ad_type: adType, ...extra }); } catch (_) { /* noop */ }
+  trackEvent(logName, { ad_type: adType, ...extra });
+}
 
 function safeIsSupported(fn: { isSupported: () => boolean }): boolean {
   try {
@@ -52,7 +61,7 @@ export function useTossBanner() {
 
 // --- 리워드/전면 광고 훅 ---
 
-export function useInterstitialAd(adGroupId: string) {
+export function useInterstitialAd(adGroupId: string, adType: AdType = 'rewarded') {
   const [isLoaded, setIsLoaded] = useState(false);
   const unregisterRef = useRef<(() => void) | null>(null);
 
@@ -69,9 +78,10 @@ export function useInterstitialAd(adGroupId: string) {
       },
       onError: () => {
         setIsLoaded(false);
+        trackAd('ad_load_failed', adType);
       },
     });
-  }, [adGroupId]);
+  }, [adGroupId, adType]);
 
   useEffect(() => {
     loadAd();
@@ -83,10 +93,12 @@ export function useInterstitialAd(adGroupId: string) {
   const showAd = useCallback((): Promise<boolean> => {
     return new Promise((resolve) => {
       if (!isLoaded || !safeIsSupported(showFullScreenAd)) {
+        trackAd('ad_failed', adType, { reason: !isLoaded ? 'not_loaded' : 'not_supported' });
         resolve(false);
         return;
       }
 
+      trackAd('ad_started', adType);
       let rewarded = false;
 
       showFullScreenAd({
@@ -94,21 +106,28 @@ export function useInterstitialAd(adGroupId: string) {
         onEvent: (event) => {
           if (event.type === 'userEarnedReward') {
             rewarded = true;
+            trackAd('ad_completed', adType);
           }
           if (event.type === 'dismissed' || event.type === 'failedToShow') {
+            if (event.type === 'failedToShow') {
+              trackAd('ad_failed', adType, { reason: 'failed_to_show' });
+            } else if (!rewarded) {
+              trackAd('ad_skipped', adType);
+            }
             setIsLoaded(false);
             loadAd();
             resolve(rewarded);
           }
         },
         onError: () => {
+          trackAd('ad_failed', adType, { reason: 'show_error' });
           setIsLoaded(false);
           loadAd();
           resolve(false);
         },
       });
     });
-  }, [adGroupId, isLoaded, loadAd]);
+  }, [adGroupId, isLoaded, loadAd, adType]);
 
   return { isLoaded, showAd };
 }

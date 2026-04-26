@@ -11,7 +11,7 @@ import { MBTI_PROFILES } from '../data/mbtiProfiles';
 import { mergeLucky } from '../utils/lucky';
 import { useTossBanner, useInterstitialAd, AD_IDS } from '../hooks/useAds';
 import { usePromotion } from '../hooks/usePromotion';
-import { trackFullFortuneClicked, trackFortuneCardExpanded, trackShareButtonClicked, trackRewardGranted } from '../utils/analytics';
+import { trackFullFortuneClicked, trackFortuneCardExpanded, trackShareButtonClicked, trackRewardGranted, trackEvent } from '../utils/analytics';
 import { Analytics } from '@apps-in-toss/web-framework';
 import { usePremiumPass } from '../hooks/usePremiumPass';
 import { useSubscription } from '../hooks/useSubscription';
@@ -282,8 +282,8 @@ export function ResultStep({
   const categories = deriveCategoryScores(highlight.score, highlight.bestCategory, highlight.cautionCategory);
 
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
-  const { showAd: showRewardedAd } = useInterstitialAd(AD_IDS.REWARDED);
-  const { showAd: showInterstitialAd } = useInterstitialAd(AD_IDS.INTERSTITIAL);
+  const { showAd: showRewardedAd } = useInterstitialAd(AD_IDS.REWARDED, 'rewarded');
+  const { showAd: showInterstitialAd } = useInterstitialAd(AD_IDS.INTERSTITIAL, 'interstitial');
   const bannerRef = useRef<HTMLDivElement>(null);
   const bottomBannerRef = useRef<HTMLDivElement>(null);
 
@@ -347,6 +347,9 @@ export function ResultStep({
 
   const doUnlock = useCallback(async (cat: FortuneCategory) => {
     setUnlockingCard(cat);
+    const method: 'subscription' | 'pass' | 'ad' = isSubscribed ? 'subscription' : hasPass ? 'pass' : 'ad';
+    try { Analytics.click({ log_name: 'card_unlock_method', method, category: cat }); } catch (_) { /* noop */ }
+    trackEvent('card_unlock_method', { method, category: cat });
     try {
       if (isSubscribed) {
         // 황금열쇠: 열람권 소진 X, 광고 X — 바로 열람
@@ -354,6 +357,8 @@ export function ResultStep({
       } else if (hasPass) {
         // 열람권 보유: 1장 소진, 광고 X — 바로 열람
         usePass();
+        try { Analytics.click({ log_name: 'pass_consume', source: 'card_unlock', category: cat }); } catch (_) { /* noop */ }
+        trackEvent('pass_consume', { source: 'card_unlock', category: cat });
         if (!fullResult) { trackFullFortuneClicked(); await onLoadFull(); }
       } else {
         // 미보유: 리워드 광고 시청 후 열람
@@ -759,7 +764,11 @@ export function ResultStep({
           }}
           onClose={() => setShowShare(false)}
           onShareReward={() => {
-            const { capped } = addPasses(1);
+            const { added, capped } = addPasses(1);
+            if (added > 0) {
+              try { Analytics.click({ log_name: 'pass_granted', source: 'share_reward', amount: added }); } catch (_) { /* noop */ }
+              trackEvent('pass_granted', { source: 'share_reward', amount: added });
+            }
             if (capped) { setCapToastMsg('🎫 열람권 한도(99개)가 가득 찼어요!'); setCapToastVisible(true); }
           }}
         />

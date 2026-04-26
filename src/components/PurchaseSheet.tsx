@@ -5,6 +5,7 @@ import { usePremiumPass } from '../hooks/usePremiumPass';
 import { useSubscription } from '../hooks/useSubscription';
 import { trackEvent } from '../utils/analytics';
 import { AdBadge } from './AdBadge';
+import { Analytics } from '@apps-in-toss/web-framework';
 
 type Props = {
   open: boolean;
@@ -15,7 +16,7 @@ type Props = {
 };
 
 export function PurchaseSheet({ open, onClose, onPurchased, passCount, lockedCount = 2 }: Props) {
-  const { showAd: showRewardedAd } = useInterstitialAd(AD_IDS.REWARDED);
+  const { showAd: showRewardedAd } = useInterstitialAd(AD_IDS.REWARDED, 'rewarded');
   const { purchaseConsumable, purchaseGoldenKey, loading: iapLoading } = useIAP();
   const { addPasses } = usePremiumPass();
   const { activate } = useSubscription();
@@ -42,7 +43,11 @@ export function PurchaseSheet({ open, onClose, onPurchased, passCount, lockedCou
     purchaseConsumable(
       SKU.PASS_3,
       (amount) => {
-        addPasses(amount);
+        const { added } = addPasses(amount);
+        if (added > 0) {
+          try { Analytics.click({ log_name: 'pass_granted', source: 'iap_pass_3', amount: added }); } catch (_) { /* noop */ }
+          trackEvent('pass_granted', { source: 'iap_pass_3', amount: added });
+        }
         onPurchased?.();
       },
       () => trackEvent('purchase_sheet_buy_error'),
@@ -53,7 +58,11 @@ export function PurchaseSheet({ open, onClose, onPurchased, passCount, lockedCou
     haptic();
     trackEvent('purchase_sheet_watch_ad');
     await showRewardedAd();
-    addPasses(1);
+    const { added } = addPasses(1);
+    if (added > 0) {
+      try { Analytics.click({ log_name: 'pass_granted', source: 'rewarded_ad', amount: added }); } catch (_) { /* noop */ }
+      trackEvent('pass_granted', { source: 'rewarded_ad', amount: added });
+    }
     onPurchased?.();
   };
 

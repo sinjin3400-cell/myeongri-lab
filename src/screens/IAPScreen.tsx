@@ -7,6 +7,7 @@ import { useInterstitialAd, AD_IDS } from '../hooks/useAds';
 import { useIAP, SKU } from '../hooks/useIAP';
 import { trackEvent } from '../utils/analytics';
 import { AdBadge } from '../components/AdBadge';
+import { Analytics } from '@apps-in-toss/web-framework';
 
 type Props = {
   onBack: () => void;
@@ -21,7 +22,7 @@ const PACKS = [
 export function IAPScreen({ onBack }: Props) {
   const { count, addPasses } = usePremiumPass();
   const { isSubscribed, activate, subscription } = useSubscription();
-  const { showAd: showRewardedAd } = useInterstitialAd(AD_IDS.REWARDED);
+  const { showAd: showRewardedAd } = useInterstitialAd(AD_IDS.REWARDED, 'rewarded');
   const { purchaseConsumable, purchaseGoldenKey, loading: iapLoading } = useIAP();
   const [selectedPack, setSelectedPack] = useState(1);
 
@@ -50,7 +51,13 @@ export function IAPScreen({ onBack }: Props) {
     trackEvent('iap_buy_pack', { n: pack.n, price: pack.price });
     purchaseConsumable(
       pack.sku,
-      (amount) => addPasses(amount),
+      (amount) => {
+        const { added } = addPasses(amount);
+        if (added > 0) {
+          try { Analytics.click({ log_name: 'pass_granted', source: `iap_pass_${pack.n}`, amount: added }); } catch (_) { /* noop */ }
+          trackEvent('pass_granted', { source: `iap_pass_${pack.n}`, amount: added });
+        }
+      },
       () => trackEvent('iap_buy_pack_error', { n: pack.n }),
     );
   };
@@ -59,7 +66,11 @@ export function IAPScreen({ onBack }: Props) {
     haptic();
     trackEvent('iap_watch_ad');
     await showRewardedAd();
-    addPasses(1);
+    const { added } = addPasses(1);
+    if (added > 0) {
+      try { Analytics.click({ log_name: 'pass_granted', source: 'rewarded_ad', amount: added }); } catch (_) { /* noop */ }
+      trackEvent('pass_granted', { source: 'rewarded_ad', amount: added });
+    }
   };
 
   return (

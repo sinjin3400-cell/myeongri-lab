@@ -36,7 +36,7 @@ type Props = {
 export function ZodiacResultStep({ result, userName, onRestart, onHome, onSelectFeature }: Props) {
   const [showShare, setShowShare] = useState(false);
 
-  const { showAd: showInterstitialAd } = useInterstitialAd(AD_IDS.INTERSTITIAL);
+  const { showAd: showInterstitialAd } = useInterstitialAd(AD_IDS.INTERSTITIAL, 'interstitial');
   useEffect(() => { showInterstitialAd(); }, []);
 
   useEffect(() => {

@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { IAP } from '@apps-in-toss/web-framework';
+import { IAP, Analytics } from '@apps-in-toss/web-framework';
 import type { IapProductListItem } from '@apps-in-toss/web-framework';
 import { trackEvent } from '../utils/analytics';
+
+function trackBoth(logName: string, params: Record<string, string | number | boolean> = {}) {
+  try { Analytics.click({ log_name: logName, ...params }); } catch (_) { /* noop */ }
+  trackEvent(logName, params);
+}
 
 export const SKU = {
   PASS_1: 'ait.0000024218.2d0d5485.3ffb04f070.6644349306',
@@ -71,7 +76,7 @@ export function useIAP() {
         },
         onEvent: async (event) => {
           if (event.type === 'success') {
-            trackEvent('iap_purchase_success', { sku, amount });
+            trackBoth('iap_purchase_success', { sku, amount });
             onSuccess(amount);
           }
           setLoading(false);
@@ -79,7 +84,7 @@ export function useIAP() {
         },
         onError: (err) => {
           const code = (err as { code?: string })?.code;
-          trackEvent('iap_purchase_error', { sku, error: code ?? 'unknown' });
+          trackBoth('iap_purchase_error', { sku, error: code ?? 'unknown' });
           if (code !== 'USER_CANCELED') {
             onError?.(err);
           }
@@ -89,7 +94,7 @@ export function useIAP() {
       });
       cleanupRef.current = cleanup;
     } catch (err) {
-      trackEvent('iap_purchase_init_error', { sku });
+      trackBoth('iap_purchase_init_error', { sku });
       onError?.(err);
       setLoading(false);
     }
@@ -116,7 +121,7 @@ export function useIAP() {
         },
         onEvent: async (event) => {
           if (event.type === 'success') {
-            trackEvent('iap_golden_key_success', {});
+            trackBoth('iap_golden_key_success');
             onSuccess();
           }
           setLoading(false);
@@ -124,7 +129,7 @@ export function useIAP() {
         },
         onError: (err) => {
           const code = (err as { code?: string })?.code;
-          trackEvent('iap_golden_key_error', { error: code ?? 'unknown' });
+          trackBoth('iap_golden_key_error', { error: code ?? 'unknown' });
           if (code !== 'USER_CANCELED') {
             onError?.(err);
           }
@@ -134,7 +139,7 @@ export function useIAP() {
       });
       cleanupRef.current = cleanup;
     } catch (err) {
-      trackEvent('iap_golden_key_init_error', {});
+      trackBoth('iap_golden_key_init_error');
       onError?.(err);
       setLoading(false);
     }

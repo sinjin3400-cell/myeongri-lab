@@ -43,7 +43,7 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
   const [showShare, setShowShare] = useState(false);
   const [showPurchase, setShowPurchase] = useState(false);
 
-  const { isLoaded: rewardLoaded, showAd } = useInterstitialAd(AD_IDS.REWARDED);
+  const { isLoaded: rewardLoaded, showAd } = useInterstitialAd(AD_IDS.REWARDED, 'rewarded');
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
   const { count: passCount, hasPass, usePass, addPasses } = usePremiumPass();
   const { isSubscribed } = useSubscription();
@@ -123,7 +123,11 @@ export function DreamResultStep({ result, userName, onRestart, onHome, onGoFortu
         lockedCount={4}
         onClose={() => setShowPurchase(false)}
         onPurchased={() => {
-          addPasses(1);
+          const { added } = addPasses(1);
+          if (added > 0) {
+            try { Analytics.click({ log_name: 'pass_granted', source: 'dream_lotto_unlock', amount: added }); } catch (_) { /* noop */ }
+            trackEvent('pass_granted', { source: 'dream_lotto_unlock', amount: added });
+          }
           setShowPurchase(false);
           trackEvent('dream_lotto_unlocked', {});
           setUnlocked(true);

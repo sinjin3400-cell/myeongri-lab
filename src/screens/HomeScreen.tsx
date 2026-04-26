@@ -114,6 +114,27 @@ export function HomeScreen({ onSelect, onIAP }: Props) {
       const { added, capped } = addPasses(result.dailyReward);
       setStreakInfo({ count: result.count, dailyReward: result.dailyReward, actualAdded: added });
       if (added > 0) setShowDailyReward(true);
+      try {
+        Analytics.click({
+          log_name: 'daily_reward_claim',
+          streak_count: result.count,
+          reward_amount: result.dailyReward,
+          actual_added: added,
+          capped: capped ? 1 : 0,
+        });
+      } catch (_) { /* noop */ }
+      trackEvent('daily_reward_claim', {
+        streak_count: result.count,
+        reward_amount: result.dailyReward,
+        actual_added: added,
+        capped,
+      });
+      if (added > 0) {
+        try {
+          Analytics.click({ log_name: 'pass_granted', source: 'daily_reward', amount: added });
+        } catch (_) { /* noop */ }
+        trackEvent('pass_granted', { source: 'daily_reward', amount: added });
+      }
       if (capped) {
         setTimeout(() => {
           setToastMsg('🎫 열람권 한도(99개)가 가득 찼어요! 사용 후 다시 받을 수 있어요');

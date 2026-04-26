@@ -23,7 +23,7 @@ export function CompatResultStep({ result, input, onRestart, onHome }: Props) {
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
   const bannerRef = useRef<HTMLDivElement>(null);
 
-  const { showAd: showInterstitialAd } = useInterstitialAd(AD_IDS.INTERSTITIAL);
+  const { showAd: showInterstitialAd } = useInterstitialAd(AD_IDS.INTERSTITIAL, 'interstitial');
   useEffect(() => { showInterstitialAd(); }, []);
 
   useEffect(() => {
