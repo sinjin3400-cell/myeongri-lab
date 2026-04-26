@@ -105,6 +105,8 @@ function profileToInfo(saved: ReturnType<typeof loadUserProfile>): UserInfo {
     birthDate: partsToDotted(saved.birthYear, saved.birthMonth, saved.birthDay),
     gender: saved.gender,
     calendarType: saved.calendarType,
+    birthSijin: saved.birthSijin ?? null,
+    birthTimeUnknown: saved.birthTimeUnknown ?? false,
   };
 }
 
@@ -242,6 +244,8 @@ export default function App() {
       birthYear: y, birthMonth: m, birthDay: d,
       gender: info.gender,
       calendarType: info.calendarType,
+      birthSijin: info.birthSijin,
+      birthTimeUnknown: info.birthTimeUnknown,
     });
     trackFormSubmit(info.gender, !!info.birthSijin || info.birthTimeUnknown);
     trackStepView('mbti');

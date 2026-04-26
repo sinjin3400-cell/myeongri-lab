@@ -1,4 +1,5 @@
 import type { Gender, CalendarType } from '../types';
+import type { SijinId } from '../sijin';
 
 const KEY = 'myeongri_user_profile';
 
@@ -9,6 +10,10 @@ export interface SharedProfile {
   birthDay: string;    // DD (zero-padded)
   gender: Gender | '';
   calendarType?: CalendarType;
+  /** 사주 폼 전용: 시진 (모르면 null) */
+  birthSijin?: SijinId | null;
+  /** 사주 폼 전용: 시진 모름 여부 */
+  birthTimeUnknown?: boolean;
   updatedAt: number;
 }
 
@@ -29,6 +34,8 @@ export function loadUserProfile(): SharedProfile | null {
       birthDay: parsed.birthDay ?? '',
       gender: (parsed.gender as Gender | '') ?? '',
       calendarType: parsed.calendarType,
+      birthSijin: parsed.birthSijin ?? null,
+      birthTimeUnknown: parsed.birthTimeUnknown ?? false,
       updatedAt: parsed.updatedAt ?? 0,
     };
   } catch {
@@ -48,6 +55,8 @@ export function saveUserProfile(p: Partial<SharedProfile>): void {
       birthDay: p.birthDay ? pad2(p.birthDay) : prev.birthDay,
       gender: (p.gender as Gender | '') ?? prev.gender,
       calendarType: p.calendarType ?? prev.calendarType,
+      birthSijin: p.birthSijin !== undefined ? p.birthSijin : prev.birthSijin,
+      birthTimeUnknown: p.birthTimeUnknown !== undefined ? p.birthTimeUnknown : prev.birthTimeUnknown,
       updatedAt: Date.now(),
     };
     localStorage.setItem(KEY, JSON.stringify(merged));
