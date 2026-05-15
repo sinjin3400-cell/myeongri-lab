@@ -28,8 +28,8 @@ export function PurchaseSheet({ open, onClose, onPurchased, passCount, lockedCou
     haptic();
     trackEvent('purchase_sheet_subscribe');
     purchaseGoldenKey(
-      () => {
-        activate(`gk_${Date.now()}`);
+      (subscriptionId) => {
+        activate(subscriptionId);
         onPurchased?.();
       },
       () => trackEvent('purchase_sheet_subscribe_error'),
@@ -231,7 +231,7 @@ export function PurchaseSheet({ open, onClose, onPurchased, passCount, lockedCou
           margin: '4px 0 0', fontSize: 12, fontWeight: 500,
           color: 'var(--navy-300)', textAlign: 'center',
         }}>
-          언제든 해지 가능 · 약관에 동의하고 구매
+          월간 이용권 · 언제든 해지 가능
         </p>
       </div>
     </>

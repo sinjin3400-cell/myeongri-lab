@@ -26,6 +26,7 @@ import { SharedResultView } from './screens/SharedResultView';
 import { decodeShareData, decodeShareDataCompact, sharedDataToHighlight } from './utils/shareUrl';
 import type { SharedFortuneData, FortuneTexts } from './utils/shareUrl';
 import { loadUserProfile, partsToDotted, saveUserProfile, dottedToParts } from './utils/userProfile';
+import type { SharedProfile } from './utils/userProfile';
 import { AutofillSheet } from './components/AutofillSheet';
 
 /** URL에서 공유 데이터 동기 확인 (base64 인코딩된 경우) */
@@ -80,17 +81,25 @@ const EMPTY_COMPAT: CompatInput = {
   person2: { name: '', birthYear: '', gender: '' },
 };
 
-const AUTOFILL_KEY = 'myeongri_autofill_session';
+type AutofillScope = 'info' | 'zodiac' | 'compat';
+const AUTOFILL_KEY_PREFIX = 'myeongri_autofill_session';
 
-function readAutofillDecision(): 'accepted' | 'declined' | null {
+function readAutofillDecision(scope: AutofillScope): 'accepted' | 'declined' | null {
   try {
-    const v = sessionStorage.getItem(AUTOFILL_KEY);
+    const v = sessionStorage.getItem(`${AUTOFILL_KEY_PREFIX}_${scope}`);
     return v === 'accepted' || v === 'declined' ? v : null;
   } catch { return null; }
 }
 
-function writeAutofillDecision(v: 'accepted' | 'declined') {
-  try { sessionStorage.setItem(AUTOFILL_KEY, v); } catch { /* noop */ }
+function writeAutofillDecision(scope: AutofillScope, v: 'accepted' | 'declined') {
+  try { sessionStorage.setItem(`${AUTOFILL_KEY_PREFIX}_${scope}`, v); } catch { /* noop */ }
+}
+
+function stepToScope(step: Step): AutofillScope | null {
+  if (step === 'info') return 'info';
+  if (step === 'zodiac-input') return 'zodiac';
+  if (step === 'compat-input') return 'compat';
+  return null;
 }
 
 function isProfileComplete(p: { name?: string; birthYear?: string } | null): boolean {
@@ -163,7 +172,7 @@ export default function App() {
   }, []);
   const [step, setStep] = useState<Step>('home');
   const [info, setInfo] = useState<UserInfo>(() => {
-    return readAutofillDecision() === 'accepted' ? profileToInfo(loadUserProfile()) : EMPTY_INFO;
+    return readAutofillDecision('info') === 'accepted' ? profileToInfo(loadUserProfile()) : EMPTY_INFO;
   });
   const [mbti, setMbti] = useState<MbtiType | null>(null);
   const [highlight, setHighlight] = useState<FortuneHighlight | null>(null);
@@ -173,13 +182,13 @@ export default function App() {
 
   // 띠별운세 상태
   const [zodiacInput, setZodiacInput] = useState<ZodiacInput>(() => {
-    return readAutofillDecision() === 'accepted' ? profileToZodiac(loadUserProfile()) : EMPTY_ZODIAC;
+    return readAutofillDecision('zodiac') === 'accepted' ? profileToZodiac(loadUserProfile()) : EMPTY_ZODIAC;
   });
   const [zodiacResult, setZodiacResult] = useState<ZodiacResult | null>(null);
 
   // 궁합보기 상태
   const [compatInput, setCompatInput] = useState<CompatInput>(() => {
-    return readAutofillDecision() === 'accepted' ? profileToCompat(loadUserProfile()) : EMPTY_COMPAT;
+    return readAutofillDecision('compat') === 'accepted' ? profileToCompat(loadUserProfile()) : EMPTY_COMPAT;
   });
   const [compatResult, setCompatResult] = useState<CompatResult | null>(null);
 
@@ -192,11 +201,12 @@ export default function App() {
   const [autofillProfile, setAutofillProfile] = useState<ReturnType<typeof loadUserProfile>>(null);
 
   useEffect(() => {
-    if (step !== 'info' && step !== 'zodiac-input' && step !== 'compat-input') {
+    const scope = stepToScope(step);
+    if (!scope) {
       setAutofillOpen(false);
       return;
     }
-    if (readAutofillDecision() !== null) return; // 이미 이번 세션에서 결정함
+    if (readAutofillDecision(scope) !== null) return; // 이 기능에서 이미 결정함
     const saved = loadUserProfile();
     if (!isProfileComplete(saved)) return;
 
@@ -213,27 +223,47 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
-  const handleAutofillAccept = useCallback(() => {
-    const saved = autofillProfile;
-    writeAutofillDecision('accepted');
-    if (saved) {
-      // 현재 폼 + 다른 폼들도 함께 채움 (사용자가 "내 정보 맞다"고 했으므로)
+  const applySavedToScope = useCallback((scope: AutofillScope, saved: SharedProfile) => {
+    if (scope === 'info') {
       setInfo(profileToInfo(saved));
+    } else if (scope === 'zodiac') {
       setZodiacInput(profileToZodiac(saved));
+    } else if (scope === 'compat') {
       setCompatInput((prev) => ({
         person1: profileToCompat(saved).person1,
         person2: prev.person2,
       }));
     }
+  }, []);
+
+  const handleAutofillAccept = useCallback(() => {
+    const saved = autofillProfile;
+    const scope = stepToScope(step);
+    if (scope) writeAutofillDecision(scope, 'accepted');
+    if (saved && scope) {
+      applySavedToScope(scope, saved);
+    }
     setAutofillOpen(false);
     trackEvent('autofill_accept', { step });
-  }, [autofillProfile, step]);
+  }, [autofillProfile, step, applySavedToScope]);
 
   const handleAutofillDecline = useCallback(() => {
-    writeAutofillDecision('declined');
+    const scope = stepToScope(step);
+    if (scope) writeAutofillDecision(scope, 'declined');
     setAutofillOpen(false);
     trackEvent('autofill_decline', { step });
   }, [step]);
+
+  const handleUseSavedManually = useCallback(() => {
+    const scope = stepToScope(step);
+    if (!scope) return;
+    const saved = loadUserProfile();
+    if (!isProfileComplete(saved) || !saved) return;
+    writeAutofillDecision(scope, 'accepted');
+    applySavedToScope(scope, saved);
+    setAutofillOpen(false);
+    trackEvent('autofill_manual_use', { step });
+  }, [step, applySavedToScope]);
 
   const goNextFromInfo = useCallback(() => {
     haptic();
@@ -346,18 +376,16 @@ export default function App() {
     haptic();
     trackRestart();
     trackStepView('home');
-    const decision = readAutofillDecision();
     const saved = loadUserProfile();
-    const fill = decision === 'accepted';
-    setInfo(fill ? profileToInfo(saved) : EMPTY_INFO);
+    setInfo(readAutofillDecision('info') === 'accepted' ? profileToInfo(saved) : EMPTY_INFO);
     setMbti(null);
     setHighlight(null);
     setFullResult(null);
     setLoadError(null);
     setPeriod('today');
-    setZodiacInput(fill ? profileToZodiac(saved) : EMPTY_ZODIAC);
+    setZodiacInput(readAutofillDecision('zodiac') === 'accepted' ? profileToZodiac(saved) : EMPTY_ZODIAC);
     setZodiacResult(null);
-    setCompatInput(fill ? profileToCompat(saved) : EMPTY_COMPAT);
+    setCompatInput(readAutofillDecision('compat') === 'accepted' ? profileToCompat(saved) : EMPTY_COMPAT);
     setCompatResult(null);
     setDreamInput({ text: '', useSaju: true });
     setDreamResult(null);
@@ -487,7 +515,14 @@ export default function App() {
         <IAPScreen onBack={restart} />
       )}
       {step === 'info' && (
-        <InfoStep value={info} onChange={setInfo} onNext={goNextFromInfo} onHome={restart} />
+        <InfoStep
+          value={info}
+          onChange={setInfo}
+          onNext={goNextFromInfo}
+          onHome={restart}
+          hasSavedProfile={isProfileComplete(loadUserProfile())}
+          onUseSaved={handleUseSavedManually}
+        />
       )}
       {step === 'mbti' && (
         <MbtiStep
@@ -622,6 +657,8 @@ export default function App() {
             setStep('zodiac-loading');
           }}
           onBack={restart}
+          hasSavedProfile={isProfileComplete(loadUserProfile())}
+          onUseSaved={handleUseSavedManually}
         />
       )}
       {step === 'zodiac-loading' && (
@@ -668,6 +705,8 @@ export default function App() {
             setStep('compat-loading');
           }}
           onBack={restart}
+          hasSavedProfile={isProfileComplete(loadUserProfile())}
+          onUseSaved={handleUseSavedManually}
         />
       )}
       {step === 'compat-loading' && (

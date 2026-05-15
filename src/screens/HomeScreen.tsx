@@ -4,8 +4,7 @@ import { LogoMark } from '../components/LogoMark';
 import { trackEvent } from '../utils/analytics';
 import { FortuneIcon, DreamIcon, ZodiacIcon, CompatibilityIcon } from '../components/FeatureIcons';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
-import { recordVisit, getDailyZodiacFortunes, getDailyReward } from '../utils/streak';
-import { usePremiumPass } from '../hooks/usePremiumPass';
+import { recordVisit, getDailyZodiacFortunes } from '../utils/streak';
 import { useSubscription } from '../hooks/useSubscription';
 import { Toast } from '../components/Toast';
 import { DAILY_QUOTES } from '../data/daily-quotes';
@@ -99,50 +98,18 @@ export function HomeScreen({ onSelect, onIAP }: Props) {
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
   const bannerRef = useRef<HTMLDivElement>(null);
 
-  const [streakInfo, setStreakInfo] = useState<{ count: number; dailyReward: number; actualAdded: number }>({ count: 0, dailyReward: 0, actualAdded: 0 });
-  const [showDailyReward, setShowDailyReward] = useState(false);
+  const [streakCount, setStreakCount] = useState(0);
   const [toastMsg, setToastMsg] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
-  const { addPasses } = usePremiumPass();
   const { isSubscribed } = useSubscription();
 
   const userName = getLastUserName();
 
   useEffect(() => {
     const result = recordVisit();
-    if (result.isNew && result.dailyReward > 0) {
-      const { added, capped } = addPasses(result.dailyReward);
-      setStreakInfo({ count: result.count, dailyReward: result.dailyReward, actualAdded: added });
-      if (added > 0) setShowDailyReward(true);
-      try {
-        Analytics.click({
-          log_name: 'daily_reward_claim',
-          streak_count: result.count,
-          reward_amount: result.dailyReward,
-          actual_added: added,
-          capped: capped ? 1 : 0,
-        });
-      } catch (_) { /* noop */ }
-      trackEvent('daily_reward_claim', {
-        streak_count: result.count,
-        reward_amount: result.dailyReward,
-        actual_added: added,
-        capped,
-      });
-      if (added > 0) {
-        try {
-          Analytics.click({ log_name: 'pass_granted', source: 'daily_reward', amount: added });
-        } catch (_) { /* noop */ }
-        trackEvent('pass_granted', { source: 'daily_reward', amount: added });
-      }
-      if (capped) {
-        setTimeout(() => {
-          setToastMsg('🎫 열람권 한도(99개)가 가득 찼어요! 사용 후 다시 받을 수 있어요');
-          setToastVisible(true);
-        }, 2500);
-      }
-    } else {
-      setStreakInfo({ count: result.count, dailyReward: 0, actualAdded: 0 });
+    setStreakCount(result.count);
+    if (result.isNew) {
+      trackEvent('daily_visit', { streak_count: result.count });
     }
     try { Analytics.impression({ log_name: 'home_view' }); } catch (_) { /* noop */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -222,61 +189,54 @@ export function HomeScreen({ onSelect, onIAP }: Props) {
       </div>
 
       {/* 연속방문 배너 */}
-      {streakInfo.count >= 1 && (() => {
-        const dayInCycle = ((streakInfo.count - 1) % 7) + 1;
-        const nextReward = getDailyReward(streakInfo.count + 1);
-        const isBonusDay = [3, 5, 7].includes(((streakInfo.count) % 7) + 1);
-        return (
-          <div
-            className="animate-slide-up"
-            style={{
-              marginBottom: 20,
-              padding: '14px 16px',
-              borderRadius: 16,
-              background: 'var(--gold-50)',
-              border: '1.5px solid rgba(212, 168, 75, 0.35)',
-              boxShadow: '0 0 12px rgba(212, 168, 75, 0.12)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-            }}
-          >
-            <div style={{
-              width: 42, height: 42, borderRadius: 100,
-              background: 'linear-gradient(135deg, #FFA500 0%, #FF8C00 100%)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 20, flexShrink: 0,
-              boxShadow: '0 2px 8px rgba(255,140,0,0.3)',
-            }}>
-              {streakInfo.count >= 7 ? '🏆' : '🔥'}
-            </div>
-            <div style={{ flex: 1 }}>
-              <p style={{ margin: '0 0 2px', fontSize: 15, fontWeight: 800, color: 'var(--navy-700)' }}>
-                {streakInfo.count}일 연속 방문 중!
-              </p>
-              <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: 'var(--navy-500)' }}>
-                {showDailyReward && streakInfo.actualAdded > 0
-                  ? `황금 열람권 ${streakInfo.actualAdded}장 획득 🎉`
-                  : nextReward >= 2
-                    ? `내일 오면 황금 열람권 ${nextReward}장 획득 🎁`
-                    : `내일 오면 황금 열람권 ${nextReward}장 획득`}
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: 4 }}>
-              {Array.from({ length: 7 }).map((_, i) => (
-                <div
-                  key={i}
-                  style={{
-                    width: 8, height: 8, borderRadius: '50%',
-                    background: i < dayInCycle ? '#d4a84b' : 'rgba(212,168,75,0.2)',
-                    transition: 'background 0.3s',
-                  }}
-                />
-              ))}
-            </div>
+      {streakCount >= 2 && (
+        <div
+          className="animate-slide-up"
+          style={{
+            marginBottom: 20,
+            padding: '14px 16px',
+            borderRadius: 16,
+            background: 'var(--gold-50)',
+            border: '1.5px solid rgba(212, 168, 75, 0.35)',
+            boxShadow: '0 0 12px rgba(212, 168, 75, 0.12)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+          }}
+        >
+          <div style={{
+            width: 42, height: 42, borderRadius: 100,
+            background: 'linear-gradient(135deg, #FFA500 0%, #FF8C00 100%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 20, flexShrink: 0,
+            boxShadow: '0 2px 8px rgba(255,140,0,0.3)',
+          }}>
+            {streakCount >= 7 ? '🏆' : '🔥'}
           </div>
-        );
-      })()}
+          <div style={{ flex: 1 }}>
+            <p style={{ margin: '0 0 2px', fontSize: 15, fontWeight: 800, color: 'var(--navy-700)' }}>
+              {streakCount}일 연속 방문 중!
+            </p>
+            <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: 'var(--navy-500)' }}>
+              {streakCount >= 7
+                ? '꾸준히 확인할수록 운의 흐름이 보여요 ✨'
+                : '매일 확인하면 나의 운세 흐름을 파악할 수 있어요'}
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {Array.from({ length: 7 }).map((_, i) => (
+              <div
+                key={i}
+                style={{
+                  width: 8, height: 8, borderRadius: '50%',
+                  background: i < (((streakCount - 1) % 7) + 1) ? '#d4a84b' : 'rgba(212,168,75,0.2)',
+                  transition: 'background 0.3s',
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 오늘의 한 줄 — 명리 고전 인용 */}
       <div

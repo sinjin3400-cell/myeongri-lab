@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { haptic } from '../utils/haptic';
 import { trackEvent } from '../utils/analytics';
 import { NavBackButton } from '../components/NavBackButton';
+import { SavedDataButton } from '../components/SavedDataButton';
 import { Analytics } from '@apps-in-toss/web-framework';
 import { getZodiacAnimal } from '../utils/zodiac';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
@@ -12,6 +13,8 @@ type Props = {
   onChange: (v: CompatInput) => void;
   onNext: () => void;
   onBack: () => void;
+  hasSavedProfile?: boolean;
+  onUseSaved?: () => void;
 };
 
 function digitsOnly(s: string) { return s.replace(/\D/g, ''); }
@@ -155,7 +158,10 @@ function PersonForm({
   );
 }
 
-export function CompatInputStep({ value, onChange, onNext, onBack }: Props) {
+export function CompatInputStep({ value, onChange, onNext, onBack, hasSavedProfile, onUseSaved }: Props) {
+  const person1IsEmpty = !value.person1.name && !value.person1.birthYear;
+  const showSavedButton = !!(hasSavedProfile && onUseSaved && person1IsEmpty);
+
   const { isInitialized: bannerReady, attachBanner } = useTossBanner();
   const bannerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -227,6 +233,12 @@ export function CompatInputStep({ value, onChange, onNext, onBack }: Props) {
           {'우리 사이\n얼마나 잘 맞을까요?'}
         </h1>
       </div>
+
+      {showSavedButton && onUseSaved && (
+        <div className="animate-fade-in" style={{ marginBottom: 20, animationDelay: '0.08s' }}>
+          <SavedDataButton onUse={onUseSaved} label="내 정보 자동 채우기" />
+        </div>
+      )}
 
       <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
         <div style={{ marginBottom: 12 }}>

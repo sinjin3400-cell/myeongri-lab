@@ -21,24 +21,18 @@ const PACKS = [
 
 export function IAPScreen({ onBack }: Props) {
   const { count, addPasses } = usePremiumPass();
-  const { isSubscribed, activate, subscription } = useSubscription();
+  const { isSubscribed, activate } = useSubscription();
   const { showAd: showRewardedAd } = useInterstitialAd(AD_IDS.REWARDED, 'rewarded');
   const { purchaseConsumable, purchaseGoldenKey, loading: iapLoading } = useIAP();
   const [selectedPack, setSelectedPack] = useState(1);
-
-  const expiryText = subscription.expiresAt
-    ? new Date(subscription.expiresAt).toLocaleDateString('ko-KR', {
-        year: 'numeric', month: 'long', day: 'numeric',
-      })
-    : null;
 
   const handleSubscribe = () => {
     if (iapLoading) return;
     haptic();
     trackEvent('iap_subscribe_click');
     purchaseGoldenKey(
-      () => {
-        activate(`gk_${Date.now()}`);
+      (subscriptionId) => {
+        activate(subscriptionId);
       },
       () => trackEvent('iap_subscribe_error'),
     );
@@ -139,7 +133,7 @@ export function IAPScreen({ onBack }: Props) {
               letterSpacing: '0.06em', marginBottom: 4,
               width: 'fit-content',
             }}>
-              30일 무제한
+              월간 무제한
             </span>
             <div style={{ fontSize: 20, fontWeight: 800, color: '#6b4e0e', letterSpacing: '-0.02em' }}>
               황금열쇠
@@ -153,7 +147,7 @@ export function IAPScreen({ onBack }: Props) {
             '사주·꿈·궁합 모든 프리미엄 운세 무제한',
             '내일·주간·월간 운세 광고 없이 바로',
             '황금 전용 운세 카드 & 상세 해설',
-            '자동갱신 없음 · 30일 후 재구매',
+            '월간 이용권 · 언제든 해지 가능',
           ].map(t => (
             <div key={t} style={{
               display: 'flex', alignItems: 'center', gap: 10,
@@ -201,9 +195,9 @@ export function IAPScreen({ onBack }: Props) {
           fontSize: 11, fontWeight: 600, color: '#8a6715',
           marginBottom: 14, position: 'relative',
         }}>
-          {isSubscribed && expiryText
-            ? `✦ ${expiryText}까지 이용 가능`
-            : '✦ 30일 이용권 · 자동갱신 없음'}
+          {isSubscribed
+            ? '✦ 이용권 사용 중'
+            : '✦ 월간 이용권 · 언제든 해지 가능'}
         </div>
 
         <button
@@ -368,7 +362,7 @@ export function IAPScreen({ onBack }: Props) {
         padding: '0 12px', lineHeight: 1.6,
       }}>
         구매 전 약관과 환불 정책을 확인해주세요.<br/>
-        황금열쇠는 30일 1회 결제 상품이며, 자동으로 갱신되지 않아요.
+        황금열쇠는 월간 이용권이며, 언제든 해지할 수 있어요.
       </p>
     </div>
   );

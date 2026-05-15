@@ -93,20 +93,6 @@ export function AutofillSheet({ open, profile, onAccept, onDecline }: Props) {
         <div style={{ display: 'flex', gap: 8 }}>
           <button
             type="button"
-            onClick={() => { haptic(); onDecline(); }}
-            style={{
-              flex: 1, padding: '13px 14px',
-              borderRadius: 12,
-              background: '#fff',
-              border: '1.5px solid rgba(26,39,68,0.10)',
-              fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
-              color: 'var(--navy-500)', cursor: 'pointer',
-            }}
-          >
-            다시 입력
-          </button>
-          <button
-            type="button"
             onClick={() => { haptic(); onAccept(); }}
             style={{
               flex: 1.4, padding: '13px 14px',
@@ -118,7 +104,21 @@ export function AutofillSheet({ open, profile, onAccept, onDecline }: Props) {
               boxShadow: '0 4px 14px rgba(26,39,68,0.20)',
             }}
           >
-            그대로 시작
+            네, 맞아요
+          </button>
+          <button
+            type="button"
+            onClick={() => { haptic(); onDecline(); }}
+            style={{
+              flex: 1, padding: '13px 14px',
+              borderRadius: 12,
+              background: '#fff',
+              border: '1.5px solid rgba(26,39,68,0.10)',
+              fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
+              color: 'var(--navy-500)', cursor: 'pointer',
+            }}
+          >
+            새로 입력
           </button>
         </div>
       </div>

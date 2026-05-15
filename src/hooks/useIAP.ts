@@ -13,7 +13,8 @@ export const SKU = {
   PASS_3: 'ait.0000024218.e3de3f71.482f1e81e1.6644422266',
   PASS_5: 'ait.0000024218.58d8a9b9.8ce5413f98.6644429046',
   PASS_10: 'ait.0000024218.f23e5db9.eb23243bb4.6644474476',
-  GOLDEN_KEY: 'ait.0000024218.7dfc8fed.3e5d5b6e51.6649360039',
+  GOLDEN_KEY_LEGACY: 'ait.0000024218.7dfc8fed.3e5d5b6e51.6649360039',
+  GOLDEN_KEY_SUB: 'sub.ioq.mp6g4164.fae6966471',
 } as const;
 
 export const SKU_TO_AMOUNT: Record<string, number> = {
@@ -101,28 +102,29 @@ export function useIAP() {
   }, []);
 
   const purchaseGoldenKey = useCallback((
-    onSuccess: () => void,
+    onSuccess: (subscriptionId: string) => void,
     onError?: (err: unknown) => void,
   ) => {
-    if (!SKU.GOLDEN_KEY) {
+    if (SKU.GOLDEN_KEY_SUB.startsWith('PLACEHOLDER')) {
       trackEvent('iap_golden_key_no_sku', {});
-      onError?.(new Error('황금열쇠 상품이 아직 등록되지 않았습니다.'));
+      onError?.(new Error('구독 상품이 아직 등록되지 않았습니다.'));
       return;
     }
     setLoading(true);
     try {
-      const cleanup = IAP.createOneTimePurchaseOrder({
+      const cleanup = IAP.createSubscriptionPurchaseOrder({
         options: {
-          sku: SKU.GOLDEN_KEY,
-          processProductGrant: async ({ orderId }) => {
-            trackEvent('iap_golden_key_grant', { orderId });
+          sku: SKU.GOLDEN_KEY_SUB,
+          processProductGrant: async ({ orderId, subscriptionId }) => {
+            trackEvent('iap_golden_key_grant', { orderId, subscriptionId: subscriptionId ?? '' });
             return true;
           },
         },
         onEvent: async (event) => {
           if (event.type === 'success') {
-            trackBoth('iap_golden_key_success');
-            onSuccess();
+            const subId = (event as { subscriptionId?: string }).subscriptionId ?? `sub_${Date.now()}`;
+            trackBoth('iap_golden_key_success', { subscriptionId: subId });
+            onSuccess(subId);
           }
           setLoading(false);
           cleanupRef.current = null;

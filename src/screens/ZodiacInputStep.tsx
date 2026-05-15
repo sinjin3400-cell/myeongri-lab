@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { haptic } from '../utils/haptic';
 import { trackEvent } from '../utils/analytics';
 import { NavBackButton } from '../components/NavBackButton';
+import { SavedDataButton } from '../components/SavedDataButton';
 import { Analytics } from '@apps-in-toss/web-framework';
 import { getZodiacByDate } from '../utils/zodiac';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
@@ -12,6 +13,8 @@ type Props = {
   onChange: (v: ZodiacInput) => void;
   onNext: () => void;
   onBack: () => void;
+  hasSavedProfile?: boolean;
+  onUseSaved?: () => void;
 };
 
 function digitsOnly(s: string) { return s.replace(/\D/g, ''); }
@@ -34,7 +37,10 @@ function parseDateDigits(stored: string) {
   return { year, month, day, valid: validYear && (d.length < 6 || validMonth) && (d.length < 8 || validDay) };
 }
 
-export function ZodiacInputStep({ value, onChange, onNext, onBack }: Props) {
+export function ZodiacInputStep({ value, onChange, onNext, onBack, hasSavedProfile, onUseSaved }: Props) {
+  const formIsEmpty = !value.name && !value.birthYear;
+  const showSavedButton = !!(hasSavedProfile && onUseSaved && formIsEmpty);
+
   const [touched, setTouched] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
@@ -162,6 +168,12 @@ export function ZodiacInputStep({ value, onChange, onNext, onBack }: Props) {
           {'생년월일을 입력하면\n12간지의 지혜가 풀어주는 오늘의 운세.'}
         </p>
       </div>
+
+      {showSavedButton && onUseSaved && (
+        <div className="animate-fade-in" style={{ marginBottom: 24, animationDelay: '0.08s' }}>
+          <SavedDataButton onUse={onUseSaved} />
+        </div>
+      )}
 
       {/* 입력 폼 */}
       <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>

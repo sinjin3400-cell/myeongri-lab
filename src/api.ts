@@ -111,19 +111,32 @@ function getSajuContext(info: UserInfo, mbti: MbtiType | null, period: FortunePe
 async function callFortuneApi(systemPrompt: string, userPrompt: string, payload: Record<string, unknown>): Promise<unknown> {
   const base = apiBase();
   const url = `${base}/api/fortune`;
+  const maxRetries = 2;
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...payload, systemPrompt, userPrompt }),
-  });
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, systemPrompt, userPrompt }),
+      });
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || `요청 실패 (${res.status})`);
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `요청 실패 (${res.status})`);
+      }
+
+      return await res.json();
+    } catch (e) {
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+        continue;
+      }
+      throw e;
+    }
   }
 
-  return res.json();
+  throw new Error('요청에 실패했어요. 잠시 후 다시 시도해주세요.');
 }
 
 /** API 응답에서 FortuneHighlight 필수 필드 검증 */

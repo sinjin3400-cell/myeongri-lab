@@ -2,6 +2,7 @@ import { useRef, useEffect } from 'react';
 import { haptic } from '../utils/haptic';
 import { SijinSelect } from '../components/SijinSelect';
 import { NavBackButton } from '../components/NavBackButton';
+import { SavedDataButton } from '../components/SavedDataButton';
 import { Analytics } from '@apps-in-toss/web-framework';
 import { useTossBanner, AD_IDS } from '../hooks/useAds';
 import type { UserInfo, Gender, CalendarType } from '../types';
@@ -12,6 +13,8 @@ type Props = {
   onChange: (v: UserInfo) => void;
   onNext: () => void;
   onHome?: () => void;
+  hasSavedProfile?: boolean;
+  onUseSaved?: () => void;
 };
 
 function digitsOnly(s: string): string {
@@ -56,7 +59,10 @@ function formatSijinLine(v: UserInfo): string {
   return '';
 }
 
-export function InfoStep({ value, onChange, onNext, onHome }: Props) {
+export function InfoStep({ value, onChange, onNext, onHome, hasSavedProfile, onUseSaved }: Props) {
+  const formIsEmpty = !value.name && !value.birthDate;
+  const showSavedButton = !!(hasSavedProfile && onUseSaved && formIsEmpty);
+
   const genderFirstRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -131,12 +137,18 @@ export function InfoStep({ value, onChange, onNext, onHome }: Props) {
       </div>
 
       {/* 섹션 라벨 + 타이틀 */}
-      <div className="animate-fade-in" style={{ marginBottom: 32, animationDelay: '0.05s' }}>
+      <div className="animate-fade-in" style={{ marginBottom: showSavedButton ? 16 : 32, animationDelay: '0.05s' }}>
         <p className="section-label" style={{ color: 'var(--gold-600)' }}>기본 정보</p>
         <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: 'var(--navy-700)', lineHeight: 1.4, letterSpacing: '-0.02em' }}>
           어떻게<br />불러드릴까요?
         </h2>
       </div>
+
+      {showSavedButton && onUseSaved && (
+        <div className="animate-fade-in" style={{ marginBottom: 24, animationDelay: '0.08s' }}>
+          <SavedDataButton onUse={onUseSaved} />
+        </div>
+      )}
 
       {/* 폼 */}
       <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
